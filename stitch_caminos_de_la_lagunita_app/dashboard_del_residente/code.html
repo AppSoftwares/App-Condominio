@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Caminos de la Lagunita - Resident Dashboard</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-container": "#556855",
+                    "secondary-container": "#fed488",
+                    "inverse-primary": "#94d2cd",
+                    "error": "#ba1a1a",
+                    "secondary": "#785919",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#e4e2df",
+                    "inverse-surface": "#30312f",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#bfc8c7",
+                    "surface": "#fbf9f6",
+                    "on-secondary-fixed": "#271900",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "on-background": "#1b1c1a",
+                    "primary-fixed-dim": "#94d2cd",
+                    "primary": "#0f5551",
+                    "surface-bright": "#fbf9f6",
+                    "outline": "#6f7978",
+                    "primary-fixed": "#b0eee9",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#f2f0ed",
+                    "tertiary": "#3d503e",
+                    "surface-tint": "#296864",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "on-surface": "#1b1c1a",
+                    "background": "#fbf9f6",
+                    "on-tertiary-container": "#d0e6ce",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "primary-container": "#2f6d69",
+                    "on-secondary-container": "#795a1a",
+                    "surface-container-low": "#f5f3f0",
+                    "on-primary-container": "#aeece7",
+                    "on-primary-fixed": "#00201e",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#eae8e5",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "surface-container": "#efeeeb",
+                    "secondary-fixed": "#ffdea6",
+                    "on-surface-variant": "#3f4947",
+                    "surface-variant": "#e4e2df",
+                    "tertiary-fixed": "#d3e8d0",
+                    "on-primary": "#ffffff",
+                    "on-primary-fixed-variant": "#05504c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "safety-area": "16px",
+                    "margin-desktop": "64px",
+                    "max-width": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["EB Garamond"],
+                    "label-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "headline-lg-mobile": ["EB Garamond"],
+                    "body-sm": ["Inter"],
+                    "headline-md": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f5551 0%, #2f6d69 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-primary-container flex items-center justify-center text-on-primary-container font-label-md">
+                    JP
+                </div>
+<div class="hidden md:block">
+<h1 class="font-headline-md text-headline-md text-primary dark:text-inverse-primary">Caminos de la Lagunita</h1>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="md:hidden">
+<h2 class="font-headline-md text-headline-md text-primary">Caminos</h2>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-12 px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto">
+<!-- Welcome Header -->
+<section class="mb-8">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary">¡Bienvenido, Juan Pérez!</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Conjunto Punta de Piedra, Casa 11-45</p>
+</section>
+<div class="flex flex-col lg:grid lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Summary & Hero -->
+<div class="lg:col-span-4 space-y-gutter">
+<!-- Status Card (Account Summary) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 transition-all hover:border-primary">
+<div class="flex justify-between items-start mb-4">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Estado de Cuenta</span>
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full text-xs font-bold uppercase">Pendiente</span>
+</div>
+<div class="mb-6">
+<h3 class="font-display-lg text-display-lg text-primary">$450.00</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Próximo Vencimiento: 15 Oct, 2023</p>
+</div>
+<button class="w-full bg-primary py-3 rounded-lg text-on-primary font-label-md hover:opacity-90 transition-opacity">
+                        Pagar Ahora
+                    </button>
+</div>
+<!-- Hero Graphic Card -->
+<div class="bg-primary-container rounded-xl overflow-hidden relative min-h-[240px] flex items-center justify-center border border-outline-variant">
+<img class="absolute inset-0 w-full h-full object-contain p-8 mix-blend-overlay opacity-40" data-alt="A stylized architectural illustration of a modern luxury residential tower with clean geometric lines, featuring a terracotta roof and arched entrances under a warm, glowing golden hour light. The style is flat, corporate, and minimalist, utilizing the Moss Green and Ochre Gold palette of the Caminos de la Lagunita brand to convey security and serenity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPwdp7uHsqU1vRZWPz2cgSezTBACQTT0Gy8BQ6Q6if0vf2CFTpdQTkcjAkPwWtFVXNuaOR4GEc-EotjUx7KvjV3hkiHEJjhqKow1-rev1tmlseP7VhH8yxef2qcJOuWC8WV1ICHTO2FIflVEH_ikuYhzv8Wxe3tdX39ad5eCxaHovyjWNn_yD38hop_ZO3Y_rmmgFX889FXiT4gDoBYlWLlInRq3EPb1EHZuCSd3gGGmU1Qo2eedVhDVZ1NWVuSvsW8mMn0x3gAPg"/>
+<div class="relative z-10 text-center px-6">
+<img alt="Logo Icon" class="w-24 mx-auto mb-4 drop-shadow-xl" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2ydpAZFDefLHGG4PLCYUOwIcyDO4j5qzSLT8Ge76ThRy3eZAgfmCEyx2bHrkDmjw9S4GEGSQg6BYdsJ0fMYifC7OxnGpynsn0hKc5ps3tx-quIpjU51D6k0MjRferYTIIznYQMnqRgzhioQExbC2aQsOndk9QFjAyKF7wXBFHdCkN-GOBP2UJAbzOyPCUjxFOZK7zhefj1jqnacY3ssp0ZaCJ8XCOzK9nF_2k6WIt-yV5C8yB2d2DLxOlAF4yeWz-b4hCJ1c-XBk"/>
+<p class="text-on-primary-container font-headline-md italic">Excelencia en Convivencia</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Actions & News -->
+<div class="lg:col-span-8 space-y-gutter">
+<!-- Quick Actions Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+<a class="group flex flex-col items-center justify-center p-6 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary hover:border-primary transition-all duration-300" href="#">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container mb-3 transition-colors">
+<span class="material-symbols-outlined text-3xl">payments</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface group-hover:text-white text-center">Pagos de Condominio</span>
+</a>
+<a class="group flex flex-col items-center justify-center p-6 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary hover:border-primary transition-all duration-300" href="#">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container mb-3 transition-colors">
+<span class="material-symbols-outlined text-3xl">rebase_edit</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface group-hover:text-white text-center">Solicitudes de Servicio</span>
+</a>
+<a class="group flex flex-col items-center justify-center p-6 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary hover:border-primary transition-all duration-300" href="#">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container mb-3 transition-colors">
+<span class="material-symbols-outlined text-3xl">vpn_key</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface group-hover:text-white text-center">Acceso de Invitados</span>
+</a>
+<a class="group flex flex-col items-center justify-center p-6 bg-surface-container-low border border-outline-variant rounded-xl hover:bg-primary hover:border-primary transition-all duration-300" href="#">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary-container mb-3 transition-colors">
+<span class="material-symbols-outlined text-3xl">calendar_today</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface group-hover:text-white text-center">Reservar Áreas</span>
+</a>
+</div>
+<!-- Community News -->
+<section>
+<div class="flex justify-between items-end mb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface">Noticias de la Comunidad</h3>
+<a class="font-label-md text-primary hover:underline" href="#">Ver todas</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- News Item 1 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:border-primary transition-colors cursor-pointer">
+<div class="h-40 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A professional landscaping team maintaining lush, vibrant green residential gardens under a clear bright sky. The aesthetic is clean, high-end, and perfectly manicured, reflecting a professional residential community's care. Soft daylight highlights the textures of the plants and the modern stone pathways." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV5ujmAXc75G7me1ghXNk55ejrYKDXN4b5RB7a88XD9PHnQCY2B74mLFqZPTmGObfnp6vC3L6yigqNeBzbWdMR1EfHU3XhsKbESuFaeP_-QbYx4xMKnveOLJIoyPkW-DDy0at3Y7I9f55R_o1cVKZAO2UKDKmwYYsfDT9eACxiVFBbLidsl0LqOclYsLZz5rmS-eMGb9T8wYys9mLJ7Dr-LDSJGpZfO3oJWhuNs_HlXEXwm9xw-bES3yjwe6yFmDU8T0Z1DVRacmY"/>
+</div>
+<div class="p-4">
+<span class="font-label-sm text-secondary bg-secondary-fixed px-2 py-0.5 rounded text-[10px] uppercase font-bold">Mantenimiento</span>
+<h4 class="font-body-lg font-semibold text-on-surface mt-2">Mantenimiento de áreas verdes</h4>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-1">Se informa que el día jueves se realizará la poda anual de los jardines de la entrada principal.</p>
+</div>
+</div>
+<!-- News Item 2 -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden hover:border-primary transition-colors cursor-pointer">
+<div class="h-40 overflow-hidden">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A sophisticated, modern assembly hall or boardroom with high ceilings, large windows, and elegant minimalist furniture. The room is filled with soft natural light, creating a serene and professional atmosphere for a community meeting. Architectural details are crisp and professional, using a neutral color palette with dark wood accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUDpOFYJfmpqnUXdQflzQKTjUirjdWcNb4elw2H-U3jp2vQSd_vYtyNVIwOdlQ_3YGyCupYhgggNgOVSCN96iNLwU1Sw0j1xJb4klTMS7nNRCESPlEeI6y-xHVKnDvlBAYYgIAKNGQqzmx0lW0lON_n5DDZAYoAC4g6hqf1WwyToMIlgKyB3b1Ky_wk6HnNVMiJVbgjGjthw5DCkJ9qf9dE2MtxKMzC4C9B7O43aLg9R9otYyogmsoN6ef6-QsPD4qBUl4J0CvHbw"/>
+</div>
+<div class="p-4">
+<span class="font-label-sm text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded text-[10px] uppercase font-bold">Comunidad</span>
+<h4 class="font-body-lg font-semibold text-on-surface mt-2">Asamblea de propietarios</h4>
+<p class="font-body-sm text-on-surface-variant line-clamp-2 mt-1">Recordatorio para la asamblea ordinaria del próximo sábado a las 10:00 AM en el salón social.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-4 pb-safe bg-surface dark:bg-surface-dim border-t border-outline-variant dark:border-outline z-50">
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-1 scale-95 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">rebase_edit</span>
+<span class="font-label-sm text-label-sm">Solicitudes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-label-sm">Pagos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</nav>
+<!-- Desktop Floating Action Button (Contextual) -->
+<div class="hidden md:flex fixed bottom-8 right-8 z-40">
+<button class="bg-primary text-on-primary flex items-center gap-3 px-6 py-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+<span class="material-symbols-outlined">add</span>
+<span class="font-label-md">Nueva Solicitud</span>
+</button>
+</div>
+<script>
+        // Simple micro-interaction for active nav states
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // e.preventDefault();
+                // This would handle navigation in a real app
+            });
+        });
+    </script>
+</body></html>

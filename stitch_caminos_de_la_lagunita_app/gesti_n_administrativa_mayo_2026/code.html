@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Administración - Mayo 2026 | Caminos de la Lagunita</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=EB+Garamond:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f6;
+            scroll-behavior: smooth;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid #bfc8c7;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-on-surface": "#f2f0ed",
+                      "primary": "#0f5551",
+                      "on-secondary-container": "#795a1a",
+                      "on-secondary-fixed": "#271900",
+                      "inverse-primary": "#94d2cd",
+                      "surface-bright": "#fbf9f6",
+                      "on-primary-fixed-variant": "#05504c",
+                      "on-secondary-fixed-variant": "#5d4200",
+                      "tertiary-fixed-dim": "#b7ccb5",
+                      "outline-variant": "#bfc8c7",
+                      "on-surface-variant": "#3f4947",
+                      "surface-container-low": "#f5f3f0",
+                      "surface-container-highest": "#e4e2df",
+                      "on-tertiary-fixed": "#0e1f10",
+                      "surface-tint": "#296864",
+                      "secondary": "#785919",
+                      "on-surface": "#1b1c1a",
+                      "background": "#fbf9f6",
+                      "on-error": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-container": "#d0e6ce",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container": "#efeeeb",
+                      "error": "#ba1a1a",
+                      "outline": "#6f7978",
+                      "secondary-container": "#fed488",
+                      "surface-variant": "#e4e2df",
+                      "surface-dim": "#dbdad7",
+                      "surface": "#fbf9f6",
+                      "surface-container-high": "#eae8e5",
+                      "tertiary": "#3d503e",
+                      "secondary-fixed-dim": "#e9c176",
+                      "primary-fixed-dim": "#94d2cd",
+                      "on-secondary": "#ffffff",
+                      "primary-container": "#2f6d69",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#556855",
+                      "primary-fixed": "#b0eee9",
+                      "inverse-surface": "#30312f",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#ffdea6",
+                      "on-primary-container": "#aeece7",
+                      "on-background": "#1b1c1a",
+                      "on-tertiary-fixed-variant": "#394b39",
+                      "tertiary-fixed": "#d3e8d0",
+                      "on-primary-fixed": "#00201e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "safety-area": "16px",
+                      "max-width": "1280px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "64px",
+                      "gutter": "24px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "body-sm": ["Inter"],
+                      "headline-md": ["EB Garamond"],
+                      "headline-lg-mobile": ["EB Garamond"],
+                      "headline-lg": ["EB Garamond"],
+                      "display-lg": ["EB Garamond"],
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "label-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
+<img alt="Resident Profile" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a mature residential manager in a modern, brightly lit office environment. The person is wearing a high-end corporate attire, exuding trust and authority. The background is softly blurred, showing hints of lush green tropical plants and elegant architectural details that align with a premium residential community's aesthetic. The lighting is warm and natural." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvO2ZSEgbk9dCus1vY8GZfI8MEOms2fk0eDjZtF3hjBKgEoiTrkkbZ1PXf0pU_kFnro6KaO1GJ7GJiLMHTlDZKbdzRkpWXGE8Na8ATSxN-VYoEL7N7SXovsk-fuUvFrVYbpjN6DWlP5zyUg5uoCpmkIymFYToNt51Wl9Djsqi-89tbBeylF4HhW7gpKQuOYvXrkDOCh65UfnJT1ih6PnoOWtk5OCmPmp-mk-pBr7kL5QuWn4c2Zbh56-2vbkmUWpzsGYKk1lDBUr4"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-inverse-primary">Caminos de la Lagunita</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-primary dark:text-inverse-primary hover:bg-surface-container-low transition-colors p-2 rounded-full">notifications</button>
+</div>
+</div>
+</header>
+<main class="mt-20 mb-24 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
+    <div id="view-dashboard">
+        <!-- Welcome & Header Section -->
+        <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <p class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-1">Panel Administrativo</p>
+                <h2 class="font-display-lg text-display-lg text-on-surface">Administración - Mayo 2026</h2>
+            </div>
+            <div class="glass-card px-6 py-4 rounded-xl border border-outline-variant flex items-center gap-4">
+                <div class="text-right">
+                    <p class="font-label-sm text-label-sm text-on-surface-variant">Tasa BCV</p>
+                    <p class="font-body-lg text-body-lg font-bold text-primary">36.50 Bs./$</p>
+                </div>
+                <div class="w-[1px] h-10 bg-outline-variant"></div>
+                <div class="flex gap-2">
+                    <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md transition-all flex items-center gap-2" onclick="exportReport('PDF')">
+                        <span class="material-symbols-outlined text-[20px]">description</span>
+                        PDF
+                    </button>
+                    <button class="bg-secondary hover:bg-on-secondary-container hover:text-white text-on-secondary-container bg-secondary-container px-4 py-2 rounded-lg font-label-md transition-all flex items-center gap-2" onclick="exportReport('Excel')">
+                        <span class="material-symbols-outlined text-[20px]">table_chart</span>
+                        Excel
+                    </button>
+                </div>
+            </div>
+        </section>
+        <!-- Totals Summary (Bento Top) -->
+        <section class="bento-grid mb-10">
+            <div class="col-span-12 md:col-span-4 glass-card p-6 rounded-xl border border-outline-variant relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5">
+                    <span class="material-symbols-outlined text-[120px]">payments</span>
+                </div>
+                <p class="font-label-md text-label-md text-on-surface-variant mb-2">Ingresos Totales</p>
+                <h3 class="font-headline-lg text-headline-lg text-primary mb-1">$ 1,240.00</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">45,260.00 Bs.</p>
+                <div class="mt-4 flex items-center gap-1 text-green-600">
+                    <span class="material-symbols-outlined text-sm">trending_up</span>
+                    <span class="font-label-sm text-label-sm">+12% vs Abril</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-4 glass-card p-6 rounded-xl border border-outline-variant relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-5 text-error">
+                    <span class="material-symbols-outlined text-[120px]">account_balance_wallet</span>
+                </div>
+                <p class="font-label-md text-label-md text-on-surface-variant mb-2">Gastos Totales</p>
+                <h3 class="font-headline-lg text-headline-lg text-error mb-1">$ 985.40</h3>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">35,967.10 Bs.</p>
+                <div class="mt-4 flex items-center gap-1 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-sm">schedule</span>
+                    <span class="font-label-sm text-label-sm">Actualizado hoy 9:45 AM</span>
+                </div>
+            </div>
+            <div class="col-span-12 md:col-span-4 bg-primary text-on-primary p-6 rounded-xl shadow-lg relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10">
+                    <span class="material-symbols-outlined text-[120px]">savings</span>
+                </div>
+                <p class="font-label-md text-label-md opacity-80 mb-2">Saldo Caja</p>
+                <h3 class="font-headline-lg text-headline-lg mb-1">$ 254.60</h3>
+                <p class="font-body-sm text-body-sm opacity-80">9,292.90 Bs.</p>
+                <div class="mt-4 flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">check_circle</span>
+                    <span class="font-label-sm text-label-sm">Cuentas cuadradas</span>
+                </div>
+            </div>
+        </section>
+        <div class="grid grid-cols-12 gap-gutter">
+            <!-- Detailed Expenses Section -->
+            <section class="col-span-12 lg:col-span-8 flex flex-col gap-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Egresos Detallados</h3>
+                    <button class="text-primary font-label-md flex items-center gap-1 hover:underline">
+                        <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                        Agregar concepto personalizado
+                    </button>
+                </div>
+                <!-- Utilities Group -->
+                <div class="bg-white border border-outline-variant rounded-xl overflow-hidden">
+                    <div class="bg-surface-container-low px-6 py-3 border-b border-outline-variant flex justify-between items-center">
+                        <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Servicios Públicos (Utilities)</span>
+                        <span class="font-body-sm text-body-sm text-primary font-semibold">$ 145.00</span>
+                    </div>
+                    <table class="w-full text-left">
+                        <tbody class="divide-y divide-outline-variant">
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">SEDEMAT Gas</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 25.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Inmobiliaria</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 15.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Hidrolago</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 12.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Corpoelec</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 45.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Aseo Urbano / Desechos Sólidos</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 38.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md border-t-2 border-dashed border-outline-variant">Teléfono Garita</td>
+                                <td class="px-6 py-4 text-right font-body-md border-t-2 border-dashed border-outline-variant">$ 10.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Payroll Group -->
+                <div class="bg-white border border-outline-variant rounded-xl overflow-hidden">
+                    <div class="bg-surface-container-low px-6 py-3 border-b border-outline-variant flex justify-between items-center">
+                        <span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Nómina y Personal (Payroll)</span>
+                        <span class="font-body-sm text-body-sm text-primary font-semibold">$ 620.00</span>
+                    </div>
+                    <table class="w-full text-left">
+                        <tbody class="divide-y divide-outline-variant">
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Vigilante Diurno/Nocturno</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 450.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Jardinero</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 60.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Servicio de Limpieza</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 40.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Liquidaciones / Prestaciones</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 20.00</td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4 font-body-md text-body-md">Bonos Alimentación / Guerra</td>
+                                <td class="px-6 py-4 text-right font-body-md">$ 50.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            <!-- Income Section -->
+            <section class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-headline-md text-headline-md text-on-surface">Ingresos Recientes</h3>
+                    <span class="bg-secondary-container text-on-secondary-container px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider">Mayo 2026</span>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <!-- Income Card 1 -->
+                    <div class="glass-card p-4 rounded-xl border-l-4 border-l-primary flex justify-between items-center transition-transform hover:scale-[1.02]">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+                                <span class="material-symbols-outlined">home</span>
+                            </div>
+                            <div>
+                                <p class="font-body-md text-body-md font-semibold">Casa 14-28</p>
+                                <p class="font-label-sm text-label-sm text-on-surface-variant">Cuota Ordinaria Mayo</p>
+                            </div>
+                        </div>
+                        <p class="font-body-lg text-body-lg font-bold text-primary">$ 20.00</p>
+                    </div>
+                </div>
+                <!-- Monthly Status Card -->
+                <div class="mt-4 bg-surface-container-high p-6 rounded-xl border border-outline-variant">
+                    <h4 class="font-label-md text-label-md text-primary mb-4 uppercase tracking-widest">Estado de Cobranza</h4>
+                    <div class="relative pt-1">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div><span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-on-primary-container bg-primary-container">En Progreso</span></div>
+                            <div class="text-right"><span class="text-xs font-semibold inline-block text-primary">65%</span></div>
+                        </div>
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-white border border-outline-variant">
+                            <div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary" style="width:65%"></div>
+                        </div>
+                    </div>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">32 de 48 casas han pagado la cuota de Mayo 2026.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- User Management View (Hidden by default) -->
+    <div class="hidden" id="view-usuarios">
+        <section class="col-span-12">
+            <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+                <div>
+                    <p class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-1">Administración de Comunidad</p>
+                    <h2 class="font-display-lg text-display-lg text-on-surface">Gestión de Usuarios</h2>
+                </div>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg font-label-md flex items-center gap-2 hover:bg-primary-container transition-all shadow-md" onclick="showCreateVigilante()">
+                    <span class="material-symbols-outlined">person_add</span>
+                    Crear Nuevo Vigilante
+                </button>
+            </div>
+            <div class="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-surface-container-low border-b border-outline-variant">
+                                <th class="px-6 py-4 font-label-md text-on-surface-variant uppercase">Usuario</th>
+                                <th class="px-6 py-4 font-label-md text-on-surface-variant uppercase">Rol</th>
+                                <th class="px-6 py-4 font-label-md text-on-surface-variant uppercase">Ubicación</th>
+                                <th class="px-6 py-4 font-label-md text-on-surface-variant uppercase">Estado</th>
+                                <th class="px-6 py-4 font-label-md text-on-surface-variant uppercase">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-outline-variant">
+                            <tr class="hover:bg-surface-container-lowest transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-body-md font-bold text-on-surface">Carlos Mendoza</span>
+                                        <span class="font-body-sm text-on-surface-variant">carlos@email.com</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full bg-primary-fixed-dim text-on-primary-fixed-variant text-xs font-bold uppercase">Propietario</span>
+                                </td>
+                                <td class="px-6 py-4 font-body-sm">Etapa II, Punta de Piedra, 11-45</td>
+                                <td class="px-6 py-4">
+                                    <span class="flex items-center gap-1.5 text-green-600 font-bold text-xs uppercase">
+                                        <span class="w-2 h-2 rounded-full bg-green-600"></span> Validado
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex gap-2">
+                                        <button class="p-2 text-on-surface-variant hover:text-error transition-colors" title="Desactivar por mudanza/pérdida" onclick="toggleUserStatus('Carlos Mendoza')">
+                                            <span class="material-symbols-outlined">person_off</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-surface-container-lowest transition-colors bg-secondary-fixed/10">
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col">
+                                        <span class="font-body-md font-bold text-on-surface">Ana Rodríguez</span>
+                                        <span class="font-body-sm text-on-surface-variant">ana.r@email.com</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-bold uppercase">Propietario</span>
+                                </td>
+                                <td class="px-6 py-4 font-body-sm">Etapa I, La Pradera, 05-12</td>
+                                <td class="px-6 py-4">
+                                    <span class="flex items-center gap-1.5 text-secondary font-bold text-xs uppercase">
+                                        <span class="w-2 h-2 rounded-full bg-secondary"></span> Pendiente
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex gap-2">
+                                        <button class="bg-primary text-white px-3 py-1 rounded text-xs font-bold hover:bg-primary-container transition-all" onclick="validateUser('Ana Rodríguez')">Validar</button>
+                                        <button class="p-2 text-on-surface-variant hover:text-error transition-colors">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full grid grid-cols-5 items-center h-20 bg-white border-t border-outline-variant z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="javascript:void(0)" onclick="switchView('dashboard')">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium mt-1">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">rebase_edit</span>
+<span class="text-[10px] font-medium mt-1">Solicitudes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary" href="javascript:void(0)" onclick="switchView('dashboard')">
+<div class="bg-primary-container p-2 rounded-xl mb-1">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</div>
+<span class="text-[10px] font-bold">Finanzas</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="javascript:void(0)" onclick="switchView('usuarios')">
+<span class="material-symbols-outlined">group</span>
+<span class="text-[10px] font-medium mt-1">Usuarios</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium mt-1">Perfil</span>
+</a>
+</nav>
+<script>
+        // Simple interactive micro-effect for cards
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.borderColor = '#0f5551';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.borderColor = '#bfc8c7';
+            });
+        });
+
+        function switchView(viewName) {
+            const dashboard = document.getElementById('view-dashboard');
+            const usuarios = document.getElementById('view-usuarios');
+            const navLinks = document.querySelectorAll('nav a');
+
+            if (viewName === 'usuarios') {
+                dashboard.classList.add('hidden');
+                usuarios.classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                dashboard.classList.remove('hidden');
+                usuarios.classList.add('hidden');
+            }
+        }
+
+        function validateUser(name) {
+            alert('Validando a ' + name + '...\nEl usuario ahora tiene acceso completo como Propietario verificado.');
+        }
+
+        function toggleUserStatus(name) {
+            const reason = prompt('Indique el motivo de la desactivación (ej. mudanza, pérdida de teléfono):');
+            if (reason) {
+                alert('Usuario ' + name + ' desactivado correctamente.\nMotivo: ' + reason);
+            }
+        }
+
+        function showCreateVigilante() {
+            alert('Abriendo formulario de creación de Vigilante...\nSe generarán credenciales temporales automáticas.');
+        }
+
+        function exportReport(format) {
+            if (format === 'PDF') {
+                const printContents = document.getElementById('reporte-formal').innerHTML;
+                const originalContents = document.body.innerHTML;
+                document.body.innerHTML = printContents;
+                window.print();
+                document.body.innerHTML = originalContents;
+                location.reload();
+            } else {
+                alert('Generando archivo Excel con el desglose financiero...\n- Resumen de Mayo 2026\n- 32 Cobranzas procesadas\n- Detalle de Egresos y Nómina.');
+            }
+        }
+    </script>
+
+    <!-- Reporte Formal Oculto (Solo para impresión/generación) -->
+    <div id="reporte-formal" class="hidden">
+        <div class="p-10 font-serif text-slate-900 bg-white">
+            <div class="flex justify-between items-start border-b-2 border-primary pb-6 mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-primary">CAMINOS DE LA LAGUNITA</h1>
+                    <p class="text-sm uppercase tracking-widest text-secondary">Gestión Administrativa y Condominio</p>
+                    <p class="text-xs mt-1">RIF: J-12345678-9</p>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-xl font-bold">REPORTE MENSUAL</h2>
+                    <p class="text-lg">Mayo 2026</p>
+                    <p class="text-xs text-slate-500">Fecha de emisión: 24/05/2026</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-6 mb-10">
+                <div class="border p-4 rounded bg-slate-50">
+                    <p class="text-xs font-bold uppercase text-slate-500">Total Ingresos</p>
+                    <p class="text-2xl font-bold text-primary">$ 1,240.00</p>
+                </div>
+                <div class="border p-4 rounded bg-slate-50">
+                    <p class="text-xs font-bold uppercase text-slate-500">Total Egresos</p>
+                    <p class="text-2xl font-bold text-error">$ 985.40</p>
+                </div>
+                <div class="border p-4 rounded bg-primary text-white">
+                    <p class="text-xs font-bold uppercase opacity-80">Saldo en Caja</p>
+                    <p class="text-2xl font-bold">$ 254.60</p>
+                </div>
+            </div>
+
+            <div class="mb-10">
+                <h3 class="text-lg font-bold border-b mb-4 pb-2">Resumen de Operaciones</h3>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-100">
+                            <th class="p-2">Categoría</th>
+                            <th class="p-2 text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b"><td class="p-2">Servicios Públicos</td><td class="p-2 text-right">$ 145.00</td></tr>
+                        <tr class="border-b"><td class="p-2">Nómina y Personal</td><td class="p-2 text-right">$ 620.00</td></tr>
+                        <tr class="border-b"><td class="p-2">Mantenimiento e Insumos</td><td class="p-2 text-right">$ 220.40</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-20 flex justify-around">
+                <div class="text-center border-t border-slate-400 pt-2 w-48">
+                    <p class="text-sm font-bold">Administrador</p>
+                </div>
+                <div class="text-center border-t border-slate-400 pt-2 w-48">
+                    <p class="text-sm font-bold">Visto Bueno Junta</p>
+                </div>
+            </div>
+
+            <p class="text-center text-[10px] text-slate-400 mt-20 italic">
+                Este documento es una representación financiera de la gestión del Conjunto Residencial Caminos de la Lagunita.
+            </p>
+        </div>
+    </div>
+</body></html>

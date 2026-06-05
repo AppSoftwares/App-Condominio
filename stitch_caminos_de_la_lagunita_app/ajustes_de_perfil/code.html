@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#1b1c1a",
+                    "outline-variant": "#bfc8c7",
+                    "inverse-surface": "#30312f",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "outline": "#6f7978",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#00201e",
+                    "tertiary-fixed": "#d3e8d0",
+                    "tertiary-container": "#556855",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#efeeeb",
+                    "on-surface": "#1b1c1a",
+                    "secondary-fixed": "#ffdea6",
+                    "primary-container": "#2f6d69",
+                    "secondary": "#785919",
+                    "primary-fixed-dim": "#94d2cd",
+                    "on-primary-fixed-variant": "#05504c",
+                    "surface-container-high": "#eae8e5",
+                    "primary": "#0f5551",
+                    "surface-variant": "#e4e2df",
+                    "on-surface-variant": "#3f4947",
+                    "on-secondary": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "on-primary-container": "#aeece7",
+                    "error": "#ba1a1a",
+                    "background": "#fbf9f6",
+                    "surface-tint": "#296864",
+                    "tertiary": "#3d503e",
+                    "surface-bright": "#fbf9f6",
+                    "inverse-primary": "#94d2cd",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f2f0ed",
+                    "secondary-container": "#fed488",
+                    "primary-fixed": "#b0eee9",
+                    "surface": "#fbf9f6",
+                    "on-tertiary-container": "#d0e6ce",
+                    "on-secondary-container": "#795a1a",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f5f3f0",
+                    "surface-container-highest": "#e4e2df",
+                    "on-secondary-fixed": "#271900"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "max-width": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "safety-area": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["EB Garamond"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["EB Garamond"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full overflow-hidden bg-surface-container">
+<img alt="Resident Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a professional man in a bright, modern residential lobby. He has a warm, welcoming expression, and the lighting is soft and natural, emphasizing a high-end, secure living environment. The background shows blurred architectural elements of a luxury apartment complex with Moss Green and Ochre Gold accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-inverse-primary">Caminos de la Lagunita</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary dark:text-inverse-primary hover:bg-surface-container-low transition-colors p-2 rounded-full">notifications</button>
+</div>
+</div>
+</header>
+<main class="flex-grow pt-20 pb-24 md:pb-8 w-full max-w-2xl mx-auto px-margin-mobile">
+<!-- Profile Header -->
+<section class="flex flex-col items-center py-8">
+<div class="relative group">
+<div class="w-32 h-32 rounded-full overflow-hidden border-4 border-surface-container-high ring-1 ring-outline-variant">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="Detailed close-up portrait of a high-end residential resident in a crisp white shirt. The lighting is elegant and professional, reminiscent of a luxury lifestyle magazine. The color palette consists of warm skin tones against a soft, neutral-toned architectural background with subtle hints of emerald green, maintaining a serene and professional atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDERPFo-4O5x_X9p2_QlukQDa7BffydSYRGjIrT5TB9paqRpFuHUcwje6R-JAQTXi2fYRV6WGrbOxTiVdQwRyvhKQVKdVVWdYS7GaM8YRwWTXbWo_tuZJaxUpFho2zcQKvHlJ10BWBRh01MTP7V0BpVEHqLdpdaWf-LD2_MJ-P56iLGQ-AFMWdA-0fXzCWEkdWnhc4S4PhKvywaw2HlyJ4GuNT7cjViSAuY5NtxOmfDb1eUUL2EhFRYY8e8z7m7d1j9_fbwbZCnXy4"/>
+</div>
+<button class="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-2 border-4 border-background hover:scale-105 transition-transform flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+<div class="mt-4 text-center">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface">Nombre y Apellido</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Residente Principal • Villa 42</p>
+<button class="mt-2 px-6 py-1.5 border border-outline text-on-surface rounded-full font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+                    Editar
+                </button>
+</div>
+</section>
+<!-- Menu Section 1 -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden mb-6">
+<div class="divide-y divide-outline-variant">
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary-container">key</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Cuenta</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container">lock</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Privacidad y seguridad</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-tertiary-fixed-dim flex items-center justify-center">
+<span class="material-symbols-outlined text-on-tertiary-fixed-variant">notifications</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Notificaciones y sonido</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">dark_mode</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Apariencia</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed-dim flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed-variant">language</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Idioma</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+</div>
+</section>
+<!-- Menu Section 2 -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden mb-8">
+<div class="divide-y divide-outline-variant">
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">help</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Ayuda, Comentario y reclamos</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<a class="flex items-center justify-between p-4 hover:bg-surface-container-low transition-colors group" href="#">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface">Invitar amigo</span>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</a>
+<button class="w-full flex items-center justify-between p-4 hover:bg-error-container/20 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-error/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-error">logout</span>
+</div>
+<span class="font-body-md text-body-md text-error">Cerrar Sesión</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Social Section -->
+<section class="mb-12">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase text-center mb-6">Síguenos</h3>
+<div class="flex justify-center gap-6">
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-secondary-container transition-all hover:scale-110" href="#">
+<svg class="w-6 h-6 fill-current text-on-surface-variant" viewbox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path></svg>
+</a>
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-secondary-container transition-all hover:scale-110" href="#">
+<svg class="w-6 h-6 fill-current text-on-surface-variant" viewbox="0 0 24 24"><path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"></path></svg>
+</a>
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-secondary-container transition-all hover:scale-110" href="#">
+<svg class="w-6 h-6 fill-current text-on-surface-variant" viewbox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg>
+</a>
+<a class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center hover:bg-secondary-container transition-all hover:scale-110" href="#">
+<svg class="w-6 h-6 fill-current text-on-surface-variant" viewbox="0 0 24 24"><path d="M12.525.02c1.31-.032 2.612.019 3.84.155 3.123.344 5.312 2.533 5.656 5.656.136 1.228.187 2.53.155 3.84-.032 1.31-.083 2.612-.155 3.84-.344 3.123-2.533 5.312-5.656 5.656-1.228.136-2.53.187-3.84.155-1.31.032-2.612-.019-3.84-.155-3.123-.344-5.312-2.533-5.656-5.656-.136-1.228-.187-2.53-.155-3.84.032-1.31.083-2.612.155-3.84C3.514 2.553 5.703.364 8.826.02c1.228-.136 2.53-.187 3.84-.155zm.134 14.542c1.332.03 2.543.018 3.514-.076 1.631-.158 2.433-.96 2.59-2.59.094-.97.106-2.181.076-3.513-.03-1.332-.018-2.544.076-3.514-.157-1.63-.96-2.433-2.59-2.59-.97-.094-2.181-.106-3.513-.076-1.332.03-2.544.018-3.514-.076-1.63.158-2.433.96-2.59 2.59-.094.97-.106 2.182-.076 3.514.03 1.332.018 2.543-.076 3.513.158 1.631.96 2.433 2.59 2.59.97.095 2.181.107 3.514.077zm-.134-2.542c-.524-.01-1.048.005-1.554-.031-.892-.065-1.321-.494-1.386-1.386-.036-.506-.021-1.03-.031-1.554.01-.524-.005-1.048.031-1.554.065-.892.494-1.321 1.386-1.386.506-.036 1.03-.021 1.554-.031.524.01 1.048-.005 1.554.031.892.065 1.321.494 1.386 1.386.036.506.021 1.03.031 1.554-.01.524.005 1.048-.031 1.554-.065.892-.494 1.321-1.386 1.386-.506.036-1.03.021-1.554.031z"></path></svg>
+</a>
+</div>
+<div class="mt-8 text-center">
+<p class="font-body-sm text-body-sm text-outline">Versión 2.4.1 (2024)</p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-4 pb-safe bg-surface dark:bg-surface-dim border-t border-outline-variant dark:border-outline z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">rebase_edit</span>
+<span class="font-label-sm text-label-sm">Solicitudes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-label-sm">Pagos</span>
+</a>
+<!-- ACTIVE STATE: Profile -->
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-1 scale-95 duration-150 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions: Click ripples and subtle scaling
+        document.querySelectorAll('a, button').forEach(elem => {
+            elem.addEventListener('mousedown', () => {
+                elem.style.transform = 'scale(0.98)';
+            });
+            elem.addEventListener('mouseup', () => {
+                elem.style.transform = '';
+            });
+            elem.addEventListener('mouseleave', () => {
+                elem.style.transform = '';
+            });
+        });
+
+        // Add visual feedback to menu items
+        const menuItems = document.querySelectorAll('main a, main button');
+        menuItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                const icon = item.querySelector('.material-symbols-outlined:last-child');
+                if (icon) icon.style.transform = 'translateX(4px)';
+            });
+            item.addEventListener('mouseleave', () => {
+                const icon = item.querySelector('.material-symbols-outlined:last-child');
+                if (icon) icon.style.transform = 'translateX(0)';
+            });
+        });
+    </script>
+</body></html>

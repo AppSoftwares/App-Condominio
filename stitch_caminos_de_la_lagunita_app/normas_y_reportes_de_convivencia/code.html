@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Normas y Reportes - Caminos de la Lagunita</title>
+<!-- Google Fonts: EB Garamond (Serif), Inter (Sans) -->
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed-dim": "#94d2cd",
+                    "surface-container-low": "#f5f3f0",
+                    "on-primary-fixed": "#00201e",
+                    "error-container": "#ffdad6",
+                    "surface-tint": "#296864",
+                    "on-secondary-fixed": "#271900",
+                    "tertiary-container": "#556855",
+                    "secondary-container": "#fed488",
+                    "on-primary-fixed-variant": "#05504c",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "inverse-primary": "#94d2cd",
+                    "primary-container": "#2f6d69",
+                    "on-surface": "#1b1c1a",
+                    "on-surface-variant": "#3f4947",
+                    "secondary-fixed": "#ffdea6",
+                    "surface-container-highest": "#e4e2df",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-tertiary-container": "#d0e6ce",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed": "#d3e8d0",
+                    "primary": "#0f5551",
+                    "surface-container": "#efeeeb",
+                    "on-secondary-container": "#795a1a",
+                    "primary-fixed": "#b0eee9",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "surface": "#fbf9f6",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#eae8e5",
+                    "on-background": "#1b1c1a",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#fbf9f6",
+                    "on-primary-container": "#aeece7",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "surface-container-lowest": "#ffffff",
+                    "secondary": "#785919",
+                    "outline": "#6f7978",
+                    "on-secondary": "#ffffff",
+                    "inverse-surface": "#30312f",
+                    "inverse-on-surface": "#f2f0ed",
+                    "background": "#fbf9f6",
+                    "tertiary": "#3d503e",
+                    "surface-variant": "#e4e2df",
+                    "outline-variant": "#bfc8c7",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#dbdad7"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "safety-area": "16px",
+                    "margin-desktop": "64px",
+                    "max-width": "1280px",
+                    "gutter": "24px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "body-md": ["Inter"],
+                    "headline-lg-mobile": ["EB Garamond"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["EB Garamond"],
+                    "body-sm": ["Inter"],
+                    "headline-lg": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f6;
+            color: #1b1c1a;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 768px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim w-full top-0 sticky z-40 border-b border-outline-variant dark:border-outline">
+<div class="flex items-center justify-between px-margin-mobile md:px-margin-desktop py-4 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-3 cursor-pointer active:opacity-80">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold overflow-hidden">
+<img alt="Estate Crest" class="w-full h-full object-cover" data-alt="A refined and sophisticated luxury residential estate logo emblem featuring classical architectural elements. The crest is rendered in a deep forest green and gold metallic finish, set against a clean, ivory background. The visual style is professional, established, and authoritative, representing a high-end community brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbY13ae7VyeKllEWjxTh5qDQen-yxCdKFlWvOvBC684418yocIH3fvsIZd14qD3qPHMdmzkzKLvbK6B1ycQ0cdhKHvuJkZk_zpRl0jEmq4ORmaPFfLZ_yyXm-OLOwPPnua4bToHXvMTky7KmV2rmz9_ikddNczPJWHMn3aPIMm_7fTrAPuHIMjOpjzO4ZMAlmijVOlsnN80ZRYHAGQoaBLHO_5oGlvHrh54z3o6lvVdLxjmFMloXXC1jI71XykoJcecUIbHhe3EKs"/>
+</div>
+<h1 class="font-headline-md text-headline-md font-semibold text-primary dark:text-primary-fixed-dim">Caminos de la Lagunita</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim cursor-pointer active:opacity-80 p-2 hover:bg-surface-container-high dark:hover:bg-surface-container-highest transition-colors rounded-full" data-icon="notifications">notifications</span>
+</div>
+</div>
+</header>
+<main class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-8 pb-32">
+<!-- Page Title -->
+<div class="mb-10">
+<h2 class="font-headline-lg text-headline-lg text-primary-container mb-2">Normas de Convivencia y Reportes</h2>
+<p class="text-on-surface-variant font-body-md">Gestión armoniosa para la comunidad de Caminos de la Lagunita.</p>
+</div>
+<div class="bento-grid">
+<!-- Normas de Convivencia Section (Bento Large) -->
+<section class="col-span-12 lg:col-span-8 space-y-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 lg:p-8">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+                            Manual de Convivencia
+                        </h3>
+<button class="text-label-md font-label-md text-secondary border border-secondary px-4 py-2 rounded-lg hover:bg-secondary-fixed transition-colors">Descargar PDF</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Category: Noise -->
+<div class="p-4 bg-surface border border-outline-variant rounded-xl hover:border-primary-container transition-all group cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-primary-fixed-dim flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="volume_off">volume_off</span>
+</div>
+<h4 class="font-label-md text-label-md mb-2 text-on-surface">Ruidos Molestos</h4>
+<p class="text-label-sm text-on-surface-variant">Prohibido exceder 50dB entre las 10:00 PM y las 8:00 AM. Eventos requieren aviso previo.</p>
+</div>
+<!-- Category: Pets -->
+<div class="p-4 bg-surface border border-outline-variant rounded-xl hover:border-primary-container transition-all group cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-secondary-fixed-dim flex items-center justify-center mb-4 text-secondary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="pets">pets</span>
+</div>
+<h4 class="font-label-md text-label-md mb-2 text-on-surface">Mascotas</h4>
+<p class="text-label-sm text-on-surface-variant">Uso obligatorio de correa. Los desechos deben ser recogidos de inmediato en áreas comunes.</p>
+</div>
+<!-- Category: Areas -->
+<div class="p-4 bg-surface border border-outline-variant rounded-xl hover:border-primary-container transition-all group cursor-pointer">
+<div class="w-12 h-12 rounded-lg bg-tertiary-fixed-dim flex items-center justify-center mb-4 text-tertiary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" data-icon="deck">deck</span>
+</div>
+<h4 class="font-label-md text-label-md mb-2 text-on-surface">Áreas Comunes</h4>
+<p class="text-label-sm text-on-surface-variant">El horario de la piscina y canchas es de 7:00 AM a 9:00 PM. No se permiten envases de vidrio.</p>
+</div>
+</div>
+</div>
+<!-- Report Form -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 lg:p-8">
+<h3 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="report">report</span>
+                        Reportar Incidente
+                    </h3>
+<form class="space-y-4">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Categoría</label>
+<select class="w-full bg-surface border border-outline-variant rounded-lg p-3 text-body-md focus:ring-2 focus:ring-primary-container focus:border-transparent outline-none transition-all">
+<option>Ruidos / Música</option>
+<option>Mascotas / Desechos</option>
+<option>Estacionamiento</option>
+<option>Infraestructura</option>
+<option>Seguridad</option>
+</select>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Ubicación / Casa</label>
+<input class="w-full bg-surface border border-outline-variant rounded-lg p-3 text-body-md focus:ring-2 focus:ring-primary-container focus:border-transparent outline-none transition-all" placeholder="Ej: Calle 3, Casa 12" type="text"/>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Descripción del Incidente</label>
+<textarea class="w-full bg-surface border border-outline-variant rounded-lg p-3 text-body-md focus:ring-2 focus:ring-primary-container focus:border-transparent outline-none transition-all" placeholder="Describa brevemente lo sucedido..." rows="4"></textarea>
+</div>
+<div class="flex flex-col md:flex-row gap-4 items-center justify-between pt-2">
+<div class="flex items-center gap-2 text-on-surface-variant cursor-pointer hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+<span class="text-label-md">Adjuntar evidencia (Foto/Audio)</span>
+</div>
+<button class="w-full md:w-auto px-10 py-3 bg-primary-container text-white font-label-md text-label-md rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition-all" type="button">
+                                Enviar Reporte
+                            </button>
+</div>
+</form>
+</div>
+</section>
+<!-- Community Alerts / Reports Feed (Bento Side) -->
+<aside class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-surface-container-high border border-outline-variant rounded-xl p-6 h-full">
+<h3 class="font-headline-md text-headline-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="emergency_share">emergency_share</span>
+                        Alertas Recientes
+                    </h3>
+<div class="space-y-4">
+<!-- Alert 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 transition-transform hover:-translate-y-1">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-error-container text-on-error-container text-[10px] font-bold rounded uppercase">Ruidos</span>
+<span class="text-label-sm text-on-surface-variant">Hace 10 min</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">Exceso de ruido - Casa 14-05</h5>
+<p class="text-body-sm text-on-surface-variant italic">"Música alta a la 1:00 AM. Niños durmiendo, mañana hay escuela. Favor bajar el volumen."</p>
+</div>
+<!-- Alert 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 transition-transform hover:-translate-y-1">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold rounded uppercase">Mascotas</span>
+<span class="text-label-sm text-on-surface-variant">Hace 2 horas</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">Mascotas - Excrementos</h5>
+<p class="text-body-sm text-on-surface-variant italic">"Un perro marrón dejó desechos frente a la entrada. Se solicita al dueño limpiar y estar más atento."</p>
+</div>
+<!-- Alert 3 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-4 transition-transform hover:-translate-y-1">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] font-bold rounded uppercase">Vialidad</span>
+<span class="text-label-sm text-on-surface-variant">Hace 5 horas</span>
+</div>
+<h5 class="font-label-md text-label-md text-on-surface mb-1">Estacionamiento - Obstrucción</h5>
+<p class="text-body-sm text-on-surface-variant italic">"Señora del Aveo azul, por favor mover el vehículo de mi puesto asignado."</p>
+</div>
+<!-- Alert 4 (Admin Notification) -->
+<div class="bg-primary-fixed text-on-primary-fixed-variant border border-primary-container/20 rounded-lg p-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-sm" data-icon="info">info</span>
+<span class="text-[10px] font-bold uppercase">Aviso Administrativo</span>
+</div>
+<p class="text-body-sm">Fumigación de áreas verdes programada para mañana a las 9:00 AM. Mantenga mascotas dentro de casa.</p>
+</div>
+</div>
+<button class="w-full mt-6 py-3 text-label-md font-label-md text-primary-container border-t border-outline-variant pt-4 flex items-center justify-center gap-2 hover:text-primary transition-colors">
+                        Ver historial completo
+                        <span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</aside>
+</div>
+</main>
+<!-- FAB for New Report (Contextual for Home/Request View) -->
+<button class="fixed bottom-24 right-6 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 md:hidden">
+<span class="material-symbols-outlined" data-icon="add" style="font-variation-settings: 'FILL' 0, 'wght' 600;">add</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface dark:bg-surface-dim border-t border-outline-variant dark:border-outline">
+<div class="flex justify-around items-center h-16 w-full max-w-max-width mx-auto">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-xl px-4 py-1 active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="handyman" style="font-variation-settings: 'FILL' 1;">handyman</span>
+<span class="font-label-sm text-label-sm">Solicitudes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-label-sm text-label-sm">Pagos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant px-4 py-1 hover:text-primary dark:hover:text-primary-fixed-dim transition-all active:scale-95 duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</div>
+</nav>
+<script>
+        // Simple micro-interaction for the report form
+        document.querySelector('form button').addEventListener('click', function(e) {
+            e.preventDefault();
+            this.innerHTML = '<span class="material-symbols-outlined animate-spin" data-icon="progress_activity">progress_activity</span>';
+            setTimeout(() => {
+                this.innerHTML = '¡Reporte Enviado!';
+                this.classList.replace('bg-primary-container', 'bg-tertiary-container');
+                setTimeout(() => {
+                    this.innerHTML = 'Enviar Reporte';
+                    this.classList.replace('bg-tertiary-container', 'bg-primary-container');
+                }, 3000);
+            }, 1200);
+        });
+    </script>
+</body></html>

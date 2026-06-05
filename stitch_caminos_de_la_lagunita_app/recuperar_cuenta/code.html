@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Recuperar Cuenta - Caminos de la Lagunita</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#1b1c1a",
+                    "outline-variant": "#bfc8c7",
+                    "inverse-surface": "#30312f",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "outline": "#6f7978",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#00201e",
+                    "tertiary-fixed": "#d3e8d0",
+                    "tertiary-container": "#556855",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#efeeeb",
+                    "on-surface": "#1b1c1a",
+                    "secondary-fixed": "#ffdea6",
+                    "primary-container": "#2f6d69",
+                    "secondary": "#785919",
+                    "primary-fixed-dim": "#94d2cd",
+                    "on-primary-fixed-variant": "#05504c",
+                    "surface-container-high": "#eae8e5",
+                    "primary": "#0f5551",
+                    "surface-variant": "#e4e2df",
+                    "on-surface-variant": "#3f4947",
+                    "on-secondary": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "on-primary-container": "#aeece7",
+                    "error": "#ba1a1a",
+                    "background": "#fbf9f6",
+                    "surface-tint": "#296864",
+                    "tertiary": "#3d503e",
+                    "surface-bright": "#fbf9f6",
+                    "inverse-primary": "#94d2cd",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f2f0ed",
+                    "secondary-container": "#fed488",
+                    "primary-fixed": "#b0eee9",
+                    "surface": "#fbf9f6",
+                    "on-tertiary-container": "#d0e6ce",
+                    "on-secondary-container": "#795a1a",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f5f3f0",
+                    "surface-container-highest": "#e4e2df",
+                    "on-secondary-fixed": "#271900"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "max-width": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "safety-area": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["EB Garamond"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["EB Garamond"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #fbf9f6; /* Bone background #FAF8F5 equivalent from config */
+            color: #1b1c1a;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden-section { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-md text-body-md">
+<!-- Top Navigation Bar (Simplified for transactional screen) -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-md border-b border-outline-variant">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<a class="p-2 hover:bg-surface-container-low rounded-full transition-colors" href="#">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</a>
+<h1 class="font-headline-md text-headline-md text-primary">Caminos de la Lagunita</h1>
+</div>
+</div>
+</header>
+<main class="flex-grow flex items-center justify-center px-margin-mobile pt-24 pb-12">
+<!-- Main Recovery Card -->
+<div class="w-full max-w-md bg-surface-container-lowest border border-outline-variant rounded-xl p-8 md:p-10 transition-all duration-300" id="recovery-card">
+<!-- Selection Step -->
+<div class="fade-in" id="step-selection">
+<div class="mb-8 text-center">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">Recuperar Cuenta</h2>
+<p class="text-on-surface-variant font-body-sm">Selecciona el elemento que deseas recuperar para continuar con el proceso.</p>
+</div>
+<div class="grid grid-cols-1 gap-4 mb-8">
+<button class="group flex items-center p-5 border border-outline-variant rounded-lg hover:border-primary hover:bg-surface-container-low transition-all text-left" onclick="selectOption('Usuario')">
+<div class="w-12 h-12 rounded-full bg-primary-fixed flex items-center justify-center mr-4 group-hover:bg-primary transition-colors">
+<span class="material-symbols-outlined text-on-primary-fixed group-hover:text-on-primary">person</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface">Usuario</p>
+<p class="text-on-surface-variant font-body-sm">Recuperar mi nombre de acceso</p>
+</div>
+</button>
+<button class="group flex items-center p-5 border border-outline-variant rounded-lg hover:border-primary hover:bg-surface-container-low transition-all text-left" onclick="selectOption('Contraseña')">
+<div class="w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center mr-4 group-hover:bg-secondary transition-colors">
+<span class="material-symbols-outlined text-on-secondary-container group-hover:text-on-secondary">lock</span>
+</div>
+<div>
+<p class="font-label-md text-on-surface">Contraseña</p>
+<p class="text-on-surface-variant font-body-sm">Restablecer mi clave de seguridad</p>
+</div>
+</button>
+</div>
+</div>
+<!-- Form Step (Hidden initially) -->
+<div class="hidden-section fade-in" id="step-form">
+<div class="mb-8">
+<button class="flex items-center text-primary font-label-md mb-4 hover:underline" onclick="goBack()">
+<span class="material-symbols-outlined text-[18px] mr-1">chevron_left</span>
+                        Volver
+                    </button>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2" id="form-title">Recuperar Usuario</h2>
+<p class="text-on-surface-variant font-body-sm">Introduce el correo electrónico asociado a tu propiedad para recibir las instrucciones.</p>
+</div>
+<form class="space-y-6" id="recovery-form" onsubmit="handleFormSubmit(event)">
+<div class="space-y-2">
+<label class="font-label-md text-on-surface block" for="email">Correo Electrónico registrado</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-transparent border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all font-body-md" id="email" placeholder="ejemplo@caminos.com" required="" type="email"/>
+</div>
+</div>
+<button class="w-full py-4 bg-primary text-on-primary rounded-lg font-label-md hover:bg-on-primary-fixed-variant transition-colors flex items-center justify-center gap-2" type="submit">
+<span>Enviar instrucciones</span>
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</form>
+</div>
+<!-- Success Step (Hidden initially) -->
+<div class="hidden-section fade-in text-center" id="step-success">
+<div class="mb-6 flex justify-center">
+<div class="w-20 h-20 rounded-full bg-tertiary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-[40px] text-on-tertiary-fixed-variant">check_circle</span>
+</div>
+</div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-2">¡Correo enviado!</h2>
+<p class="text-on-surface-variant font-body-sm mb-8">
+                    Hemos enviado las instrucciones para recuperar tu <span class="font-semibold text-primary" id="recovery-type-label">cuenta</span> a la dirección proporcionada.
+                </p>
+<div class="p-4 bg-surface-container-high rounded-lg mb-8">
+<p class="font-body-sm italic text-on-surface-variant">Revisa tu carpeta de spam si no recibes el correo en los próximos minutos.</p>
+</div>
+<button class="w-full py-4 border border-outline text-primary rounded-lg font-label-md hover:bg-surface-container-low transition-colors" onclick="window.location.reload()">
+                    Volver al inicio
+                </button>
+</div>
+</div>
+</main>
+<!-- Footer decoration / Background pattern -->
+<div class="fixed bottom-0 left-0 w-full h-1/3 -z-10 opacity-30 pointer-events-none overflow-hidden">
+<div class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-primary-fixed-dim rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2"></div>
+<div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-secondary-fixed-dim rounded-full blur-[100px] translate-x-1/2 translate-y-1/2"></div>
+</div>
+<!-- Asymmetric Decorative Image (Desktop only) -->
+<div class="hidden lg:block fixed right-12 bottom-12 w-64 h-80 rounded-2xl overflow-hidden border border-outline-variant shadow-lg rotate-3 hover:rotate-0 transition-transform duration-700">
+<img class="w-full h-full object-cover" data-alt="A serene architectural detail of a premium residential entrance at Caminos de la Lagunita, showcasing clean lines, moss-green accents, and natural stone textures under warm sunset lighting. The photograph emphasizes a professional and secure atmosphere with minimalist landscaping. The soft, elegant aesthetic perfectly complements a high-end corporate identity focused on residential tranquility." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDp5jeF4kuiyyn0VFiyRPMaugWqv3bZFP5RKuNUKAJjWH3l7FmnZAMw9aV7fopt_a34kg1TFS4rQmrUrzZokSxt3FNLYCcW0kPBrWpjfTo5taXDX2EdP1-0u0nf4m9r1N0SjUeDdIwKoaj7OH4i4ZcwO2hC2aNk12zzKZiJ8tN6faVeFe_6iVcnUiz12R7GczaffmyN-dXKDrT8ltkDSSf9UdLq1e4KmOCam_ALlmhbUKGPwcc1nNPBdGByBXsCveBa06NWJ_1okzo"/>
+</div>
+<script>
+        let selectedOption = '';
+
+        function selectOption(option) {
+            selectedOption = option;
+            document.getElementById('step-selection').classList.add('hidden-section');
+            document.getElementById('step-form').classList.remove('hidden-section');
+            document.getElementById('form-title').innerText = `Recuperar ${option}`;
+            document.getElementById('recovery-type-label').innerText = option.toLowerCase();
+        }
+
+        function goBack() {
+            document.getElementById('step-form').classList.add('hidden-section');
+            document.getElementById('step-selection').classList.remove('hidden-section');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalContent = btn.innerHTML;
+            
+            // Loading state
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">progress_activity</span>`;
+            
+            setTimeout(() => {
+                document.getElementById('step-form').classList.add('hidden-section');
+                document.getElementById('step-success').classList.remove('hidden-section');
+                
+                // Add some confetti-like pulse to the card
+                const card = document.getElementById('recovery-card');
+                card.classList.add('ring-2', 'ring-primary/20');
+            }, 1500);
+        }
+    </script>
+</body></html>

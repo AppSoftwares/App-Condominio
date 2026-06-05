@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#1b1c1a",
+                    "outline-variant": "#bfc8c7",
+                    "inverse-surface": "#30312f",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "outline": "#6f7978",
+                    "secondary-fixed-dim": "#e9c176",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed": "#00201e",
+                    "tertiary-fixed": "#d3e8d0",
+                    "tertiary-container": "#556855",
+                    "on-primary": "#ffffff",
+                    "surface-container": "#efeeeb",
+                    "on-surface": "#1b1c1a",
+                    "secondary-fixed": "#ffdea6",
+                    "primary-container": "#2f6d69",
+                    "secondary": "#785919",
+                    "primary-fixed-dim": "#94d2cd",
+                    "on-primary-fixed-variant": "#05504c",
+                    "surface-container-high": "#eae8e5",
+                    "primary": "#0f5551",
+                    "surface-variant": "#e4e2df",
+                    "on-surface-variant": "#3f4947",
+                    "on-secondary": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "on-primary-container": "#aeece7",
+                    "error": "#ba1a1a",
+                    "background": "#fbf9f6",
+                    "surface-tint": "#296864",
+                    "tertiary": "#3d503e",
+                    "surface-bright": "#fbf9f6",
+                    "inverse-primary": "#94d2cd",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f2f0ed",
+                    "secondary-container": "#fed488",
+                    "primary-fixed": "#b0eee9",
+                    "surface": "#fbf9f6",
+                    "on-tertiary-container": "#d0e6ce",
+                    "on-secondary-container": "#795a1a",
+                    "on-error-container": "#93000a",
+                    "surface-container-low": "#f5f3f0",
+                    "surface-container-highest": "#e4e2df",
+                    "on-secondary-fixed": "#271900"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "64px",
+                    "max-width": "1280px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "base": "8px",
+                    "safety-area": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["EB Garamond"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["EB Garamond"],
+                    "body-md": ["Inter"],
+                    "label-md": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["EB Garamond"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .poll-card:hover .percentage-fill {
+            filter: brightness(1.1);
+        }
+        body {
+            background-color: #fbf9f6;
+            color: #1b1c1a;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-dim border-b border-outline-variant dark:border-outline z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed overflow-hidden">
+<span class="material-symbols-outlined">person</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-inverse-primary leading-none">Caminos de la Lagunita</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low dark:hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-primary dark:text-inverse-primary">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto">
+<!-- Header Section -->
+<section class="mb-12">
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">Portal de Comunidad</h2>
+<p class="font-body-md text-on-surface-variant max-w-2xl">Participe en las decisiones de nuestra comunidad y manténgase informado sobre los comunicados oficiales.</p>
+</section>
+<!-- Active Polls Section: Bento Grid -->
+<section class="mb-16">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">how_to_vote</span>
+                    Votaciones Activas
+                </h3>
+<span class="font-label-md text-label-md text-secondary uppercase tracking-wider">2 Encuestas Pendientes</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Main Poll Card -->
+<div class="md:col-span-7 bg-surface-container-lowest border border-outline-variant rounded-xl p-8 flex flex-col justify-between transition-all hover:border-primary">
+<div>
+<span class="font-label-sm text-label-sm bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full mb-4 inline-block">Prioridad Alta</span>
+<h4 class="font-headline-md text-headline-md mb-4">Nuevo color de fachada</h4>
+<p class="font-body-md text-on-surface-variant mb-8">Seleccione la paleta cromática para la renovación exterior de los edificios Fase 1. La votación cierra en 3 días.</p>
+<div class="space-y-6 mb-8">
+<div class="space-y-2">
+<div class="flex justify-between font-label-md text-label-md">
+<span>Verde Musgo &amp; Piedra</span>
+<span>64%</span>
+</div>
+<div class="h-3 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full transition-all duration-1000 percentage-fill" style="width: 64%"></div>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between font-label-md text-label-md">
+<span>Arena &amp; Ochre</span>
+<span>36%</span>
+</div>
+<div class="h-3 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-1000 percentage-fill" style="width: 36%"></div>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full md:w-max bg-primary text-on-primary font-label-md text-label-md px-10 py-3 rounded-lg hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                        Votar Ahora
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Secondary Poll Card -->
+<div class="md:col-span-5 flex flex-col gap-gutter">
+<div class="bg-surface-container-low border border-outline-variant rounded-xl p-6 transition-all hover:bg-surface-container">
+<h4 class="font-headline-md text-headline-md mb-2">Horarios de basura</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">Propuesta para extender el horario de recolección nocturna los fines de semana.</p>
+<div class="flex items-center gap-4 mb-6">
+<div class="flex-1 h-2 bg-outline-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container" style="width: 48%"></div>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">48% Participación</span>
+</div>
+<button class="w-full border border-primary text-primary font-label-md text-label-md py-2 rounded-lg hover:bg-primary-fixed-dim transition-colors">Votar</button>
+</div>
+<div class="bg-primary text-on-primary rounded-xl p-6 relative overflow-hidden group">
+<div class="relative z-10">
+<span class="material-symbols-outlined text-4xl mb-4 text-primary-fixed">history</span>
+<h4 class="font-headline-md text-headline-md mb-2">Historial de Decisiones</h4>
+<p class="font-body-sm text-body-sm text-on-primary-container opacity-90">Consulte los resultados de votaciones anteriores y su ejecución.</p>
+</div>
+<!-- Decorative element -->
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-primary-container rounded-full opacity-50 group-hover:scale-125 transition-transform duration-500"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Portal de Comunicados Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-8 border-b border-outline-variant pb-4">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">feed</span>
+                    Portal de Comunicados
+                </h3>
+<div class="flex gap-2">
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-2 border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Document List -->
+<div class="lg:col-span-2 space-y-4">
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex items-center gap-4 hover:shadow-sm transition-all cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">description</span>
+</div>
+<div class="flex-1">
+<h5 class="font-label-md text-label-md text-on-surface">Informe de Mantenimiento Trimestral Q3</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Publicado hace 2 días • PDF 1.2MB</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">download</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex items-center gap-4 hover:shadow-sm transition-all cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div class="flex-1">
+<h5 class="font-label-md text-label-md text-on-surface">Nuevos Protocolos de Seguridad en Entrada Norte</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Publicado el 12 Oct • Documento Oficial</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">visibility</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl flex items-center gap-4 hover:shadow-sm transition-all cursor-pointer group">
+<div class="w-12 h-12 bg-surface-container rounded-lg flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">event_available</span>
+</div>
+<div class="flex-1">
+<h5 class="font-label-md text-label-md text-on-surface">Minuta Asamblea General de Propietarios</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Publicado el 5 Oct • Firmado digitalmente</p>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">download</span>
+</div>
+</div>
+<!-- Sidebar News/Featured -->
+<div class="space-y-6">
+<div class="rounded-xl overflow-hidden border border-outline-variant bg-surface-container-lowest">
+<div class="aspect-video relative">
+<img alt="Clubhouse News" class="w-full h-full object-cover" data-alt="A sophisticated architectural detail of a modern residential clubhouse exterior at dusk. The building features warm natural wood cladding, floor-to-ceiling glass windows, and elegant moss green accents. Soft golden ambient lighting spills from the interior onto a manicured stone pathway. The atmosphere is serene and professional, reflecting a high-end established community aesthetic with a palette of deep forest greens and ochre golds." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2noB2a1FB0UDGWNhRGFodV3DxGIYCicle1V-UnXXEASXn5bX39en6uenh_U2DIroNlQZx_UcFwFXxdThRB2NzG5MdJ3D1LibgB4qFLWYOQ10Pe2LrQawhaMGiVGRFI0awIgDfQ1384XGsMFnXJYqDW1ym4VxIxHfp2ICjTB6VyBofC_X1OpwLwaPgReGvpz-ewbrs7E5TYL4up6eNivH8NnS0DipSAKLLGyCpTg7iL3SMN1Hg9ahR7eHGDwAE1FMLxnZfJXEOEs8"/>
+<div class="absolute top-4 left-4">
+<span class="bg-secondary text-on-secondary px-3 py-1 rounded-full text-label-sm font-label-sm">Comunidad</span>
+</div>
+</div>
+<div class="p-6">
+<h5 class="font-headline-md text-headline-md mb-2 leading-tight">Inauguración de la nueva área de co-working</h5>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-4">Los residentes ahora pueden disfrutar de un espacio moderno y tranquilo para trabajar desde casa...</p>
+<a class="font-label-md text-label-md text-primary flex items-center gap-1 hover:underline" href="#">
+                                Leer más
+                                <span class="material-symbols-outlined text-xs">open_in_new</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-4 pb-safe bg-surface dark:bg-surface-dim border-t border-outline-variant dark:border-outline z-50 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-xl px-4 py-1 scale-95 duration-150" href="#">
+<span class="material-symbols-outlined">rebase_edit</span>
+<span class="font-label-sm text-label-sm">Solicitudes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-label-sm">Pagos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-surface-variant px-4 py-1 hover:text-primary dark:hover:text-inverse-primary transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</nav>
+<script>
+        // Simple interactive micro-effect for percentage bars on scroll/load
+        document.addEventListener('DOMContentLoaded', () => {
+            const bars = document.querySelectorAll('.percentage-fill');
+            bars.forEach(bar => {
+                const targetWidth = bar.style.width;
+                bar.style.width = '0%';
+                setTimeout(() => {
+                    bar.style.width = targetWidth;
+                }, 300);
+            });
+        });
+    </script>
+</body></html>

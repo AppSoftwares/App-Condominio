@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Caminos de la Lagunita - Reservas</title>
+<!-- Google Fonts: Cinzel, EB Garamond & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&amp;family=EB+Garamond:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#2F6D69", // Heritage Deep Turquoise
+                        "secondary": "#C6A059", // Heritage Gold/Ochre
+                        "on-background": "#1b1c1a",
+                        "outline-variant": "#bfc8c7",
+                        "inverse-surface": "#30312f",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "outline": "#6f7978",
+                        "secondary-fixed-dim": "#e9c176",
+                        "on-tertiary-fixed": "#0e1f10",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#00201e",
+                        "tertiary-fixed": "#d3e8d0",
+                        "tertiary-container": "#556855",
+                        "on-primary": "#ffffff",
+                        "surface-container": "#efeeeb",
+                        "on-surface": "#1b1c1a",
+                        "secondary-fixed": "#ffdea6",
+                        "primary-container": "#2f6d69",
+                        "primary-fixed-dim": "#94d2cd",
+                        "on-primary-fixed-variant": "#05504c",
+                        "surface-container-high": "#eae8e5",
+                        "surface-variant": "#e4e2df",
+                        "on-surface-variant": "#3f4947",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dbdad7",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#394b39",
+                        "on-primary-container": "#aeece7",
+                        "error": "#ba1a1a",
+                        "background": "#fbf9f6",
+                        "surface-tint": "#296864",
+                        "tertiary": "#3d503e",
+                        "surface-bright": "#fbf9f6",
+                        "inverse-primary": "#94d2cd",
+                        "tertiary-fixed-dim": "#b7ccb5",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f2f0ed",
+                        "secondary-container": "#fed488",
+                        "primary-fixed": "#b0eee9",
+                        "surface": "#fbf9f6",
+                        "on-tertiary-container": "#d0e6ce",
+                        "on-secondary-container": "#795a1a",
+                        "on-error-container": "#93000a",
+                        "surface-container-low": "#f5f3f0",
+                        "surface-container-highest": "#e4e2df",
+                        "on-secondary-fixed": "#271900"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "max-width": "1280px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "base": "8px",
+                        "safety-area": "16px"
+                    },
+                    "fontFamily": {
+                        "cinzel": ["Cinzel", "serif"],
+                        "headline-lg": ["Cinzel", "serif"],
+                        "label-sm": ["Inter", "sans-serif"],
+                        "headline-md": ["Cinzel", "serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "display-lg": ["Cinzel", "serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-lg-mobile": ["Cinzel", "serif"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bfc8c7;
+            border-radius: 4px;
+        }
+        /* Custom selector styling */
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236f7978'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full bg-surface border-b border-outline-variant z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-on-primary overflow-hidden">
+<span class="material-symbols-outlined">domain</span>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary">Caminos de la Lagunita</h1>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
+<!-- Welcome & Intro Section -->
+<section class="mb-gutter">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-2">Reservación de Áreas</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Gestione su acceso a las exclusivas instalaciones de la comunidad. Seleccione una fecha y el espacio que desea disfrutar.</p>
+</section>
+<!-- Calendar Selection (Top Section) -->
+<section class="mb-gutter">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-label-md text-label-md uppercase text-secondary">Octubre 2023</h3>
+<div class="flex gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-2 rounded-full hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="calendar-grid text-center mb-4">
+<div class="font-label-sm text-on-surface-variant py-2">D</div>
+<div class="font-label-sm text-on-surface-variant py-2">L</div>
+<div class="font-label-sm text-on-surface-variant py-2">M</div>
+<div class="font-label-sm text-on-surface-variant py-2">M</div>
+<div class="font-label-sm text-on-surface-variant py-2">J</div>
+<div class="font-label-sm text-on-surface-variant py-2">V</div>
+<div class="font-label-sm text-on-surface-variant py-2">S</div>
+<div class="py-3 text-outline font-body-sm">24</div>
+<div class="py-3 text-outline font-body-sm">25</div>
+<div class="py-3 text-outline font-body-sm">26</div>
+<div class="py-3 text-outline font-body-sm">27</div>
+<div class="py-3 text-outline font-body-sm">28</div>
+<div class="py-3 text-outline font-body-sm">29</div>
+<div class="py-3 text-outline font-body-sm">30</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">1</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">2</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">3</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">4</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">5</div>
+<div class="py-3 font-body-sm bg-primary text-on-primary rounded-lg font-bold">6</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">7</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">8</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">9</div>
+<div class="py-3 font-body-sm cursor-pointer hover:bg-surface-container rounded-lg transition-all">10</div>
+</div>
+<div class="pt-4 border-t border-outline-variant mt-4">
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">event_available</span>
+<span class="font-body-sm">Fecha seleccionada: <strong>Viernes, 06 de Octubre</strong></span>
+</div>
+</div>
+</div>
+</section>
+<!-- Normativas de Uso (Elegant Style) -->
+<section class="mb-gutter">
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-6 relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="font-headline-md text-headline-md text-primary mb-2">Normativa de Uso</h4>
+<p class="font-body-sm text-on-surface-variant mb-4">Para garantizar la armonía de nuestra comunidad, las reservaciones deben realizarse con antelación. Las cancelaciones requieren 24 horas de aviso previo.</p>
+<button class="font-label-md text-secondary hover:underline flex items-center gap-1">
+                        Ver términos y condiciones completos
+                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+<div class="absolute -right-6 -bottom-6 opacity-5">
+<span class="material-symbols-outlined text-[140px]">menu_book</span>
+</div>
+</div>
+</section>
+<!-- Areas List -->
+<div class="grid grid-cols-1 gap-6">
+<!-- Bohío -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col md:flex-row transition-all hover:border-secondary shadow-sm">
+<div class="md:w-72 h-56 md:h-auto overflow-hidden relative">
+<img alt="Bohío" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3fifZElPy6Dtuz7SapzgfurrwMYuTuu-rb6Zip5T6xYgPbsj1WgrgT9yMfXBRiM7srbZy5mM4AKb6U6zZT0puDVqDmw4gqPV9U8NZe67IfBpHjrbH85psoV0oQHu1ycC4jG2wp0VdDlCEvBupJExt5hqJhxRXHHl7hja8fn1zA-JsGGRe-Y-Ccm1F_ERiyKY4EB4x-9yJcyJj0DJcH_0Lga-inwDBQ58LNuRoFcsGzseADmRdlfQummjCzseBN6-kXKSRDJff9HY"/>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Bohío</h3>
+<span class="flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-sm border border-secondary/20">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">park</span> Social
+                            </span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-6">Área social techada ideal para reuniones familiares en un entorno natural y elegante.</p>
+<div class="flex flex-col gap-2 mb-4">
+<label class="font-label-sm text-on-surface-variant">Seleccionar Hora:</label>
+<div class="flex gap-4 items-center">
+<select class="flex-1 bg-surface-container-low border-outline-variant rounded-lg font-body-sm py-2 px-3 focus:ring-secondary focus:border-secondary transition-all">
+<option>10:00 AM - 01:00 PM</option>
+<option>02:00 PM - 05:00 PM</option>
+<option>06:00 PM - 09:00 PM</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end pt-4 border-t border-outline-variant/30">
+<button class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-label-md hover:bg-primary/90 transition-all active:scale-95 shadow-md">Reservar Área</button>
+</div>
+</div>
+</div>
+<!-- Cancha Deportiva -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col md:flex-row transition-all hover:border-secondary shadow-sm">
+<div class="md:w-72 h-56 md:h-auto overflow-hidden relative">
+<img alt="Cancha Deportiva" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE6XFBPFgJ4Nhk5oPxEQ6-MxT4bsY43_sgJ9wzfqTjIMPVi9oSZISnBiChGwX7J8rHP4UEZPknc8AN99uhW4A6qzGwE4NPkDNVrpRJwqQjethFsbNLh5bGqCdZFL4C9WES3QnIG99iPFfQQStOsUM-WMWle9vG1wgLeUTJcrHOJQ_xcnO677SLtww2NxhbfvJ5j2YEcWzMt_XeFTj6a1fRvj8CvVZIggQlwkdFw_I6OVTQwxYDyKEaiEFzvvHWpPs0wdGBJCp8nLI"/>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Cancha Deportiva</h3>
+<span class="flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-sm border border-secondary/20">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">sports_tennis</span> Multi-uso
+                            </span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-6">Cancha profesional con superficie de alta calidad para tenis y baloncesto con iluminación nocturna.</p>
+<div class="flex flex-col gap-2 mb-4">
+<label class="font-label-sm text-on-surface-variant">Seleccionar Turno:</label>
+<div class="flex gap-4 items-center">
+<select class="flex-1 bg-surface-container-low border-outline-variant rounded-lg font-body-sm py-2 px-3 focus:ring-secondary focus:border-secondary transition-all">
+<option>07:00 AM - 08:30 AM</option>
+<option>08:30 AM - 10:00 AM</option>
+<option>05:00 PM - 06:30 PM</option>
+<option>06:30 PM - 08:00 PM</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end pt-4 border-t border-outline-variant/30">
+<button class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-label-md hover:bg-primary/90 transition-all active:scale-95 shadow-md">Reservar Turno</button>
+</div>
+</div>
+</div>
+<!-- Parque Infantil -->
+<div class="group bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden flex flex-col md:flex-row transition-all hover:border-secondary shadow-sm">
+<div class="md:w-72 h-56 md:h-auto overflow-hidden relative">
+<img alt="Parque Infantil" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3YrjdR5LeE646oKR04BunCmBWE8h_uM59qU0bIqeo10evr5zFxQUHg4e7Zd9j09DstMPCyhdtMYk38TTygu9_ZLfcMQ6IMw0axm6akmgeoeGL-J0MLm6oK7LTGvVvmrLVtUgtZeZBwdTTDOjSP_3fKAobgjV7-vQGaI55VMa1kgiylJ9o1fqWgqKcriV65asbmgQnJOA3M--eBPbUcknXpDlIbFpSuln4mC5Vf8KBvKgofKAQ-yN0EwDlVIckyG6ee9C2gw8m3dY"/>
+</div>
+<div class="flex-1 p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-headline-md text-headline-md text-primary">Parque Infantil</h3>
+<span class="flex items-center gap-1 px-3 py-1 rounded-full bg-secondary/10 text-secondary font-label-sm border border-secondary/20">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">child_care</span> Familiar
+                            </span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-6">Área recreativa segura y moderna con piso amortiguante para el disfrute de los más pequeños.</p>
+<div class="flex flex-col gap-2 mb-4">
+<label class="font-label-sm text-on-surface-variant">Horario de Visita:</label>
+<div class="flex gap-4 items-center">
+<select class="flex-1 bg-surface-container-low border-outline-variant rounded-lg font-body-sm py-2 px-3 focus:ring-secondary focus:border-secondary transition-all">
+<option>09:00 AM - 12:00 PM</option>
+<option>02:00 PM - 06:00 PM</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end pt-4 border-t border-outline-variant/30">
+<button class="bg-primary text-on-primary px-8 py-2.5 rounded-lg font-label-md hover:bg-primary/90 transition-all active:scale-95 shadow-md">Reservar Espacio</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center h-20 px-4 pb-safe bg-surface border-t border-outline-variant z-50">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm mt-1">Inicio</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary/10 text-secondary rounded-xl px-4 py-1 scale-95 duration-150 border border-secondary/20" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rebase_edit</span>
+<span class="font-label-sm text-label-sm mt-1">Reservas</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-label-sm mt-1">Pagos</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-primary transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm mt-1">Perfil</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for calendar days
+        document.querySelectorAll('.calendar-grid div:not(.font-label-sm)').forEach(day => {
+            day.addEventListener('click', function() {
+                if(this.textContent.trim() !== "" && !this.classList.contains('text-outline')) {
+                    document.querySelector('.bg-primary.text-on-primary')?.classList.remove('bg-primary', 'text-on-primary', 'font-bold');
+                    this.classList.add('bg-primary', 'text-on-primary', 'font-bold');
+                }
+            });
+        });
+
+        // Reserve buttons interaction
+        document.querySelectorAll('button').forEach(btn => {
+            if(btn.textContent.includes('Reservar') && !btn.classList.contains('cursor-not-allowed') && btn.closest('main')) {
+                btn.addEventListener('click', () => {
+                    const areaCard = btn.closest('.group');
+                    const areaName = areaCard.querySelector('h3').textContent;
+                    const timeSelected = areaCard.querySelector('select').value;
+                    alert(`Confirmando reservación para ${areaName} en el horario: ${timeSelected}`);
+                });
+            }
+        });
+    </script>
+</body></html>

@@ -1,0 +1,22 @@
+Usuarios de Prueba por Rol:
+Rol
+Email
+
+Contraseña
+Administrador
+admin@caminos.com
+admin123
+
+Propietario
+residente@caminos.com
+residente123
+
+Vigilante
+vigilante@caminos.com
+vigilante123
+
+Registro de nuevos
+1. LAGUNITA-ETAPA1-2026
+2. LAGUNITA-ETAPA2-2026
+3. LAGUNITA-PRO-2024
+Nota: El sistema no distingue entre mayúsculas y minúsculas al ingresarlos, pero es recomendable usarlos tal cual aparecen arriba. .
