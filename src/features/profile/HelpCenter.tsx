@@ -6,184 +6,69 @@ export const HelpCenter: React.FC = () => {
   const [search, setSearch] = useState('')
 
   const faqs = [
-    {
-      q: "¿Cómo registro un pago?",
-      a: "Ve a la sección 'Pagos' desde tu Dashboard, selecciona el método de pago preferido e ingresa los datos del comprobante. La administración validará tu pago en breve."
-    },
-    {
-      q: "¿Cómo autorizo a un visitante?",
-      a: "En el Dashboard, pulsa 'Invitados'. Ingresa el nombre y cédula de tu visita y genera el Pase QR que podrá escanear el vigilante."
-    },
-    {
-      q: "¿Qué hago si mi casa ya está registrada?",
-      a: "Si ves un aviso de casa duplicada, contacta a administración para validar tu identidad y recuperar el acceso a tu vivienda."
-    },
-    {
-      q: "¿Cómo funcionan las reservas?",
-      a: "Pulsa 'Reservas', selecciona el área (Bohío o Cancha), elige un día disponible y confirma tu turno. Recibirás una notificación de confirmación."
-    }
+    { question: "¿Cómo registro un pago?", answer: "Vaya a la sección de Pagos, elija su método (Pago Móvil, Zelle o Transferencia), realice la operación y adjunte el comprobante." },
+    { question: "¿Cómo autorizo a un visitante?", answer: "En el menú inferior elija Invitados, presione 'Nueva Invitación' y genere el código QR para enviar por WhatsApp." },
+    { question: "¿Olvidé mi contraseña?", answer: "En la pantalla de login, use la opción 'Recuperar Cuenta' o contacte directamente a la administración del conjunto." },
+    { question: "¿Qué hacer ante un reclamo?", answer: "Use la sección de Solicitudes para reportar ruidos, fallas de infraestructura o problemas de convivencia." },
   ]
 
-  const filteredFaqs = faqs.filter(f => f.q.toLowerCase().includes(search.toLowerCase()))
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', paddingBottom: '40px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '50px' }}>
       <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5',
-        borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px',
+        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px',
         zIndex: 100, boxSizing: 'border-box'
       }}>
         <button
-          onClick={() => navigate('/profile/support')}
+          onClick={() => navigate('/profile')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--text-color)' }}>arrow_back</span>
         </button>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: '#0f5551', fontWeight: 700, textTransform: 'uppercase' }}>Centro de Ayuda</h1>
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: 'var(--primary-color)', fontWeight: 700 }}>Centro de Ayuda</h1>
       </header>
 
-      <main style={{ paddingTop: '84px', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-
-        {/* Search Bar - Contained within padding */}
-        <div style={{ padding: '0 20px', marginBottom: '32px' }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '16px',
-            border: '1px solid #bfc8c7',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '4px 16px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
-          }}>
-            <span className="material-symbols-outlined" style={{ color: '#6f7978', marginRight: '12px' }}>search</span>
-            <input
-              type="text"
-              placeholder="Buscar pregunta o tutorial..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: '100%', padding: '12px 0', border: 'none', outline: 'none', fontSize: '16px', backgroundColor: 'transparent' }}
-            />
-          </div>
+      <main style={{ paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '600px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ backgroundColor: 'var(--primary-color)', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '30px' }}>
+           <h2 style={{ fontSize: '24px', marginBottom: '15px' }}>¿En qué podemos ayudarte?</h2>
+           <div style={{ position: 'relative' }}>
+              <span className="material-symbols-outlined" style={{ position: 'absolute', left: '15px', top: '12px', color: '#6f7978' }}>search</span>
+              <input
+                type="text"
+                placeholder="Buscar solución..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '14px 14px 14px 45px', borderRadius: '12px', border: 'none', fontSize: '15px', outline: 'none', color: '#1B1C1A' }}
+              />
+           </div>
         </div>
 
-        {/* Tutorials Section - Full width scrollable */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#785919', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px', padding: '0 20px' }}>Tutoriales Paso a Paso</h3>
-          <div style={{
-            display: 'flex',
-            gap: '15px',
-            overflowX: 'auto',
-            padding: '0 20px 20px 20px',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch'
-          }} className="no-scrollbar">
-             <TutorialBox title="Mi Primer Pago" icon="payments" color="#d3e8d0" />
-             <TutorialBox title="Guía de Invitados" icon="vpn_key" color="#b0eee9" />
-             <TutorialBox title="Reglas de Áreas" icon="park" color="#ffdea6" />
-             {/* Extra spacer to prevent cutting off last item */}
-             <div style={{ minWidth: '5px', flexShrink: 0 }}></div>
-          </div>
+        <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>Preguntas Frecuentes</h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+           {faqs.filter(f => f.question.toLowerCase().includes(search.toLowerCase())).map((f, i) => (
+             <FAQItem key={i} question={f.question} answer={f.answer} />
+           ))}
         </div>
 
-        {/* FAQs Section - Contained within padding */}
-        <div style={{ padding: '0 20px' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 800, color: '#785919', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '20px' }}>Consultas Frecuentes</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-             {filteredFaqs.map((faq, i) => (
-               <FaqAccordion key={i} question={faq.q} answer={faq.a} />
-             ))}
-          </div>
-        </div>
-
-        {/* Contact Footer - Contained within padding */}
-        <div style={{ padding: '0 20px', marginTop: '50px' }}>
-          <div style={{ padding: '30px', backgroundColor: '#2f6d69', borderRadius: '24px', color: 'white', textAlign: 'center', boxShadow: '0 10px 30px rgba(47,109,105,0.2)' }}>
-             <h4 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: 700 }}>¿Aún tienes dudas?</h4>
-             <p style={{ margin: '0 0 25px 0', fontSize: '14px', opacity: 0.9 }}>Estamos disponibles para ayudarte personalmente.</p>
-             <button
-              onClick={() => navigate('/profile/support')}
-              style={{
-                width: '100%',
-                padding: '16px',
-                backgroundColor: 'white',
-                color: '#2f6d69',
-                border: 'none',
-                borderRadius: '12px',
-                fontWeight: 800,
-                fontSize: '14px',
-                cursor: 'pointer',
-                textTransform: 'uppercase'
-              }}
-             >Hablar con Soporte</button>
-          </div>
+        <div style={{ marginTop: '40px', padding: '25px', border: '1px dashed var(--border-color)', borderRadius: '20px', textAlign: 'center' }}>
+           <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '15px' }}>¿No encuentras lo que buscas?</p>
+           <button style={{ backgroundColor: 'transparent', border: `1px solid var(--primary-color)`, color: 'var(--primary-color)', padding: '12px 25px', borderRadius: '12px', fontWeight: 700 }}>Contactar Soporte</button>
         </div>
       </main>
     </div>
   )
 }
 
-const TutorialBox = ({ title, icon, color }: any) => (
-  <div style={{
-    minWidth: '160px',
-    backgroundColor: 'white',
-    border: '1px solid #bfc8c7',
-    borderRadius: '20px',
-    padding: '24px 15px',
-    textAlign: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-    flexShrink: 0,
-    scrollSnapAlign: 'start'
-  }}>
-    <div style={{
-      width: '56px',
-      height: '56px',
-      borderRadius: '16px',
-      backgroundColor: color,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 16px'
-    }}>
-      <span className="material-symbols-outlined" style={{ fontSize: '28px', color: '#1B1C1A' }}>{icon}</span>
-    </div>
-    <span style={{ fontSize: '13px', fontWeight: 700, color: '#1B1C1A', display: 'block', lineHeight: '1.3' }}>{title}</span>
-  </div>
-)
-
-const FaqAccordion = ({ question, answer }: any) => {
-  const [isOpen, setIsOpen] = useState(false)
+const FAQItem = ({ question, answer }: any) => {
+  const [open, setOpen] = useState(false)
   return (
-    <div style={{
-      backgroundColor: 'white',
-      border: '1px solid #bfc8c7',
-      borderRadius: '16px',
-      overflow: 'hidden',
-      transition: 'all 0.3s ease'
-    }}>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-      >
-        <span style={{ fontSize: '15px', fontWeight: 700, color: '#0f5551', pr: '10px' }}>{question}</span>
-        <span className="material-symbols-outlined" style={{
-          color: '#bfc8c7',
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-          transition: 'transform 0.3s'
-        }}>expand_more</span>
+    <div onClick={() => setOpen(!open)} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '20px', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--primary-color)', paddingRight: '10px' }}>{question}</span>
+        <span className="material-symbols-outlined" style={{ transition: 'transform 0.3s', transform: open ? 'rotate(180deg)' : 'none' }}>expand_more</span>
       </div>
-      {isOpen && (
-        <div style={{
-          padding: '0 20px 20px',
-          fontSize: '14px',
-          color: '#3f4947',
-          lineHeight: '1.6',
-          borderTop: '1px solid #f5f3f0',
-          paddingTop: '15px',
-          animation: 'fadeIn 0.3s ease-in'
-        }}>
-          {answer}
-        </div>
-      )}
+      {open && <p style={{ marginTop: '15px', fontSize: '14px', color: 'var(--text-sub)', lineHeight: '1.6' }}>{answer}</p>}
     </div>
   )
 }

@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+android/
+ios/
+.idea
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.xlsx
+!src/assets/logo_premium.png

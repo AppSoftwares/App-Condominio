@@ -13,6 +13,7 @@ export default {
         "on-primary-container": "#aeece7",
         "secondary": "#785919",
         "secondary-container": "#fed488",
+        "lagunita-gold": "#C6A059",
         "tertiary": "#3d503e",
         "background": "#fbf9f6",
         "surface": "#fbf9f6",

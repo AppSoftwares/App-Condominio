@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BCV_RATE, formatBs, formatUSD } from '../../utils/currency'
+import { formatBs, formatUSD } from '../../utils/currency'
+import { useCurrencyStore } from '../../store/useCurrencyStore'
 
 export const Payments: React.FC = () => {
   const navigate = useNavigate()
+  const bcvRate = useCurrencyStore(state => state.bcvRate)
   const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
   const [fileAttached, setFileAttached] = useState<string | null>(null)
   const [senderName, setSenderName] = useState('')
@@ -14,7 +16,8 @@ export const Payments: React.FC = () => {
     const file = e.target.files?.[0]
     if (file) {
       setFileAttached(file.name)
-      alert(`Capture adjuntado: ${file.name}. Ahora puede registrar su pago.`)
+      // Simular notificación push
+      alert(`[PUSH]: Comprobante adjuntado con éxito. Puede proceder a registrar el pago.`)
     }
   }
 
@@ -27,7 +30,7 @@ export const Payments: React.FC = () => {
       alert("Por favor ingrese el nombre del titular de la cuenta Zelle.")
       return
     }
-    alert("¡Pago registrado con éxito! Su comprobante será validado por administración en un lapso de 24 horas.")
+    alert("¡Pago registrado con éxito! Se ha enviado una notificación de confirmación. Su comprobante será validado en un lapso de 24 horas.")
     navigate('/dashboard')
   }
 
@@ -36,7 +39,7 @@ export const Payments: React.FC = () => {
     const isZelle = selectedMethod === 'zelle'
 
     return (
-      <div style={containerStyle}>
+      <div style={{ backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
         <header style={headerStyle}>
           <button onClick={() => setSelectedStep('main')} style={backBtnStyle}>
             <span className="material-symbols-outlined">arrow_back</span>
@@ -73,17 +76,31 @@ export const Payments: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <InfoRow label="BANCO" value="Banesco" />
-                  <InfoRow label="RIF" value="J-12345678-9" />
-                  {!isPM && <InfoRow label="CUENTA" value="1234-5678-90-1234567890" />}
-                  {!isPM && <InfoRow label="NOMBRE" value="Condominio Las Huertas" />}
-                  <InfoRow label="TELÉFONO" value="0414-123.45.67" />
+                  <InfoRow label="BANCO" value="Banco Nacional de Crédito (0191)" />
+                  <InfoRow label="RIF" value="J-299007323" />
+                  {!isPM && <InfoRow label="CUENTA" value="0191-0000-00-0000000000" />}
+                  {!isPM && <InfoRow label="NOMBRE" value="Adm. Conj. Las Huertas" />}
+                  <InfoRow label="TELÉFONO" value="04121064643" />
                 </>
               )}
 
               <div style={{ ...infoRowStyle, border: 'none', backgroundColor: '#f5f3f0', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#3d503e' }}>MONTO A ENVIAR</span>
-                <span style={{ fontSize: '20px', fontWeight: 800, color: '#0f5551' }}>{formatUSD(debtUSD)}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#3d503e' }}>MONTO A ENVIAR</span>
+                  {!isZelle && (
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#785919' }}>
+                      (Tasa BCV: {bcvRate.toFixed(2)} Bs/$)
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#0f5551' }}>{formatUSD(debtUSD)}</span>
+                  {!isZelle && (
+                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#2f6d69' }}>
+                      {formatBs(debtUSD, bcvRate)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -125,9 +142,9 @@ export const Payments: React.FC = () => {
         <div style={{ backgroundColor: '#2f6d69', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(47,109,105,0.2)' }}>
            <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO PENDIENTE</p>
            <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(debtUSD)}</h2>
-           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: '#ffdea6' }}>Equivalente a: {formatBs(debtUSD)}</p>
+           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: '#ffdea6' }}>Equivalente a: {formatBs(debtUSD, bcvRate)}</p>
            <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
-           <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {BCV_RATE.toFixed(2)} Bs/$</p>
+           <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {bcvRate.toFixed(2)} Bs/$</p>
         </div>
 
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1B1C1A', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
@@ -148,7 +165,7 @@ export const Payments: React.FC = () => {
            <PaymentOption
               icon="account_balance"
               label="Transferencia Bancaria"
-              sublabel="Datos Banesco y adjuntar capture"
+              sublabel="Datos BNC y adjuntar capture"
               onClick={() => setSelectedStep('transferencia')}
            />
            <PaymentOption
@@ -183,7 +200,7 @@ const PaymentOption = ({ icon, label, sublabel, highlight, onClick }: any) => (
   </div>
 )
 
-const containerStyle = { minHeight: '100%', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', display: 'flex', flexDirection: 'column' as any }
+const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }
 const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5', borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
 const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }
 const titleStyle = { fontFamily: "'EB Garamond', serif", fontSize: '20px', color: '#0f5551', fontWeight: 700, margin: '0 0 0 15px' }

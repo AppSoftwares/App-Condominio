@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, UserRole } from '../../store/useAuthStore'
+import { sanitizeString } from '../../utils/security'
+import { Logo } from '../../components/Logo'
 
 const DEMO_USERS = [
   { email: 'admin@caminos.com', pass: 'admin123', role: 'admin' as UserRole, name: 'Admin', last: 'Caminos' },
@@ -19,9 +21,11 @@ export const Login: React.FC = () => {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate API delay
+    const cleanEmail = sanitizeString(email).toLowerCase()
+    const cleanPass = password
+
     setTimeout(() => {
-      const found = DEMO_USERS.find(u => u.email === email && u.pass === password)
+      const found = DEMO_USERS.find(u => u.email === cleanEmail && u.pass === cleanPass)
 
       if (found) {
         setUser({
@@ -46,54 +50,51 @@ export const Login: React.FC = () => {
 
   return (
     <div style={{
-      height: '100vh', width: '100vw', backgroundColor: '#FAF8F5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box', fontFamily: "'Inter', sans-serif"
+      height: '100vh', width: '100vw', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', boxSizing: 'border-box', fontFamily: "'Inter', sans-serif"
     }}>
        <header style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button
             onClick={() => navigate('/auth')}
             style={{ position: 'absolute', left: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}
           >
-            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--text-color)' }}>arrow_back</span>
           </button>
-          <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPwdp7uHsqU1vRZWPz2cgSezTBACQTT0Gy8BQ6Q6if0vf2CFTpdQTkcjAkPwWtFVXNuaOR4GEc-EotjUx7KvjV3hkiHEJjhqKow1-rev1tmlseP7VhH8yxef2qcJOuWC8WV1ICHTO2FIflVEH_ikuYhzv8Wxe3tdX39ad5eCxaHovyjWNn_yD38hop_ZO3Y_rmmgFX889FXiT4gDoBYlWLlInRq3EPb1EHZuCSd3gGGmU1Qo2eedVhDVZ1NWVuSvsW8mMn0x3gAPg" style={{ height: '60px' }} />
+          <Logo height={50} />
        </header>
 
-       <main style={{ width: '100%', maxWidth: '400px', backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '20px', padding: '40px', boxSizing: 'border-box', boxShadow: '0 8px 30px rgba(0,0,0,0.05)' }}>
+       <main style={{ width: '100%', maxWidth: '450px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '40px', boxSizing: 'border-box', boxShadow: '0 10px 40px rgba(0,0,0,0.04)' }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <h1 style={{ fontSize: '28px', color: '#0f5551', margin: '0 0 8px 0', fontFamily: "'EB Garamond', serif" }}>Bienvenido</h1>
-            <p style={{ color: '#3f4947', fontSize: '14px', margin: 0 }}>Inicie sesión con las credenciales de prueba</p>
+            <h1 style={{ fontSize: '36px', color: 'var(--primary-color)', margin: '0 0 10px 0', fontFamily: "'EB Garamond', serif", fontWeight: 700 }}>Bienvenido</h1>
+            <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '0 auto 15px', borderRadius: '2px' }}></div>
+            <p style={{ color: 'var(--text-sub)', fontSize: '15px', margin: 0, fontWeight: 500 }}>Inicie sesión con las credenciales de prueba</p>
           </div>
 
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-             <div>
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+             <div style={{ textAlign: 'left' }}>
                 <label style={labelStyle}>Email</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="admin@caminos.com" style={inputStyle} />
              </div>
 
-             <div>
+             <div style={{ textAlign: 'left' }}>
                 <label style={labelStyle}>Contraseña</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" style={inputStyle} />
              </div>
 
-             <button type="submit" disabled={loading} style={{ width: '100%', padding: '16px', backgroundColor: '#2f6d69', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', marginTop: '10px' }}>
-                {loading ? 'Ingresando...' : 'Ingresar'}
+             <button type="submit" disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 8px 20px rgba(15,85,81,0.2)' }}>
+                {loading ? 'Ingresando...' : 'Ingresar al Portal'}
              </button>
           </form>
 
-          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f5f3f0', borderRadius: '10px', fontSize: '12px', color: '#6f7978' }}>
+          <div style={{ marginTop: '20px', padding: '15px', backgroundColor: 'var(--icon-bg)', borderRadius: '12px', fontSize: '12px', color: 'var(--text-sub)' }}>
              <strong>Credenciales demo:</strong><br/>
              Admin: admin@caminos.com / admin123<br/>
-             Propietario: residente@caminos.com / residente123<br/>
+             Residente: residente@caminos.com / residente123<br/>
              Vigilante: vigilante@caminos.com / vigilante123
           </div>
        </main>
-
-       <footer style={{ marginTop: '40px', opacity: 0.5, fontSize: '12px', letterSpacing: '2px', color: '#6f7978', textAlign: 'center' }}>
-          SEGURIDAD • COMUNIDAD • EXCLUSIVIDAD
-       </footer>
     </div>
   )
 }
 
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, color: '#3d503e', marginBottom: '8px', textTransform: 'uppercase' as const }
-const inputStyle = { width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid #bfc8c7', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none' }
+const labelStyle = { display: 'block' as const, fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as const, letterSpacing: '1px' }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }

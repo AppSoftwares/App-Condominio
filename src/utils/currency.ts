@@ -2,11 +2,12 @@
  * Utilidad para conversión de moneda basada en la tasa oficial BCV
  */
 
-// Tasa oficial de referencia (según captura: 560.37 Bs/$)
-export const BCV_RATE = 560.3753
+// Tasa estática de respaldo (se actualiza dinámicamente en los componentes)
+export const BCV_RATE_DEFAULT = 567.68
 
-export const formatBs = (dollars: number) => {
-  const amount = dollars * BCV_RATE
+export const formatBs = (dollars: number, customRate?: number) => {
+  const rate = customRate || BCV_RATE_DEFAULT
+  const amount = dollars * rate
   return new Intl.NumberFormat('es-VE', {
     style: 'currency',
     currency: 'VES',

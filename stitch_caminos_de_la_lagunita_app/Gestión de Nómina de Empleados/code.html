@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Caminos de la Lagunita - Gestión de Nómina</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#efeeeb",
+                        "surface-dim": "#dbdad7",
+                        "outline": "#6f7978",
+                        "on-secondary-fixed": "#271900",
+                        "on-primary-fixed-variant": "#05504c",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "background": "#fbf9f6",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#795a1a",
+                        "on-background": "#1b1c1a",
+                        "surface-bright": "#fbf9f6",
+                        "tertiary": "#3d503e",
+                        "primary-fixed-dim": "#94d2cd",
+                        "surface": "#fbf9f6",
+                        "outline-variant": "#bfc8c7",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e4e2df",
+                        "secondary-fixed": "#ffdea6",
+                        "on-secondary-fixed-variant": "#5d4200",
+                        "inverse-on-surface": "#f2f0ed",
+                        "on-tertiary-fixed-variant": "#394b39",
+                        "tertiary-fixed": "#d3e8d0",
+                        "surface-variant": "#e4e2df",
+                        "error": "#ba1a1a",
+                        "surface-container-high": "#eae8e5",
+                        "secondary-fixed-dim": "#e9c176",
+                        "inverse-primary": "#94d2cd",
+                        "on-primary-container": "#aeece7",
+                        "primary-container": "#2f6d69",
+                        "tertiary-fixed-dim": "#b7ccb5",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#fed488",
+                        "tertiary-fixed": "#d3e8d0",
+                        "primary": "#0f5551",
+                        "on-primary-fixed": "#00201e",
+                        "inverse-surface": "#30312f",
+                        "surface-tint": "#296864",
+                        "on-tertiary-fixed": "#0e1f10",
+                        "on-surface-variant": "#3f4947",
+                        "surface-container-low": "#f5f3f0",
+                        "primary-fixed": "#b0eee9",
+                        "on-tertiary-container": "#d0e6ce",
+                        "secondary": "#785919",
+                        "on-surface": "#1b1c1a",
+                        "on-secondary": "#ffffff"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["EB Garamond"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["EB Garamond"],
+                        "headline-md": ["EB Garamond"],
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "max-width": "1280px",
+                        "margin-mobile": "16px",
+                        "safety-area": "16px",
+                        "margin-desktop": "64px",
+                        "base": "8px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scrolling-touch { -webkit-overflow-scrolling: touch; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md">
+<!-- Top Navigation Bar -->
+<header class="w-full top-0 sticky z-50 bg-surface border-b border-outline-variant flex items-center justify-between px-margin-mobile md:px-margin-desktop py-4">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A sophisticated crest for a luxury residential complex featuring clean architectural lines and a refined teal and gold color scheme. The logo is displayed in a minimalist, professional style against a high-end, light-toned background, reflecting exclusivity and security." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjP36SZJj7xkvjdkDjTWF59CJNIlelwdWPRoMAKDj_w2fIDzd6oNdtoyrioObbqug_mz8vGPuY_urXp1clqY7MJ2FRmmcmn1b-FEMI0mlG7CsD-t0MBq5_Anb7WVA-sjerb_tP6JsCSeS2CT9brDM5XafSy2dXzl59vIyypQnUXrT8PrdZdmx_uO7DXs6sqeF9n-v8zmhcmrtihjqPS0cEIhLrm5UxF6M7MhqRweqIxUrQqQda8eytrxz4zsPikevfDpdhi9js0ts"/>
+</div>
+<h1 class="font-headline-md text-headline-md font-semibold text-primary">Caminos de la Lagunita</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high transition-colors p-2 rounded-full cursor-pointer">notifications</button>
+<div class="hidden md:flex flex-col items-end">
+<span class="font-label-md text-label-md text-on-surface">Admin User</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Superintendente</span>
+</div>
+</div>
+</header>
+<main class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-8 pb-24">
+<!-- Page Title & Primary Actions -->
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary">Gestión de Nómina</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Control administrativo de personal y beneficios de ley.</p>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="bg-primary hover:opacity-90 text-on-primary px-6 py-2.5 rounded-lg flex items-center gap-2 transition-all active:scale-95 font-label-md">
+<span class="material-symbols-outlined">person_add</span>
+                    Agregar Empleado
+                </button>
+<button class="bg-surface-container-highest hover:bg-surface-container-high text-on-surface border border-outline-variant px-4 py-2.5 rounded-lg flex items-center gap-2 transition-all font-label-md">
+<span class="material-symbols-outlined">download</span>
+                    Exportar
+                </button>
+</div>
+</div>
+<!-- Summary Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+<div class="bg-surface border border-outline-variant rounded-xl p-6 transition-all hover:border-primary-container">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Costo Total Mensual</span>
+<div class="flex items-end gap-2 mt-2">
+<span class="font-headline-lg text-headline-lg text-primary">$4,850.00</span>
+<span class="font-label-sm text-label-sm text-on-tertiary-fixed-variant pb-1">↑ 2.4%</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                    Octubre 2023
+                </div>
+</div>
+<div class="bg-surface border border-outline-variant rounded-xl p-6 transition-all hover:border-primary-container">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Empleados Activos</span>
+<div class="flex items-end gap-2 mt-2">
+<span class="font-headline-lg text-headline-lg text-primary">12</span>
+</div>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant font-body-sm">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+                    8 Seguridad / 4 Mantenimiento
+                </div>
+</div>
+<div class="bg-secondary-container border border-outline-variant rounded-xl p-6 flex flex-col justify-between">
+<div>
+<span class="font-label-sm text-label-sm text-on-secondary-container uppercase tracking-wider">Próximo Pago</span>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-headline-md text-headline-md text-on-secondary-fixed">30 de Octubre</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-on-secondary-fixed-variant font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+                    Faltan 4 días hábiles
+                </div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Employee List -->
+<div class="lg:col-span-5 bg-surface border border-outline-variant rounded-xl overflow-hidden flex flex-col h-fit">
+<div class="p-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h3 class="font-label-md text-label-md text-on-surface">Lista de Personal</h3>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="pl-10 pr-4 py-1.5 text-sm rounded-full border-outline-variant bg-white focus:ring-primary focus:border-primary w-40 md:w-full" placeholder="Buscar..." type="text"/>
+</div>
+</div>
+<div class="divide-y divide-outline-variant max-h-[600px] overflow-y-auto">
+<!-- Employee Item 1 (Selected) -->
+<div class="p-4 bg-primary-container/10 border-l-4 border-primary cursor-pointer transition-colors">
+<div class="flex justify-between items-start mb-1">
+<div>
+<h4 class="font-label-md text-label-md text-primary">José Pérez</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Vigilante de Seguridad</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">$420.00</span>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed text-[10px] uppercase font-bold">Activo</span>
+<span class="text-[12px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">id_card</span> 12.345.678
+                            </span>
+</div>
+</div>
+<!-- Employee Item 2 -->
+<div class="p-4 hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex justify-between items-start mb-1">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Carlos Rivas</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Jardinero / Paisajista</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">$380.00</span>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed text-[10px] uppercase font-bold">Activo</span>
+<span class="text-[12px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">id_card</span> 15.678.901
+                            </span>
+</div>
+</div>
+<!-- Employee Item 3 -->
+<div class="p-4 hover:bg-surface-container-high cursor-pointer transition-colors">
+<div class="flex justify-between items-start mb-1">
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">María Garcés</h4>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Limpieza General</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface font-bold">$350.00</span>
+</div>
+<div class="flex items-center gap-4 mt-2">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed text-[10px] uppercase font-bold">Activo</span>
+<span class="text-[12px] text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">id_card</span> 18.901.234
+                            </span>
+</div>
+</div>
+</div>
+</div>
+<!-- Detail Breakdown Section -->
+<div class="lg:col-span-7 space-y-6">
+<!-- Receipt Card -->
+<div class="bg-surface border border-outline-variant rounded-xl p-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4">
+<div class="opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[120px]">description</span>
+</div>
+</div>
+<div class="flex justify-between items-start mb-8 border-b border-outline-variant pb-6">
+<div>
+<p class="font-label-sm text-label-sm text-primary uppercase font-bold">Detalle de Pago Individual</p>
+<h3 class="font-headline-md text-headline-md text-on-surface mt-1">José Pérez</h3>
+<p class="font-body-sm text-on-surface-variant italic">C.I: V-12.345.678 | Cargo: Vigilante Nocturno</p>
+</div>
+<div class="text-right">
+<p class="font-label-sm text-on-surface-variant">Periodo: 01/10/2023 - 31/10/2023</p>
+<p class="font-label-sm text-on-surface-variant">Fecha de Emisión: 26 Oct 2023</p>
+</div>
+</div>
+<div class="space-y-4">
+<!-- Earnings -->
+<div class="bg-surface-container-low p-4 rounded-lg">
+<h4 class="font-label-md text-label-md text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">add_circle</span> Asignaciones (Ingresos)
+                            </h4>
+<div class="space-y-3">
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Sueldo Base Mensual</span>
+<span class="font-semibold">$250.00</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Bono de Alimentación (Cesta Ticket)</span>
+<span class="font-semibold">$40.00</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Beneficio de Guerra Económica</span>
+<span class="font-semibold">$130.00</span>
+</div>
+<div class="flex justify-between font-body-md text-primary font-bold border-t border-outline-variant pt-2 mt-2">
+<span>Total Asignaciones</span>
+<span>$420.00</span>
+</div>
+</div>
+</div>
+<!-- Deductions -->
+<div class="bg-error-container/20 p-4 rounded-lg">
+<h4 class="font-label-md text-label-md text-error mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">remove_circle</span> Deducciones de Ley
+                            </h4>
+<div class="space-y-3">
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Seguro Social Obligatorio (SSO)</span>
+<span class="font-semibold text-error">-$10.00</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Régimen Prestacional de Empleo (SPF)</span>
+<span class="font-semibold text-error">-$2.50</span>
+</div>
+<div class="flex justify-between font-body-md text-on-surface">
+<span>Fondo de Ahorro Oblig. Vivienda (FAOV)</span>
+<span class="font-semibold text-error">-$2.50</span>
+</div>
+<div class="flex justify-between font-body-md text-error font-bold border-t border-outline-variant pt-2 mt-2">
+<span>Total Deducciones</span>
+<span>-$15.00</span>
+</div>
+</div>
+</div>
+<!-- Final Net -->
+<div class="pt-6 border-t-2 border-dashed border-outline-variant">
+<div class="flex justify-between items-center px-4">
+<div class="text-on-surface">
+<p class="font-headline-md text-headline-md font-bold">Neto a Pagar</p>
+<p class="font-body-sm italic">Cuatrocientos cinco dólares con 00/100 USD</p>
+</div>
+<span class="font-display-lg text-display-lg text-primary">$405.00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Receipt Actions -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<button class="bg-primary text-on-primary py-3 rounded-lg flex items-center justify-center gap-2 font-label-md transition-all active:scale-95 shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">receipt_long</span>
+                        Generar Recibo de Pago
+                    </button>
+<div class="flex gap-4">
+<button class="flex-1 border border-outline text-on-surface-variant py-3 rounded-lg flex items-center justify-center gap-2 font-label-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">picture_as_pdf</span>
+                            PDF
+                        </button>
+<button class="flex-1 border border-outline text-on-surface-variant py-3 rounded-lg flex items-center justify-center gap-2 font-label-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">table_view</span>
+                            Excel
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Management Visualization (Asymmetric Pattern) -->
+<section class="mt-12">
+<h3 class="font-headline-md text-headline-md text-primary mb-6">Distribución Presupuestaria</h3>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="md:col-span-3 bg-surface border border-outline-variant rounded-xl p-8">
+<div class="flex justify-between items-center mb-6">
+<p class="font-label-md">Histórico de Gastos (Últimos 6 Meses)</p>
+<div class="flex gap-2">
+<span class="w-3 h-3 rounded-full bg-primary"></span>
+<span class="text-[10px] text-on-surface-variant font-bold uppercase">Nómina Fija</span>
+</div>
+</div>
+<!-- Simplified Visual Chart Placeholder -->
+<div class="h-48 flex items-end justify-between gap-4">
+<div class="w-full bg-primary-container/20 rounded-t-lg h-[60%] hover:bg-primary/40 transition-all cursor-help relative group">
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-2 py-1 rounded text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">$4.2k</div>
+</div>
+<div class="w-full bg-primary-container/20 rounded-t-lg h-[75%] hover:bg-primary/40 transition-all cursor-help relative group"></div>
+<div class="w-full bg-primary-container/20 rounded-t-lg h-[65%] hover:bg-primary/40 transition-all cursor-help relative group"></div>
+<div class="w-full bg-primary-container/20 rounded-t-lg h-[90%] hover:bg-primary/40 transition-all cursor-help relative group"></div>
+<div class="w-full bg-primary-container/20 rounded-t-lg h-[85%] hover:bg-primary/40 transition-all cursor-help relative group"></div>
+<div class="w-full bg-primary rounded-t-lg h-[95%] hover:opacity-90 transition-all cursor-help relative group"></div>
+</div>
+<div class="flex justify-between mt-4 text-[12px] text-on-surface-variant font-medium">
+<span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span><span>Oct</span>
+</div>
+</div>
+<div class="bg-primary-container text-on-primary-container rounded-xl p-8 flex flex-col justify-center items-center text-center space-y-4">
+<div class="w-16 h-16 rounded-full bg-on-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px]">verified_user</span>
+</div>
+<div>
+<p class="font-headline-md text-headline-md font-bold">100%</p>
+<p class="font-body-sm">Cumplimiento de leyes laborales</p>
+</div>
+<p class="text-[11px] opacity-80 leading-relaxed">Todos los cálculos de SSO, FAOV y SPF están actualizados según la última Gaceta Oficial.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 bg-surface border-t border-outline-variant flex justify-around items-center h-16">
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">handyman</span>
+<span class="font-label-sm text-label-sm">Requests</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-xl px-4 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-label-sm text-label-sm">Payments</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</div>
+</nav>
+<!-- Side Decoration (Desktop Subtle Aesthetic) -->
+<div class="hidden lg:block fixed right-0 top-1/2 -translate-y-1/2 w-1.5 h-32 bg-primary rounded-l-full opacity-30"></div>
+<script>
+        // Micro-interactions for list selection
+        document.querySelectorAll('.divide-y > div').forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active classes from all
+                document.querySelectorAll('.divide-y > div').forEach(i => {
+                    i.classList.remove('bg-primary-container/10', 'border-l-4', 'border-primary');
+                    i.classList.add('hover:bg-surface-container-high');
+                    const name = i.querySelector('h4');
+                    if (name) name.classList.replace('text-primary', 'text-on-surface');
+                });
+                // Add active classes to current
+                this.classList.add('bg-primary-container/10', 'border-l-4', 'border-primary');
+                this.classList.remove('hover:bg-surface-container-high');
+                const activeName = this.querySelector('h4');
+                if (activeName) activeName.classList.replace('text-on-surface', 'text-primary');
+            });
+        });
+    </script>
+</body></html>

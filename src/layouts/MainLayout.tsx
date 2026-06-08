@@ -10,12 +10,10 @@ export const MainLayout: React.FC = () => {
   if (!user) return <Outlet />
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#FAF8F5' }}>
-      {/* Scrollable Content Container with Padding for Bottom Nav */}
+    <div style={{ minHeight: '100dvh', backgroundColor: 'var(--bg-color)', transition: 'background-color 0.3s ease' }}>
+      {/* Content Container */}
       <div style={{
-        flex: 1,
-        paddingBottom: '100px', // Space for the fixed bottom nav
-        overflowY: 'auto',
+        paddingBottom: '80px', // Matches Nav height
         WebkitOverflowScrolling: 'touch'
       }}>
         <Outlet />
@@ -27,36 +25,33 @@ export const MainLayout: React.FC = () => {
         bottom: 0,
         width: '100%',
         height: '80px',
-        backgroundColor: 'white',
-        borderTop: '1px solid #bfc8c7',
+        backgroundColor: 'var(--card-bg)',
+        borderTop: '1px solid var(--border-color)',
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
         zIndex: 1000,
         paddingBottom: 'env(safe-area-inset-bottom)',
-        boxShadow: '0 -2px 10px rgba(0,0,0,0.02)'
+        boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
+        transition: 'all 0.3s ease'
       }}>
         <NavIcon
           icon="home"
-          label="Inicio"
           active={location.pathname === '/dashboard'}
           onClick={() => navigate('/dashboard')}
         />
         <NavIcon
           icon="rebase_edit"
-          label="Solicitudes"
           active={location.pathname === '/requests'}
           onClick={() => navigate('/requests')}
         />
         <NavIcon
           icon="payments"
-          label="Pagos"
           active={location.pathname === '/payments'}
           onClick={() => navigate('/payments')}
         />
         <NavIcon
           icon="person"
-          label="Perfil"
           active={location.pathname.startsWith('/profile')}
           onClick={() => navigate('/profile')}
         />
@@ -65,7 +60,7 @@ export const MainLayout: React.FC = () => {
   )
 }
 
-const NavIcon = ({ icon, label, active, onClick }: any) => (
+const NavIcon = ({ icon, active, onClick }: any) => (
   <div
     onClick={onClick}
     style={{
@@ -74,27 +69,26 @@ const NavIcon = ({ icon, label, active, onClick }: any) => (
       flexDirection: 'column',
       alignItems: 'center',
       gap: '4px',
-      color: active ? '#271900' : '#6f7978',
+      color: active ? 'var(--primary-color)' : 'var(--text-sub)',
       transition: 'all 0.3s ease',
       width: '70px',
       overflow: 'hidden'
     }}
   >
     <div style={{
-      backgroundColor: active ? '#ffdea6' : 'transparent',
-      padding: '4px 16px',
-      borderRadius: '16px',
+      backgroundColor: active ? 'rgba(137, 209, 202, 0.15)' : 'transparent',
+      padding: '8px 20px',
+      borderRadius: '20px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
     }}>
       <span className="material-symbols-outlined" style={{
         fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0",
-        fontSize: '24px'
+        fontSize: '28px'
       }}>
         {icon}
       </span>
     </div>
-    <span style={{ fontSize: '10px', fontWeight: active ? 700 : 500, whiteSpace: 'nowrap' }}>{label}</span>
   </div>
 )

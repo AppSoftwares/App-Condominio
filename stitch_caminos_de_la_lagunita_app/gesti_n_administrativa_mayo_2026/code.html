@@ -26,6 +26,21 @@
             backdrop-filter: blur(8px);
             border: 1px solid #bfc8c7;
         }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #reporte-formal, #reporte-formal * {
+                visibility: visible;
+            }
+            #reporte-formal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important;
+            }
+        }
     </style>
 <script id="tailwind-config">
         tailwind.config = {
@@ -133,7 +148,7 @@
 <div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 w-full max-w-max-width mx-auto">
 <div class="flex items-center gap-4">
 <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container overflow-hidden">
-<img alt="Resident Profile" class="w-full h-full object-cover" data-alt="A professional close-up portrait of a mature residential manager in a modern, brightly lit office environment. The person is wearing a high-end corporate attire, exuding trust and authority. The background is softly blurred, showing hints of lush green tropical plants and elegant architectural details that align with a premium residential community's aesthetic. The lighting is warm and natural." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvO2ZSEgbk9dCus1vY8GZfI8MEOms2fk0eDjZtF3hjBKgEoiTrkkbZ1PXf0pU_kFnro6KaO1GJ7GJiLMHTlDZKbdzRkpWXGE8Na8ATSxN-VYoEL7N7SXovsk-fuUvFrVYbpjN6DWlP5zyUg5uoCpmkIymFYToNt51Wl9Djsqi-89tbBeylF4HhW7gpKQuOYvXrkDOCh65UfnJT1ih6PnoOWtk5OCmPmp-mk-pBr7kL5QuWn4c2Zbh56-2vbkmUWpzsGYKk1lDBUr4"/>
+<img alt="Resident Manager Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvO2ZSEgbk9dCus1vY8GZfI8MEOms2fk0eDjZtF3hjBKgEoiTrkkbZ1PXf0pU_kFnro6KaO1GJ7GJiLMHTlDZKbdzRkpWXGE8Na8ATSxN-VYoEL7N7SXovsk-fuUvFrVYbpjN6DWlP5zyUg5uoCpmkIymFYToNt51Wl9Djsqi-89tbBeylF4HhW7gpKQuOYvXrkDOCh65UfnJT1ih6PnoOWtk5OCmPmp-mk-pBr7kL5QuWn4c2Zbh56-2vbkmUWpzsGYKk1lDBUr4"/>
 </div>
 <h1 class="font-headline-md text-headline-md text-primary dark:text-inverse-primary">Caminos de la Lagunita</h1>
 </div>
@@ -144,6 +159,20 @@
 </header>
 <main class="mt-20 mb-24 max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop">
     <div id="view-dashboard">
+        <!-- Floating Alert for SEDEMAT (Highly Visible) -->
+        <div id="sedemat-alert" class="mb-6 bg-error-container text-on-error-container p-4 rounded-xl border-2 border-error flex items-center justify-between shadow-lg animate-pulse">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-3xl">warning</span>
+                <div>
+                    <p class="font-bold">Pendiente: Cargar Recibo SEDEMAT</p>
+                    <p class="text-xs">Aún no se han procesado los pagos de Aseo y Gas de este mes.</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('pdf-upload').click()" class="bg-error text-white px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition-transform">
+                SUBIR PDF AHORA
+            </button>
+        </div>
+
         <!-- Welcome & Header Section -->
         <section class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
@@ -157,9 +186,13 @@
                 </div>
                 <div class="w-[1px] h-10 bg-outline-variant"></div>
                 <div class="flex gap-2">
+                    <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md transition-all flex items-center gap-2" onclick="document.getElementById('pdf-upload').click()">
+                        <span class="material-symbols-outlined text-[20px]">upload_file</span>
+                        CARGAR SEDEMAT (PDF)
+                    </button>
                     <button class="bg-primary hover:bg-primary-container text-on-primary px-4 py-2 rounded-lg font-label-md transition-all flex items-center gap-2" onclick="exportReport('PDF')">
                         <span class="material-symbols-outlined text-[20px]">description</span>
-                        PDF
+                        DESCARGAR RELACIÓN (PDF)
                     </button>
                     <button class="bg-secondary hover:bg-on-secondary-container hover:text-white text-on-secondary-container bg-secondary-container px-4 py-2 rounded-lg font-label-md transition-all flex items-center gap-2" onclick="exportReport('Excel')">
                         <span class="material-symbols-outlined text-[20px]">table_chart</span>
@@ -208,6 +241,77 @@
             </div>
         </section>
         <div class="grid grid-cols-12 gap-gutter">
+            <!-- Municipal Services Section (NEW) -->
+            <section class="col-span-12 flex flex-col gap-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">account_balance</span>
+                        Servicios Municipales (SEDEMAT / Aseo / Gas)
+                    </h3>
+                </div>
+                <div class="glass-card p-6 rounded-xl border-dashed border-2 border-primary/30 bg-primary/5 flex flex-col md:flex-row items-center gap-6">
+                    <div class="flex-1">
+                        <h4 class="font-body-lg font-bold text-primary mb-2">Carga Automática de Recibos</h4>
+                        <p class="font-body-sm text-on-surface-variant">Sube el PDF de SEDEMAT para procesar automáticamente los pagos de aseo y gas del mes.</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <input type="file" id="pdf-upload" class="hidden" accept=".pdf" onchange="processPDF(this)">
+                        <button onclick="document.getElementById('pdf-upload').click()" class="bg-primary text-on-primary px-6 py-3 rounded-lg font-label-md flex items-center gap-2 hover:bg-primary-container transition-all">
+                            <span class="material-symbols-outlined">upload_file</span>
+                            Cargar PDF SEDEMAT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Services Status Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="municipal-services-status">
+                    <!-- Aseo Urbano -->
+                    <div class="bg-white p-4 rounded-xl border border-outline-variant flex flex-col gap-2">
+                        <div class="flex justify-between items-start">
+                            <span class="font-label-sm text-on-surface-variant uppercase">Aseo Urbano</span>
+                            <span class="material-symbols-outlined text-error" id="status-icon-aseo">error</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold" id="amount-aseo">$ 0.00</span>
+                            <span class="text-[10px] text-error font-bold uppercase" id="status-text-aseo">Pendiente</span>
+                        </div>
+                    </div>
+                    <!-- Gas -->
+                    <div class="bg-white p-4 rounded-xl border border-outline-variant flex flex-col gap-2">
+                        <div class="flex justify-between items-start">
+                            <span class="font-label-sm text-on-surface-variant uppercase">Gas (SEDEMAT)</span>
+                            <span class="material-symbols-outlined text-error" id="status-icon-gas">error</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold" id="amount-gas">$ 0.00</span>
+                            <span class="text-[10px] text-error font-bold uppercase" id="status-text-gas">Pendiente</span>
+                        </div>
+                    </div>
+                    <!-- Hidrolago -->
+                    <div class="bg-white p-4 rounded-xl border border-outline-variant flex flex-col gap-2 opacity-60">
+                        <div class="flex justify-between items-start">
+                            <span class="font-label-sm text-on-surface-variant uppercase">Hidrolago</span>
+                            <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold">$ 12.00</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold uppercase">En Espera</span>
+                        </div>
+                    </div>
+                    <!-- Corpoelec -->
+                    <div class="bg-white p-4 rounded-xl border border-outline-variant flex flex-col gap-2 opacity-60">
+                        <div class="flex justify-between items-start">
+                            <span class="font-label-sm text-on-surface-variant uppercase">Corpoelec</span>
+                            <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xl font-bold">$ 45.00</span>
+                            <span class="text-[10px] text-on-surface-variant font-bold uppercase">En Espera</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Detailed Expenses Section -->
             <section class="col-span-12 lg:col-span-8 flex flex-col gap-6">
                 <div class="flex items-center justify-between">
@@ -227,7 +331,7 @@
                         <tbody class="divide-y divide-outline-variant">
                             <tr class="hover:bg-surface-container-lowest transition-colors">
                                 <td class="px-6 py-4 font-body-md text-body-md">SEDEMAT Gas</td>
-                                <td class="px-6 py-4 text-right font-body-md">$ 25.00</td>
+                                <td class="px-6 py-4 text-right font-body-md" id="table-amount-gas">$ 25.00</td>
                             </tr>
                             <tr class="hover:bg-surface-container-lowest transition-colors">
                                 <td class="px-6 py-4 font-body-md text-body-md">Inmobiliaria</td>
@@ -243,7 +347,7 @@
                             </tr>
                             <tr class="hover:bg-surface-container-lowest transition-colors">
                                 <td class="px-6 py-4 font-body-md text-body-md">Aseo Urbano / Desechos Sólidos</td>
-                                <td class="px-6 py-4 text-right font-body-md">$ 38.00</td>
+                                <td class="px-6 py-4 text-right font-body-md" id="table-amount-aseo">$ 38.00</td>
                             </tr>
                             <tr class="hover:bg-surface-container-lowest transition-colors">
                                 <td class="px-6 py-4 font-body-md text-body-md border-t-2 border-dashed border-outline-variant">Teléfono Garita</td>
@@ -405,7 +509,6 @@
         </section>
     </div>
 </main>
-</main>
 <!-- BottomNavBar -->
 <nav class="fixed bottom-0 left-0 w-full grid grid-cols-5 items-center h-20 bg-white border-t border-outline-variant z-[100] shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
 <a class="flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors" href="javascript:void(0)" onclick="switchView('dashboard')">
@@ -442,6 +545,66 @@
             });
         });
 
+        function processPDF(input) {
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                alert('Procesando recibo: ' + fileName + '\nExtrayendo datos de conceptos y montos...');
+
+                // Simulación de procesamiento (3 segundos)
+                setTimeout(() => {
+                    // Datos extraídos del ejemplo del usuario
+                    // Tasa BCV asumida: 36.50
+                    const aseoBs = 240915.64;
+                    const gasBs = 90343.36;
+                    const tasa = 36.50;
+
+                    const aseoUsd = (aseoBs / tasa).toFixed(2);
+                    const gasUsd = (gasBs / tasa).toFixed(2);
+
+                    // Actualizar UI para Aseo
+                    document.getElementById('status-icon-aseo').textContent = 'check_circle';
+                    document.getElementById('status-icon-aseo').classList.replace('text-error', 'text-green-600');
+                    document.getElementById('status-text-aseo').textContent = 'Pagado';
+                    document.getElementById('status-text-aseo').classList.replace('text-error', 'text-green-600');
+                    document.getElementById('amount-aseo').textContent = '$ ' + aseoUsd;
+                    document.getElementById('table-amount-aseo').textContent = '$ ' + aseoUsd;
+                    document.getElementById('table-amount-aseo').classList.add('text-green-600', 'font-bold');
+
+                    // Actualizar UI para Gas
+                    document.getElementById('status-icon-gas').textContent = 'check_circle';
+                    document.getElementById('status-icon-gas').classList.replace('text-error', 'text-green-600');
+                    document.getElementById('status-text-gas').textContent = 'Pagado';
+                    document.getElementById('status-text-gas').classList.replace('text-error', 'text-green-600');
+                    document.getElementById('amount-gas').textContent = '$ ' + gasUsd;
+                    document.getElementById('table-amount-gas').textContent = '$ ' + gasUsd;
+                    document.getElementById('table-amount-gas').classList.add('text-green-600', 'font-bold');
+
+                    // Ocultar alerta y mostrar éxito
+                    document.getElementById('sedemat-alert').classList.add('hidden');
+
+                    // ACTUALIZAR EL REPORTE FORMAL (PDF)
+                    const municipalSection = `
+                        <div class="mt-6 border-t pt-4">
+                            <h4 class="text-sm font-bold text-primary uppercase mb-2">Detalle Recibo SEDEMAT Procesado</h4>
+                            <table class="w-full text-xs text-left">
+                                <tr class="bg-slate-50 font-bold border-b">
+                                    <th class="p-1">Concepto</th>
+                                    <th class="p-1 text-right">Monto (Bs)</th>
+                                    <th class="p-1 text-right">Equivalente ($)</th>
+                                </tr>
+                                <tr class="border-b"><td class="p-1">Servicio de Aseo</td><td class="p-1 text-right">${aseoBs.toLocaleString()} Bs.</td><td class="p-1 text-right">$ ${aseoUsd}</td></tr>
+                                <tr class="border-b"><td class="p-1">Servicio de Gas</td><td class="p-1 text-right">${gasBs.toLocaleString()} Bs.</td><td class="p-1 text-right">$ ${gasUsd}</td></tr>
+                                <tr class="font-bold"><td class="p-1 text-primary">TOTAL PAGADO</td><td class="p-1 text-right text-primary">${(aseoBs + gasBs).toLocaleString()} Bs.</td><td class="p-1 text-right text-primary">$ ${(parseFloat(aseoUsd) + parseFloat(gasUsd)).toFixed(2)}</td></tr>
+                            </table>
+                        </div>
+                    `;
+                    document.getElementById('reporte-municipal-data').innerHTML = municipalSection;
+
+                    alert('¡Recibo procesado con éxito!\n\nConceptos detectados:\n- Servicio de Aseo: ' + aseoBs.toLocaleString() + ' Bs. ($' + aseoUsd + ')\n- Servicio de Gas: ' + gasBs.toLocaleString() + ' Bs. ($' + gasUsd + ')\n\nLos montos han sido cargados y aparecerán en el reporte PDF.');
+                }, 2000);
+            }
+        }
+
         function switchView(viewName) {
             const dashboard = document.getElementById('view-dashboard');
             const usuarios = document.getElementById('view-usuarios');
@@ -474,12 +637,8 @@
 
         function exportReport(format) {
             if (format === 'PDF') {
-                const printContents = document.getElementById('reporte-formal').innerHTML;
-                const originalContents = document.body.innerHTML;
-                document.body.innerHTML = printContents;
+                alert('Preparando Relación Mensual...\n\nSi ya cargaste el recibo de SEDEMAT, los detalles aparecerán automáticamente.\n\nEn la siguiente ventana, selecciona "Guardar como PDF" en el destino de la impresora.');
                 window.print();
-                document.body.innerHTML = originalContents;
-                location.reload();
             } else {
                 alert('Generando archivo Excel con el desglose financiero...\n- Resumen de Mayo 2026\n- 32 Cobranzas procesadas\n- Detalle de Egresos y Nómina.');
             }
@@ -532,6 +691,10 @@
                         <tr class="border-b"><td class="p-2">Mantenimiento e Insumos</td><td class="p-2 text-right">$ 220.40</td></tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div id="reporte-municipal-data">
+                <p class="text-[10px] text-error italic mt-4">* No se ha procesado el recibo de SEDEMAT para este periodo.</p>
             </div>
 
             <div class="mt-20 flex justify-around">

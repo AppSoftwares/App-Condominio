@@ -15,12 +15,17 @@ import { Support } from './features/profile/Support'
 import { HelpCenter } from './features/profile/HelpCenter'
 import { LegalDocument } from './features/profile/LegalDocument'
 import { AdminManagement } from './features/admin/AdminManagement'
+import { PayrollManagement } from './features/admin/PayrollManagement'
 import { GuardPortal } from './features/guard/GuardPortal'
 import { Payments } from './features/resident/Payments'
 import { Requests } from './features/resident/Requests'
 import { Guests } from './features/resident/Guests'
 import { Reservations } from './features/resident/Reservations'
+import { Incidents } from './features/resident/Incidents'
 import { useAuthStore, UserRole } from './store/useAuthStore'
+import { useCurrencyStore } from './store/useCurrencyStore'
+import { useThemeStore } from './store/useThemeStore'
+import { useEffect } from 'react'
 
 // SEGURIDAD: Componente para proteger rutas por rol
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
@@ -38,6 +43,24 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 
 function App() {
   const user = useAuthStore(state => state.user)
+  const fetchRate = useCurrencyStore(state => state.fetchRate)
+  const isDarkMode = useThemeStore(state => state.isDarkMode)
+
+  useEffect(() => {
+    // Actualizar tasa BCV al iniciar la app
+    fetchRate()
+  }, [fetchRate])
+
+  useEffect(() => {
+    // Aplicar clase de modo oscuro al body para estilos globales
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode')
+      document.body.style.backgroundColor = '#1B1C1A'
+    } else {
+      document.body.classList.remove('dark-mode')
+      document.body.style.backgroundColor = '#FAF8F5'
+    }
+  }, [isDarkMode])
 
   return (
     <Router>
@@ -65,6 +88,9 @@ function App() {
           } />
           <Route path="/reservations" element={
             <ProtectedRoute allowedRoles={['resident']}><Reservations /></ProtectedRoute>
+          } />
+          <Route path="/incidents" element={
+            <ProtectedRoute allowedRoles={['resident']}><Incidents /></ProtectedRoute>
           } />
 
           {/* Profile Routes (Common) */}
@@ -100,6 +126,9 @@ function App() {
         {/* Independent Layout Sections */}
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}><AdminManagement /></ProtectedRoute>
+        } />
+        <Route path="/admin/payroll" element={
+          <ProtectedRoute allowedRoles={['admin']}><PayrollManagement /></ProtectedRoute>
         } />
         <Route path="/guard" element={
           <ProtectedRoute allowedRoles={['guard']}><GuardPortal /></ProtectedRoute>

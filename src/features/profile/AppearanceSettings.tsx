@@ -1,50 +1,59 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useThemeStore } from '../../store/useThemeStore'
 
 export const AppearanceSettings: React.FC = () => {
   const navigate = useNavigate()
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const { isDarkMode, toggleTheme } = useThemeStore()
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode)
+  // Definición de colores según el tema
+  const colors = {
+    bg: isDarkMode ? '#1B1C1A' : '#FAF8F5',
+    text: isDarkMode ? '#F2F0ED' : '#1B1C1A',
+    subtext: isDarkMode ? '#A5AFA3' : '#3f4947',
+    card: isDarkMode ? '#262724' : '#FFFFFF',
+    border: isDarkMode ? '#3D3E3B' : '#bfc8c7',
+    header: isDarkMode ? '#262724' : '#FAF8F5',
+    primary: isDarkMode ? '#94D2CD' : '#0f5551',
+    iconBg: isDarkMode ? '#3D3E3B' : '#f5f3f0'
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', paddingBottom: '50px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: colors.bg, fontFamily: "'Inter', sans-serif", color: colors.text, paddingBottom: '50px', transition: 'all 0.3s ease' }}>
       <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5',
-        borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px',
-        zIndex: 100, boxSizing: 'border-box'
+        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: colors.header,
+        borderBottom: `1px solid ${colors.border}`, display: 'flex', alignItems: 'center', padding: '0 20px',
+        zIndex: 100, boxSizing: 'border-box', transition: 'all 0.3s ease'
       }}>
         <button
           onClick={() => navigate('/profile')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: colors.text }}>arrow_back</span>
         </button>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: '#0f5551', fontWeight: 700, textTransform: 'uppercase' }}>Apariencia</h1>
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: colors.primary, fontWeight: 700, textTransform: 'uppercase' }}>Apariencia</h1>
       </header>
 
       <main style={{ paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
-        <p style={{ color: '#3f4947', fontSize: '14px', marginBottom: '30px', textAlign: 'center' }}>Personaliza el estilo visual de tu aplicación.</p>
+        <p style={{ color: colors.subtext, fontSize: '14px', marginBottom: '30px', textAlign: 'center' }}>Personaliza el estilo visual de tu aplicación.</p>
 
         {/* Main Card with Toggle */}
-        <div style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '40px' }}>
+        <div style={{ backgroundColor: colors.card, border: `1px solid ${colors.border}`, borderRadius: '20px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '40px', transition: 'all 0.3s ease' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: '#f5f3f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span className="material-symbols-outlined" style={{ color: '#0f5551' }}>{isDarkMode ? 'dark_mode' : 'light_mode'}</span>
+              <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: colors.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="material-symbols-outlined" style={{ color: colors.primary }}>{isDarkMode ? 'dark_mode' : 'light_mode'}</span>
               </div>
               <div>
-                <span style={{ fontWeight: 700, fontSize: '16px', color: '#1B1C1A', display: 'block' }}>Modo Oscuro</span>
-                <span style={{ fontSize: '12px', color: '#6f7978' }}>Cambiar tema global</span>
+                <span style={{ fontWeight: 700, fontSize: '16px', color: colors.text, display: 'block' }}>Modo Oscuro</span>
+                <span style={{ fontSize: '12px', color: colors.subtext }}>Cambiar tema global</span>
               </div>
             </div>
 
             <div
               onClick={toggleTheme}
               style={{
-                width: '60px', height: '34px', backgroundColor: isDarkMode ? '#2f6d69' : '#bfc8c7',
+                width: '60px', height: '34px', backgroundColor: isDarkMode ? colors.primary : '#bfc8c7',
                 borderRadius: '17px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease'
               }}
             >
@@ -57,19 +66,21 @@ export const AppearanceSettings: React.FC = () => {
           </div>
 
           {/* Mini Views Inside the Card for better visibility */}
-          <div style={{ borderTop: '1px solid #efeeeb', paddingTop: '30px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#0f5551', marginBottom: '20px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>Vista Previa</h3>
+          <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: '30px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: colors.primary, marginBottom: '20px', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>Vista Previa</h3>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'nowrap' }}>
                <ThemePreview
                 active={!isDarkMode}
                 label="MODO CLARO"
                 theme={{ bg: '#FAF8F5', head: '#FFF', prim: '#0F5551', card: '#FFF', text: '#1B1C1A' }}
+                onClick={() => isDarkMode && toggleTheme()}
                />
                <ThemePreview
                 active={isDarkMode}
                 label="MODO OSCURO"
                 theme={{ bg: '#1B1C1A', head: '#30312F', prim: '#94D2CD', card: '#30312F', text: '#F2F0ED' }}
+                onClick={() => !isDarkMode && toggleTheme()}
                />
             </div>
           </div>
@@ -79,8 +90,8 @@ export const AppearanceSettings: React.FC = () => {
   )
 }
 
-const ThemePreview = ({ active, label, theme }: any) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, maxWidth: '140px' }}>
+const ThemePreview = ({ active, label, theme, onClick }: any) => (
+  <div onClick={onClick} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, maxWidth: '140px', cursor: 'pointer' }}>
     {/* Mini Mobile Frame */}
     <div style={{
       width: '100%',
@@ -119,6 +130,6 @@ const ThemePreview = ({ active, label, theme }: any) => (
         <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: theme.prim, opacity: 0.4 }}></div>
       </div>
     </div>
-    <span style={{ fontSize: '10px', fontWeight: 800, color: active ? '#0f5551' : '#6f7978', marginTop: '12px', letterSpacing: '0.5px' }}>{label}</span>
+    <span style={{ fontSize: '10px', fontWeight: 800, color: active ? '#C6A059' : '#6f7978', marginTop: '12px', letterSpacing: '0.5px' }}>{label}</span>
   </div>
 )

@@ -47,7 +47,7 @@ export const InviteFriend: React.FC = () => {
 
         {/* Share Card */}
         <section style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '20px', padding: '24px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
-          <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#785919', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px', borderBottom: '1px solid #efeeeb', paddingBottom: '100' }}>Canales de Envío</h3>
+          <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#785919', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '24px', borderBottom: '1px solid #efeeeb', paddingBottom: '10px' }}>Canales de Envío</h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
              {shareOptions.map((opt) => (
