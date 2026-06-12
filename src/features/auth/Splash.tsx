@@ -7,7 +7,7 @@ export const Splash: React.FC = () => {
 
   return (
     <div style={{
-      height: '100vh', width: '100vw', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
+      height: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
     }}>
        {/* Background Decoration */}
        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'var(--icon-bg)', zIndex: 0, border: '2px solid var(--accent-gold)', opacity: 0.3 }}></div>

@@ -1,4 +1,4 @@
-# 🏰 Caminos de la Lagunita - Management Suite
+# 🏰 Caminos de la Lagunita - Software de Aplicaciones JP
 
 🏢 Sistema Premium de Gestión Residencial para el **Condominio Conjunto 14 Las Huertas** (RIF: J-29900732-3).
 

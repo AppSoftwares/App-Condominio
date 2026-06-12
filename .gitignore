@@ -1,5 +1,7 @@
 node_modules
 dist
+# Security and Access Keys
+src/config/access_keys/
 .env
 android/
 ios/
@@ -9,4 +11,5 @@ ios/
 *.jpeg
 *.pdf
 *.xlsx
+residents/
 !src/assets/logo_premium.png

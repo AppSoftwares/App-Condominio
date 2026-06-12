@@ -7,7 +7,7 @@ export const Welcome: React.FC = () => {
 
   return (
     <div style={{
-      height: '100vh', width: '100vw', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
+      height: '100vh', width: '100%', overflow: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '20px', boxSizing: 'border-box'
     }}>
        <div style={{ animation: 'fadeIn 1.5s ease', maxWidth: '400px', width: '100%' }}>
           <Logo height={140} style={{ marginBottom: '40px', justifyContent: 'center' }} />

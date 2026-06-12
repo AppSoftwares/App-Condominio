@@ -1,38 +1,18 @@
-/**
- * Sistema de Persistencia Local (IndexedDB)
- * Asegura que el progreso no se pierda sin conexión.
- */
+// Creado por Jesús Pirela.
+import { openDB } from 'idb'
 
-const DB_NAME = 'CaminosLagunitaDB'
+const DB_NAME = 'caminos-lagunita-db'
 const DB_VERSION = 1
 
-export const initDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION)
-
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-
-    request.onupgradeneeded = (event: any) => {
-      const db = event.target.result
-
-      // Store for offline actions (sync queue)
-      if (!db.objectStoreNames.contains('sync_queue')) {
-        db.createObjectStore('sync_queue', { keyPath: 'id', autoIncrement: true })
+export const initDB = async () => {
+  return openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      if (!db.objectStoreNames.contains('offline_actions')) {
+        db.createObjectStore('offline_actions', { keyPath: 'id', autoIncrement: true })
       }
-
-      // Store for local user data
-      if (!db.objectStoreNames.contains('local_storage')) {
-        db.createObjectStore('local_storage', { keyPath: 'key' })
+      if (!db.objectStoreNames.contains('user_data')) {
+        db.createObjectStore('user_data', { keyPath: 'key' })
       }
-    }
+    },
   })
-}
-
-export const addToSyncQueue = async (action: any) => {
-  const db = await initDB()
-  const tx = db.transaction('sync_queue', 'readwrite')
-  const store = tx.objectStore('sync_queue')
-  store.add({ ...action, timestamp: new Date().toISOString() })
-  return tx.oncomplete
 }

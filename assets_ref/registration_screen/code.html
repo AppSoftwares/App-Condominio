@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Registro de Residente - Caminos de la Lagunita</title>
+<!-- Google Fonts: EB Garamond for Serif (as configured in design system), Inter for Sans, Cinzel for specific header request -->
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=Cinzel:wght@600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@100..900&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#ffdea6",
+                    "tertiary-container": "#556855",
+                    "surface-bright": "#fbf9f6",
+                    "primary-fixed": "#b0eee9",
+                    "surface": "#fbf9f6",
+                    "surface-container-high": "#eae8e5",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#d3e8d0",
+                    "on-tertiary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "primary-container": "#2f6d69",
+                    "surface-container-highest": "#e4e2df",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dbdad7",
+                    "error": "#ba1a1a",
+                    "tertiary": "#3d503e",
+                    "on-secondary-fixed-variant": "#5d4200",
+                    "surface-variant": "#e4e2df",
+                    "surface-container-low": "#f5f3f0",
+                    "primary": "#0f5551",
+                    "background": "#fbf9f6",
+                    "on-primary-fixed": "#00201e",
+                    "outline": "#6f7978",
+                    "secondary": "#785919",
+                    "inverse-primary": "#94d2cd",
+                    "on-primary-container": "#aeece7",
+                    "inverse-on-surface": "#f2f0ed",
+                    "inverse-surface": "#30312f",
+                    "secondary-container": "#fed488",
+                    "on-primary-fixed-variant": "#05504c",
+                    "on-surface": "#1b1c1a",
+                    "on-background": "#1b1c1a",
+                    "on-surface-variant": "#3f4947",
+                    "on-tertiary-fixed": "#0e1f10",
+                    "tertiary-fixed-dim": "#b7ccb5",
+                    "surface-container": "#efeeeb",
+                    "on-secondary-fixed": "#271900",
+                    "surface-tint": "#296864",
+                    "outline-variant": "#bfc8c7",
+                    "on-tertiary-container": "#d0e6ce",
+                    "secondary-fixed-dim": "#e9c176",
+                    "primary-fixed-dim": "#94d2cd",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#394b39",
+                    "on-secondary-container": "#795a1a",
+                    "on-error": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "max-width": "1280px",
+                    "gutter": "24px",
+                    "safety-area": "16px",
+                    "margin-mobile": "16px",
+                    "base": "8px",
+                    "margin-desktop": "64px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["EB Garamond"],
+                    "headline-md": ["EB Garamond"],
+                    "body-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg-mobile": ["EB Garamond"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display-lg": ["EB Garamond"],
+                    "label-md": ["Inter"],
+                    "cinzel": ["Cinzel"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #FAF8F5;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for better UI experience */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fbf9f6;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #bfc8c7;
+            border-radius: 4px;
+        }
+        .cinzel-header {
+            font-family: 'Cinzel', serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface">
+<!-- Top AppBar - Following JSON structure for Registration (Transactional) -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-mobile h-16 bg-surface border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<button class="p-2 transition-colors duration-200 ease-in-out hover:bg-surface-container-low rounded-full" onclick="window.history.back()">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="cinzel-header text-xl md:text-2xl font-semibold text-primary">Registro de Residente</h1>
+</div>
+<div class="hidden md:block">
+<span class="font-headline-md text-primary font-semibold">Caminos de la Lagunita</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-24 pb-12 px-margin-mobile md:px-0">
+<div class="max-w-xl mx-auto">
+<!-- Registration Card -->
+<div class="bg-white border border-outline-variant rounded-xl p-6 md:p-10 transition-all duration-300">
+<!-- Decorative Section -->
+<div class="mb-8 text-center">
+<p class="font-body-md text-on-surface-variant max-w-md mx-auto">
+                        Únase a nuestra exclusiva comunidad residencial. Complete los siguientes datos para gestionar su cuenta.
+                    </p>
+</div>
+<form class="space-y-6" id="registrationForm">
+<!-- Name Group -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="nombre">Nombre</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="nombre" name="nombre" placeholder="Ej: Juan" required="" type="text"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="apellido">Apellido</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="apellido" name="apellido" placeholder="Ej: Pérez" required="" type="text"/>
+</div>
+</div>
+<!-- Cédula and Phone -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="cedula">Cédula de Identidad</label>
+<div class="flex">
+<label class="sr-only" for="cedula_type">Tipo de Cédula</label>
+<select class="h-12 px-3 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-low text-on-surface-variant font-body-md outline-none" id="cedula_type" name="cedula_type">
+<option value="V">V</option>
+<option value="E">E</option>
+<option value="J">J</option>
+</select>
+<input class="w-full h-12 px-4 rounded-r-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="cedula" name="cedula" placeholder="12345678" required="" type="text"/>
+</div>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="phone">Número de teléfono</label>
+<div class="flex">
+<span class="inline-flex items-center px-4 rounded-l-lg border border-r-0 border-outline-variant bg-surface-container-low text-on-surface-variant font-body-md">
+                                +58
+                            </span>
+<input class="w-full h-12 px-4 rounded-r-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="phone" name="phone" placeholder="412 1234567" required="" type="tel"/>
+</div>
+</div>
+</div>
+<!-- Email and Plate -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="email">Correo electrónico</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="email" name="email" placeholder="ejemplo@correo.com" required="" type="email"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="placa">Placa del Vehículo (Opcional)</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="placa" name="placa" placeholder="ABC-123" type="text"/>
+</div>
+</div>
+<!-- Passwords -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="password">Contraseña</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="password" minlength="8" name="password" placeholder="Min. 8 caracteres" required="" type="password"/>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="confirm_password">Confirmar contraseña</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="confirm_password" minlength="8" name="confirm_password" placeholder="Repita contraseña" required="" type="password"/>
+<p class="hidden text-error text-xs mt-1 font-body-sm" id="passwordError">Las contraseñas no coinciden.</p>
+</div>
+</div>
+<!-- Residential Information -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="tipo_residente">Tipo de Residente</label>
+<select class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md appearance-none bg-white" id="tipo_residente" name="tipo_residente" required="">
+<option value="Propietario">Propietario</option>
+<option value="Arrendatario">Arrendatario</option>
+<option value="Familiar">Familiar / Co-residente</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="etapa">Etapa Residencial</label>
+<select class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md appearance-none bg-white" id="etapa" name="etapa" required="">
+<option disabled="" selected="" value="">Seleccione etapa</option>
+<option value="I">I Etapa</option>
+<option value="II">II Etapa</option>
+<option value="III">III Etapa</option>
+<option value="IV">IV Etapa</option>
+</select>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="conjunto">Conjunto</label>
+<select class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md appearance-none bg-white disabled:bg-surface-container-low disabled:cursor-not-allowed" disabled="" id="conjunto" name="conjunto" required="">
+<option disabled="" selected="" value="">Primero elija etapa</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="font-label-md text-on-surface-variant" for="house_number">Número de casa</label>
+<input class="w-full h-12 px-4 rounded-lg border border-outline-variant focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-200 outline-none font-body-md" id="house_number" name="house_number" placeholder="Ej: 11-45" required="" type="text"/>
+<p class="hidden text-error text-xs mt-1 font-body-sm" id="houseFormatError">Formato inválido (Ejemplo: 11-45).</p>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-4">
+<button class="w-full h-14 bg-primary-container text-white font-label-md text-lg rounded-lg transition-transform duration-150 hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+                            Crear cuenta
+                        </button>
+</div>
+</form>
+<div class="mt-8 text-center">
+<p class="font-body-sm text-on-surface-variant">
+                        ¿Ya tienes una cuenta? <a class="text-primary font-semibold hover:underline" href="#">Inicia sesión</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Space Holder -->
+<footer class="py-8 text-center px-margin-mobile">
+<p class="font-label-sm text-on-surface-variant opacity-60">© 2024 Caminos de la Lagunita Software de Aplicaciones JP. Todos los derechos reservados.</p>
+</footer>
+<script>
+        const conjuntosPorEtapa = {
+            "I": ["La Pradera", "Los Jarales", "El Roble"],
+            "II": ["Punta de Piedra", "Las Isletas", "Punta Mangle"],
+            "III": ["Altos del Mirador", "Lomas del Sol"],
+            "IV": ["Residencias Lagunita", "The Collection"]
+        };
+
+        const etapaSelect = document.getElementById('etapa');
+        const conjuntoSelect = document.getElementById('conjunto');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const passwordError = document.getElementById('passwordError');
+        const houseNumber = document.getElementById('house_number');
+        const houseFormatError = document.getElementById('houseFormatError');
+        const form = document.getElementById('registrationForm');
+
+        // Stage -> Conjunto dependency logic
+        etapaSelect.addEventListener('change', function() {
+            const etapa = this.value;
+            conjuntoSelect.disabled = false;
+            conjuntoSelect.innerHTML = '<option value="" disabled selected>Seleccione conjunto</option>';
+            
+            conjuntosPorEtapa[etapa].forEach(conjunto => {
+                const option = document.createElement('option');
+                option.value = conjunto;
+                option.textContent = conjunto;
+                conjuntoSelect.appendChild(option);
+            });
+        });
+
+        // Form Validation Logic
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+
+            // Password Check
+            if (password.value !== confirmPassword.value) {
+                passwordError.classList.remove('hidden');
+                confirmPassword.classList.add('border-error');
+                isValid = false;
+            } else {
+                passwordError.classList.add('hidden');
+                confirmPassword.classList.remove('border-error');
+            }
+
+            // House Format Check (Simplified Regex for XX-XX)
+            const houseRegex = /^\d{1,3}-\d{1,3}$/;
+            if (!houseRegex.test(houseNumber.value)) {
+                houseFormatError.classList.remove('hidden');
+                houseNumber.classList.add('border-error');
+                isValid = false;
+            } else {
+                houseFormatError.classList.add('hidden');
+                houseNumber.classList.remove('border-error');
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                // Simple vibration-like feedback for desktop/mobile
+                form.classList.add('animate-shake');
+                setTimeout(() => form.classList.remove('animate-shake'), 400);
+            } else {
+                e.preventDefault();
+                alert('¡Registro exitoso! Bienvenido a Caminos de la Lagunita.');
+            }
+        });
+
+        // Real-time password check feedback
+        confirmPassword.addEventListener('input', function() {
+            if (this.value === password.value) {
+                passwordError.classList.add('hidden');
+                this.classList.remove('border-error');
+            }
+        });
+    </script>
+<style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+            animation: shake 0.2s ease-in-out 0s 2;
+        }
+        .border-error {
+            border-color: #ba1a1a !vehemently;
+        }
+    </style>
+</body></html>

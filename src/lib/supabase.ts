@@ -1,14 +1,11 @@
+// Creado por Jesús Pirela.
 import { createClient } from '@supabase/supabase-js'
 
-// Usar variables de entorno de Vite o valores por defecto para evitar errores de compilación
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co'
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL
+const supabaseAnonKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Faltan las variables de entorno de Supabase.')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-/**
- * REGLAS DE SEGURIDAD (RLS) RECOMENDADAS:
- * 1. profile: select allowed for auth.uid() == user_id, update allowed for auth.uid() == user_id.
- * 2. lessons: select public if is_published = true.
- * 3. audit_logs: select only for is_super_admin = true.
- */

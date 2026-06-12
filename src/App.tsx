@@ -1,33 +1,33 @@
+// Creado por Jesús Pirela.
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { MainLayout } from './layouts/MainLayout'
+import { Layout } from './layouts/Main'
 import { Welcome } from './features/auth/Welcome'
 import { AuthSplash } from './features/auth/AuthSplash'
 import { Login } from './features/auth/Login'
 import { Register } from './features/auth/Register'
-import { ResidentDashboard } from './features/dashboard/ResidentDashboard'
-import { Profile } from './features/profile/Profile'
-import { AccountSettings } from './features/profile/AccountSettings'
-import { AppearanceSettings } from './features/profile/AppearanceSettings'
-import { PrivacySecurity } from './features/profile/PrivacySecurity'
-import { NotificationSettings } from './features/profile/NotificationSettings'
-import { InviteFriend } from './features/profile/InviteFriend'
-import { Support } from './features/profile/Support'
-import { HelpCenter } from './features/profile/HelpCenter'
-import { LegalDocument } from './features/profile/LegalDocument'
-import { AdminManagement } from './features/admin/AdminManagement'
-import { PayrollManagement } from './features/admin/PayrollManagement'
+import { ResDash } from './features/dash/ResDash'
+import { Profile } from './features/prof/Profile'
+import { Account } from './features/prof/Account'
+import { Appearance } from './features/prof/Appearance'
+import { Privacy } from './features/prof/Privacy'
+import { Notifications } from './features/prof/Notifications'
+import { InviteFriend } from './features/prof/InviteFriend'
+import { Support } from './features/prof/Support'
+import { HelpCenter } from './features/prof/HelpCenter'
+import { LegalDocument } from './features/prof/LegalDocument'
+import { Admin } from './features/admin/Admin'
+import { Payroll } from './features/admin/Payroll'
 import { GuardPortal } from './features/guard/GuardPortal'
-import { Payments } from './features/resident/Payments'
-import { Requests } from './features/resident/Requests'
-import { Guests } from './features/resident/Guests'
-import { Reservations } from './features/resident/Reservations'
-import { Incidents } from './features/resident/Incidents'
+import { Payments } from './features/res/Payments'
+import { Requests } from './features/res/Requests'
+import { Guests } from './features/res/Guests'
+import { Reservations } from './features/res/Reservations'
+import { Incidents } from './features/res/Incidents'
 import { useAuthStore, UserRole } from './store/useAuthStore'
 import { useCurrencyStore } from './store/useCurrencyStore'
 import { useThemeStore } from './store/useThemeStore'
 import { useEffect } from 'react'
 
-// SEGURIDAD: Componente para proteger rutas por rol
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
 
@@ -47,12 +47,10 @@ function App() {
   const isDarkMode = useThemeStore(state => state.isDarkMode)
 
   useEffect(() => {
-    // Actualizar tasa BCV al iniciar la app
     fetchRate()
   }, [fetchRate])
 
   useEffect(() => {
-    // Aplicar clase de modo oscuro al body para estilos globales
     if (isDarkMode) {
       document.body.classList.add('dark-mode')
       document.body.style.backgroundColor = '#1B1C1A'
@@ -65,17 +63,14 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={!user ? <Welcome /> : <RoleRedirect role={user.role} />} />
         <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
         <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
         <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
 
-        {/* Protected App Routes with Persistent Bottom Nav */}
-        <Route element={<MainLayout />}>
-          {/* Resident Routes */}
+        <Route element={<Layout />}>
           <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['resident']}><ResidentDashboard /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={['resident']}><ResDash /></ProtectedRoute>
           } />
           <Route path="/payments" element={
             <ProtectedRoute allowedRoles={['resident']}><Payments /></ProtectedRoute>
@@ -93,21 +88,20 @@ function App() {
             <ProtectedRoute allowedRoles={['resident']}><Incidents /></ProtectedRoute>
           } />
 
-          {/* Profile Routes (Common) */}
           <Route path="/profile" element={
             <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><Profile /></ProtectedRoute>
           } />
           <Route path="/profile/account" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><AccountSettings /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><Account /></ProtectedRoute>
           } />
           <Route path="/profile/privacy" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><PrivacySecurity /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><Privacy /></ProtectedRoute>
           } />
           <Route path="/profile/appearance" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><AppearanceSettings /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><Appearance /></ProtectedRoute>
           } />
           <Route path="/profile/notifications" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><NotificationSettings /></ProtectedRoute>
+            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><Notifications /></ProtectedRoute>
           } />
           <Route path="/profile/invite" element={
             <ProtectedRoute allowedRoles={['resident', 'admin', 'guard']}><InviteFriend /></ProtectedRoute>
@@ -123,18 +117,16 @@ function App() {
           } />
         </Route>
 
-        {/* Independent Layout Sections */}
         <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin']}><AdminManagement /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}><Admin /></ProtectedRoute>
         } />
         <Route path="/admin/payroll" element={
-          <ProtectedRoute allowedRoles={['admin']}><PayrollManagement /></ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}><Payroll /></ProtectedRoute>
         } />
         <Route path="/guard" element={
           <ProtectedRoute allowedRoles={['guard']}><GuardPortal /></ProtectedRoute>
         } />
 
-        {/* Default redirect */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
