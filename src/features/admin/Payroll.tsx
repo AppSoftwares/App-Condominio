@@ -166,7 +166,7 @@ export const Payroll: React.FC = () => {
         ['Bono Alimentación', calc.bonoAliBs.toFixed(2), 'RPE (2%)', calc.rpe.toFixed(2)],
         ['Bono Transporte', calc.bonoTransBs.toFixed(2), 'FAOV (1%)', calc.faov.toFixed(2)],
         ['', '', 'INCES (0.5%)', calc.inces.toFixed(2)],
-        ['', '', 'Préstamos', emp.prestamosBs.toFixed(2)],
+        ['', '', 'Préstamos', emp.prestamos_bs.toFixed(2)],
         ['TOTAL ASIGNACIONES', calc.totalAsignaciones.toFixed(2), 'TOTAL DEDUCCIONES', calc.totalDeducciones.toFixed(2)],
       ],
       theme: 'grid',
@@ -219,24 +219,21 @@ export const Payroll: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', paddingBottom: '40px', height: '100%', width: '100%' }}>
 
-      <header style={headerStyle}>
+      <header style={{ width: '100%', padding: '20px 0', borderBottom: '1px solid var(--border-color)', marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <button onClick={() => navigate('/admin')} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer' }}>
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(15, 85, 81, 0.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img src={logoPremium} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
-          <div>
+          <div style={{ textAlign: 'center' }}>
             <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Nómina de Empleados</h1>
             <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-sub)', letterSpacing: '1px', fontWeight: 800 }}>GESTIÓN LABORAL LOTTT</p>
           </div>
         </div>
       </header>
 
-      <main style={{ paddingTop: '100px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '1000px', boxSizing: 'border-box' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '1000px', boxSizing: 'border-box' }}>
 
         <section style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -325,28 +322,40 @@ export const Payroll: React.FC = () => {
                   <div>
                     <label style={labelStyle}>Sueldo Base (USD)</label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       style={inputStyle}
                       value={editValues.sueldo_usd}
-                      onChange={e => setEditValues({...editValues, sueldo_usd: parseFloat(e.target.value) || 0})}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                        setEditValues({...editValues, sueldo_usd: parseFloat(val) || 0});
+                      }}
                     />
                   </div>
                   <div>
                     <label style={labelStyle}>Bono Alimentación (USD)</label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       style={inputStyle}
                       value={editValues.bono_alimentacion_usd}
-                      onChange={e => setEditValues({...editValues, bono_alimentacion_usd: parseFloat(e.target.value) || 0})}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                        setEditValues({...editValues, bono_alimentacion_usd: parseFloat(val) || 0});
+                      }}
                     />
                   </div>
                   <div>
                     <label style={labelStyle}>Bono Transporte (USD)</label>
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
                       style={inputStyle}
                       value={editValues.bono_transporte_usd}
-                      onChange={e => setEditValues({...editValues, bono_transporte_usd: parseFloat(e.target.value) || 0})}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9.]/g, '');
+                        setEditValues({...editValues, bono_transporte_usd: parseFloat(val) || 0});
+                      }}
                     />
                   </div>
                   <button style={{ ...primaryBtnStyle, marginTop: '20px' }} onClick={handleUpdateSalary}>
@@ -370,8 +379,16 @@ export const Payroll: React.FC = () => {
                       <DetailRow label="INCES (0.5%)" value={`${calculatePayroll(selectedEmployee).inces.toFixed(2)} Bs`} isRed />
                    </section>
 
+                   <section>
+                      <h4 style={{ ...sectionTitleStyle, color: '#C6A059' }}>PROYECCIÓN PRESTACIONES SOCIALES (LOTTT)</h4>
+                      <DetailRow label="Días Antigüedad Acumulados" value="15 días" />
+                      <DetailRow label="Monto Prestaciones (Proyectado)" value="45.200,00 Bs" />
+                      <DetailRow label="Intereses s/ Prestaciones" value="3.450,00 Bs" />
+                      <DetailRow label="TOTAL ACUMULADO" value="48.650,00 Bs" />
+                   </section>
+
                    <div style={totalNetoCardStyle}>
-                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, opacity: 0.8 }}>TOTAL NETO A PAGAR</p>
+                      <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, opacity: 0.8 }}>TOTAL NETO MES ACTUAL</p>
                       <h3 style={{ margin: '10px 0 0', fontSize: '32px', fontWeight: 900 }}>
                         {calculatePayroll(selectedEmployee).neto.toLocaleString('es-VE')} <span style={{ fontSize: '16px' }}>Bs.D</span>
                       </h3>
@@ -383,15 +400,6 @@ export const Payroll: React.FC = () => {
            </div>
         </div>
       )}
-
-      {/* Persistent Bottom Nav - ICONS ONLY */}
-      <nav style={bottomNavStyle}>
-        <NavIcon icon="account_balance_wallet" label="Finanzas" onClick={() => navigate('/admin')} />
-        <NavIcon icon="group" label="Usuarios" onClick={() => navigate('/admin')} />
-        <NavIcon icon="payments" label="Nómina" active />
-        <NavIcon icon="add_chart" label="Votaciones" onClick={() => navigate('/admin')} />
-        <NavIcon icon="settings" label="Perfil" onClick={() => navigate('/profile')} />
-      </nav>
 
       <style>{`
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -414,26 +422,15 @@ const DetailRow = ({ label, value, isRed }: any) => (
   </div>
 )
 
-const NavIcon = ({ icon, label, active, onClick }: any) => (
-  <div onClick={onClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ backgroundColor: active ? 'rgba(198, 160, 89, 0.15)' : 'transparent', padding: '8px 20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span className="material-symbols-outlined" style={{ color: active ? '#C6A059' : 'var(--text-sub)', fontSize: '28px', fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
-      <span style={{ fontSize: '10px', color: active ? '#C6A059' : 'var(--text-sub)', fontWeight: active ? 700 : 500, marginTop: '4px' }}>{label}</span>
-    </div>
-  </div>
-)
-
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
 const actionBtnStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', color: 'var(--primary-color)', padding: '10px 18px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: 700 }
 const cardStyle = { backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any, padding: '30px' }
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as any, letterSpacing: '0.5px' }
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '14px', outline: 'none' }
-const thStyle = { textAlign: 'left' as any, padding: '15px', fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase' as any, letterSpacing: '1px' }
-const tdStyle = { padding: '15px', fontSize: '14px' }
+const thStyle = { textAlign: 'left' as any, padding: '10px', fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase' as any, letterSpacing: '1px' }
+const tdStyle = { padding: '10px', fontSize: '14px' }
 const miniBtnStyle = { background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-sub)', padding: '8px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }
 const modalOverlayStyle = { position: 'fixed' as any, top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.3)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }
-const modalContentStyle = { width: '100%', maxWidth: '500px', height: '100%', backgroundColor: 'var(--card-bg)', padding: '40px', boxSizing: 'border-box' as any, animation: 'slideIn 0.3s ease-out', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)' }
+const modalContentStyle = { width: '100%', maxWidth: '500px', height: '100%', backgroundColor: 'var(--card-bg)', padding: '40px', boxSizing: 'border-box' as any, animation: 'slideIn 0.3s ease-out', boxShadow: '-10px 0 30px rgba(0,0,0,0.1)', overflowY: 'auto' as any }
 const sectionTitleStyle = { fontSize: '12px', fontWeight: 800, color: 'var(--primary-color)', letterSpacing: '2px', marginBottom: '15px', borderLeft: '4px solid', paddingLeft: '10px' }
 const totalNetoCardStyle = { backgroundColor: 'var(--primary-color)', color: 'white', padding: '30px', borderRadius: '24px', marginTop: '10px' }
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }
-const bottomNavStyle = { position: 'fixed' as any, bottom: 0, width: '100%', height: '85px', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 1000 }

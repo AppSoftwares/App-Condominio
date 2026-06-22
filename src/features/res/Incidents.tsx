@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCommunityStore, Incident } from '../../store/useCommunityStore'
+import { sanitizeString } from '../../utils/security'
 
 export const Incidents: React.FC = () => {
   const navigate = useNavigate()
@@ -23,8 +24,8 @@ export const Incidents: React.FC = () => {
       const newIncident: Incident = {
         id: Date.now().toString(),
         category,
-        location,
-        description,
+        location: sanitizeString(location),
+        description: sanitizeString(description),
         date: 'Recién publicado',
         status: 'Pendiente',
         houseNumber: user?.house_number || 'UNKNOWN'

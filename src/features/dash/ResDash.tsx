@@ -1,11 +1,34 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
 import logoPremium from '../../assets/logo_premium.png'
 
 export const ResDash: React.FC = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const [announcements, setAnnouncements] = React.useState<any[]>([])
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .order('fecha_creacion', { ascending: false })
+          .limit(3)
+
+        if (error) throw error
+        setAnnouncements(data || [])
+      } catch (err) {
+        console.error("Error al cargar anuncios:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchAnnouncements()
+  }, [])
 
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
@@ -30,34 +53,6 @@ export const ResDash: React.FC = () => {
         </section>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-          {/* Hero Image Card */}
-          <div style={{
-            backgroundColor: 'var(--primary-color)',
-            borderRadius: '28px',
-            height: '220px',
-            width: '100%',
-            overflow: 'hidden',
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid var(--border-color)'
-          }}>
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPwdp7uHsqU1vRZWPz2cgSezTBACQTT0Gy8BQ6Q6if0vf2CFTpdQTkcjAkPwWtFVXNuaOR4GEc-EotjUx7KvjV3hkiHEJjhqKow1-rev1tmlseP7VhH8yxef2qcJOuWC8WV1ICHTO2FIflVEH_ikuYhzv8Wxe3tdX39ad5eCxaHovyjWNn_yD38hop_ZO3Y_rmmgFX889FXiT4gDoBYlWLlInRq3EPb1EHZuCSd3gGGmU1Qo2eedVhDVZ1NWVuSvsW8mMn0x3gAPg"
-              alt="Caminos de la Lagunita"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4, mixBlendMode: 'overlay' as any }}
-            />
-            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '20px' }}>
-              <img
-                src={logoPremium}
-                alt="Caminos de la Lagunita Logo"
-                style={{ width: '100px', marginBottom: '10px' }}
-              />
-              <p style={{ color: 'white', fontFamily: "'EB Garamond', serif", fontSize: '20px', fontStyle: 'italic', margin: 0 }}>Excelencia en Convivencia</p>
-            </div>
-          </div>
 
           {/* Status Card */}
           <div style={{ ...cardStyle, textAlign: 'center' }}>
@@ -86,20 +81,21 @@ export const ResDash: React.FC = () => {
           <section style={{ marginTop: '10px' }}>
             <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '28px', color: 'var(--text-color)', marginBottom: '20px', textAlign: 'center' }}>Noticias y Avisos</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <NewsItem
-                title="Mantenimiento de áreas"
-                desc="Poda anual de jardines este jueves."
-                tag="Mantenimiento"
-                color="#ffdea6"
-                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDV5ujmAXc75G7me1ghXNk55ejrYKDXN4b5RB7a88XD9PHnQCY2B74mLFqZPTmGObfnp6vC3L6yigqNeBzbWdMR1EfHU3XhsKbESuFaeP_-QbYx4xMKnveOLJIoyPkW-DDy0at3Y7I9f55R_o1cVKZAO2UKDKmwYYsfDT9eACxiVFBbLidsl0LqOclYsLZz5rmS-eMGb9T8wYys9mLJ7Dr-LDSJGpZfO3oJWhuNs_HlXEXwm9xw-bES3yjwe6yFmDU8T0Z1DVRacmY"
-              />
-              <NewsItem
-                title="Asamblea Propietarios"
-                desc="Sábado a las 10:00 AM en salón social."
-                tag="Comunidad"
-                color="#d3e8d0"
-                imageUrl="https://lh3.googleusercontent.com/aida-public/AB6AXuDUDpOFYJfmpqnUXdQflzQKTjUirjdWcNb4elw2H-U3jp2vQSd_vYtyNVIwOdlQ_3YGyCupYhgggNgOVSCN96iNLwU1Sw0j1xJb4klTMS7nNRCESPlEeI6y-xHVKnDvlBAYYgIAKNGQqzmx0lW0lON_n5DDZAYoAC4g6hqf1WwyToMIlgKyB3b1Ky_wk6HnNVMiJVbgjGjthw5DCkJ9qf9dE2MtxKMzC4C9B7O43aLg9R9otYyogmsoN6ef6-QsPD4qBUl4J0CvHbw"
-              />
+              {loading ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>Cargando avisos...</p>
+              ) : announcements.length > 0 ? (
+                announcements.map(ann => (
+                  <NewsItem
+                    key={ann.id}
+                    title={ann.titulo}
+                    desc={ann.mensaje}
+                    tag={ann.tipo}
+                    color={ann.tipo === 'mantenimiento' ? '#ffdea6' : '#d3e8d0'}
+                  />
+                ))
+              ) : (
+                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay avisos recientes.</p>
+              )}
             </div>
           </section>
         </div>

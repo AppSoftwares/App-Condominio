@@ -10,17 +10,75 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import logoPremium from '../../assets/logo_premium.png'
 
+const TabItem = ({ active, label, icon, onClick }: any) => (
+  <button
+    onClick={onClick}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 14px',
+      borderRadius: '20px',
+      border: 'none',
+      backgroundColor: active ? 'var(--primary-color)' : 'var(--card-bg)',
+      color: active ? 'white' : 'var(--text-sub)',
+      fontSize: '12px',
+      fontWeight: 700,
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+    }}
+  >
+    <span className="material-symbols-outlined" style={{ fontSize: '18px', width: 'auto', height: 'auto', overflow: 'visible' }}>{icon}</span>
+    {label}
+  </button>
+)
+
 export const Admin: React.FC = () => {
   const navigate = useNavigate()
   const { user, setWhitelist } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
   const { addPoll } = useCommunityStore()
-  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls'>('finance')
+  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security'>('finance')
   const [sedematData, setSedematData] = useState<{ aseoBs: number, gasBs: number, aseoUsd: number, gasUsd: number } | null>(null)
   const [users, setUsers] = useState<any[]>([])
+  const [apiKeys, setApiKeys] = useState<any[]>([])
+  const [newKeyName, setNewKeyName] = useState('')
+  const [generatedKey, setGeneratedKey] = useState<string | null>(null)
+  const [isImportDebtsOpen, setIsImportDebtsOpen] = useState(false)
   const [pendingUsers, setPendingUsers] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Poll state
+  const [polls, setPolls] = useState<Poll[]>([
+    {
+      id: '1',
+      title: 'Cambio de Bomba de Agua',
+      description: 'Se requiere la aprobación de la comunidad para la adquisición e instalación de una nueva bomba de agua de 5HP. Cuota extra por unidad: $25.00. Este cambio es crítico para garantizar el suministro constante.',
+      priority: 'Alta',
+      endDate: '30/11/2023',
+      totalVotes: 97,
+      votedHouses: [],
+      options: [{ text: 'A FAVOR', votes: 85 }, { text: 'EN CONTRA', votes: 12 }]
+    }
+  ])
+
+  // Financial State
+  const [showGastoDetail, setShowGastoDetail] = useState(false)
+  const [gastoDetail, setGastoDetail] = useState({ concepto: '', monto: 0, categoria: 'Servicios' })
+  const [financialState, setFinancialState] = useState({
+    condominio: "CONDOMINIO CAMINOS DE LA LAGUNITA",
+    rif: "J-29900732-3",
+    mes_relacion: "",
+    gastos_ordinarios: [],
+    gastos_sobrevenidos: []
+  })
+
+  // Modal Gasto State
+  const [isGastoModalOpen, setIsGastoModalOpen] = useState(false)
+  const [newGasto, setNewGasto] = useState({ concepto: '', monto_bs: '', type: 'ordinario' as 'ordinario' | 'sobrevenido' })
 
   useEffect(() => {
     fetchData()
@@ -88,38 +146,17 @@ export const Admin: React.FC = () => {
   const miniBtnStyle = { background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-sub)', padding: '6px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }
 
   const financialData = {
-    condominio: "CONDOMINIO CONJUNTO 14 LAS HUERTAS",
+    condominio: "CONDOMINIO CAMINOS DE LA LAGUNITA",
     rif: "J-29900732-3",
-    mes_relacion: "JUNIO 2026",
-    tasa_cambio: 560.00,
-    gastos_ordinarios: [
-      { concepto: "Aseo Urbano", bs: 75000.00, usd: 133.93 },
-      { concepto: "Servicios Básicos", bs: 200000.00, usd: 357.14 },
-      { concepto: "Teléfono de Recepción", bs: 5000.00, usd: 8.93 },
-      { concepto: "Operadores de Servicio General", bs: 620.00, usd: 1.11 },
-      { concepto: "Trabajador Residencial", bs: 130.00, usd: 0.23 },
-      { concepto: "Bonos de Alimentación", bs: 672000.00, usd: 1200.00 },
-      { concepto: "Beneficios Sociales Trabajadores", bs: 189600.00, usd: 338.57 },
-      { concepto: "Artículos de Limpieza", bs: 58800.00, usd: 105.00 },
-      { concepto: "Materiales Eléctricos", bs: 41383.00, usd: 73.90 },
-      { concepto: "Mantenimiento Portones Eléctricos", bs: 22400.00, usd: 40.00 },
-      { concepto: "Material Ferretería", bs: 4500.00, usd: 8.04 },
-      { concepto: "Mantenimiento Ascensores", bs: 38200.00, usd: 68.21 },
-      { concepto: "Mantenimiento Aire Acondicionado", bs: 30000.00, usd: 53.57 },
-      { concepto: "Sistema de Cámaras de Seguridad", bs: 33500.00, usd: 59.82 },
-      { concepto: "Jardinería y Áreas Verdes", bs: 44800.00, usd: 80.00 },
-      { concepto: "Administración y Seguimiento", bs: 112000.00, usd: 200.00 },
-      { concepto: "Fondo de Reserva Ordinario", bs: 134317.30, usd: 239.85 }
-    ],
-    gastos_sobrevenidos: [
-      { concepto: "Reparación bajante sótano", bs: 280000.00, usd: 500.00 },
-      { concepto: "2 discos duros 1TB DVR", bs: 212800.00, usd: 380.00 },
-      { concepto: "Mantenimiento correctivo planta", bs: 145000.00, usd: 260.00 }
-    ]
+    mes_relacion: new Date().toLocaleDateString('es-VE', { month: 'long', year: 'numeric' }).toUpperCase(),
+    tasa_cambio: bcvRate,
+    gastos_ordinarios: [] as any[],
+    gastos_sobrevenidos: [] as any[]
   }
 
   // Poll state
   const [newPollTitle, setNewPollTitle] = useState('')
+  const [newPollAmount, setNewPollAmount] = useState('')
   const [newPollDesc, setNewPollDesc] = useState('')
   const [opt1, setOpt1] = useState('')
   const [opt2, setOpt2] = useState('')
@@ -129,25 +166,25 @@ export const Admin: React.FC = () => {
     const poll: Poll = {
       id: Date.now().toString(),
       title: newPollTitle,
-      description: newPollDesc,
+      description: `${newPollDesc}${newPollAmount ? `\n\nMONTO ESTIMADO: ${formatUSD(parseFloat(newPollAmount))}` : ''}`,
       priority: 'Alta',
       endDate: 'Cierra en 3 días',
       totalVotes: 0,
       votedHouses: [],
       options: [{ text: opt1, votes: 0 }, { text: opt2, votes: 0 }]
     }
+    setPolls([poll, ...polls]) // Usar el estado local de polls
     addPoll(poll)
     alert('¡Votación publicada exitosamente!')
-    setNewPollTitle(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
-    setActiveTab('polls')
+    setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
   }
 
   const handleProcessSedemat = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const fileName = e.target.files[0].name;
-      alert(`Procesando recibo: ${fileName}...`);
+      alert(`Archivo ${fileName} detectado.`);
 
-      // Simulación de extracción de datos del recibo SEDEMAT del usuario
+      // Simulación de extracción de datos del recibo
       setTimeout(() => {
         const aseoBs = 240915.64;
         const gasBs = 90343.36;
@@ -155,9 +192,49 @@ export const Admin: React.FC = () => {
         const gasUsd = gasBs / bcvRate;
 
         setSedematData({ aseoBs, gasBs, aseoUsd, gasUsd });
-        alert('¡Recibo SEDEMAT procesado con éxito!\nSe han cargado los montos de Aseo y Gas.');
-      }, 1500);
+        setGastoDetail({ concepto: 'PAGO SERVICIOS MUNICIPALES', monto: aseoUsd + gasUsd, categoria: 'Impuestos/Servicios' });
+        setShowGastoDetail(true);
+      }, 1000);
     }
+  }
+
+  const handleImportDebts = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        setLoading(true);
+        // Ajustar la URL según el entorno (dev/prod)
+        const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:8000';
+
+        const response = await fetch(`${API_BASE}/api/v1/accounting/migrate-excel`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Error en el servidor');
+        }
+
+        const result = await response.json();
+        alert(`¡Migración Completada!\nProcesados: ${result.processed} registros.`);
+        console.table(result.details);
+        fetchData();
+      } catch (err: any) {
+        console.error('Error migrating debts:', err);
+        alert('Error al migrar deudas: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+
+  const toggleConvenio = (userId: number) => {
+    setUsers(users.map(u => u.id === userId ? { ...u, hasConvenio: !u.hasConvenio } : u));
+    alert("Estado de convenio actualizado para el propietario.");
   }
 
   const handleExportExcel = () => {
@@ -272,11 +349,6 @@ export const Admin: React.FC = () => {
     }, 500);
   }
 
-  const [users, setUsers] = useState([
-    { id: 1, name: "Jesus Pirela", email: "jesus@email.com", phone: "+584121234567", role: "Residente", house_number: "14-28", status: "Activo", debt: 865.00 },
-    { id: 2, name: "Carlos Mendoza", email: "carlos@email.com", phone: "+584149876543", role: "Residente", house_number: "11-45", status: "Activo", debt: 20.00 },
-    { id: 3, name: "Ana Rodríguez", email: "ana.r@email.com", phone: "+584241112233", role: "Residente", house_number: "05-12", status: "Activo", debt: 0.00 },
-  ]);
 
   const handleImportResidents = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -390,19 +462,23 @@ export const Admin: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '40px' }}>
 
-      <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(15, 85, 81, 0.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--accent-gold)' }}>
-            <img src={logoPremium} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          </div>
-          <div>
-            <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Caminos Admin</h1>
-            <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-sub)', letterSpacing: '1px', fontWeight: 800, textAlign: 'center' }}>PANEL DE CONTROL</p>
-          </div>
+      <header style={{ width: '100%', padding: '20px 0', borderBottom: '1px solid var(--border-color)', marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Caminos Admin</h1>
+          <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-sub)', letterSpacing: '1px', fontWeight: 800, textAlign: 'center' }}>PANEL DE CONTROL</p>
         </div>
       </header>
+
+      {/* Tabs Selector */}
+      <div style={{ display: 'flex', width: '100%', gap: '6px', padding: '0 10px 20px', marginBottom: '10px', justifyContent: 'center', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+        <TabItem active={activeTab === 'finance'} label="Finanzas" icon="finance" onClick={() => setActiveTab('finance')} />
+        <TabItem active={activeTab === 'users'} label="Usuarios" icon="group" onClick={() => setActiveTab('users')} />
+        <TabItem active={activeTab === 'payments'} label="Validar" icon="receipt_long" onClick={() => setActiveTab('payments')} />
+        <TabItem active={activeTab === 'polls'} label="Votos" icon="how_to_vote" onClick={() => setActiveTab('polls')} />
+        {user?.role === 'superadmin' && <TabItem active={activeTab === 'security'} label="Soporte" icon="admin_panel_settings" onClick={() => setActiveTab('security')} />}
+      </div>
 
       <main style={mainContentStyle}>
 
@@ -421,6 +497,9 @@ export const Admin: React.FC = () => {
 
                    {/* Otros botones debajo */}
                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                      <button onClick={() => { setGastoDetail({ concepto: '', monto: 0, categoria: 'Reparación' }); setShowGastoDetail(true); }} style={actionBtnStyle}>
+                         <span className="material-symbols-outlined" style={{ marginRight: '8px' }}>add_circle</span> Nuevo Gasto
+                      </button>
                       <button onClick={handleExportPDF} style={actionBtnStyle}>
                          <span className="material-symbols-outlined" style={{ marginRight: '8px' }}>picture_as_pdf</span> PDF
                       </button>
@@ -443,9 +522,43 @@ export const Admin: React.FC = () => {
                       <span style={{ fontSize: '13px' }}>Aseo Urbano</span>
                       <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(sedematData.aseoUsd)}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
                       <span style={{ fontSize: '13px' }}>Gas Doméstico</span>
                       <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(sedematData.gasUsd)}</span>
+                    </div>
+                  </div>
+                )}
+
+                {showGastoDetail && (
+                  <div style={{ backgroundColor: 'var(--icon-bg)', padding: '20px', borderRadius: '15px', marginBottom: '15px', border: '1px solid var(--border-color)' }}>
+                    <p style={labelStyle}>Registro de Gasto Detallado</p>
+                    <input
+                      style={{ ...inputStyle, padding: '10px', fontSize: '13px', marginBottom: '8px' }}
+                      value={gastoDetail.concepto}
+                      onChange={e => setGastoDetail({ ...gastoDetail, concepto: e.target.value })}
+                      placeholder="Concepto del gasto"
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        style={{ ...inputStyle, padding: '10px', fontSize: '13px' }}
+                        value={gastoDetail.monto}
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          setGastoDetail({ ...gastoDetail, monto: parseFloat(val) || 0 });
+                        }}
+                        placeholder="Monto $"
+                      />
+                      <button
+                        onClick={() => {
+                          alert("Gasto registrado en el libro diario contable.");
+                          setShowGastoDetail(false);
+                        }}
+                        style={{ ...primaryBtnStyleSmall, width: '100%', fontSize: '13px', justifyContent: 'center', padding: '14px' }}
+                      >
+                        GUARDAR GASTO
+                      </button>
                     </div>
                   </div>
                 )}
@@ -469,7 +582,7 @@ export const Admin: React.FC = () => {
         )}
 
         {activeTab === 'users' && (
-          <section style={{ width: '100%', animation: 'fadeIn 0.5s ease' }}>
+          <section style={{ width: '100%' }}>
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Gestión de Usuarios</h3>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
@@ -480,7 +593,12 @@ export const Admin: React.FC = () => {
                   <input type="file" id="import-residents" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportResidents} />
                   <button onClick={() => document.getElementById('import-residents')?.click()} style={{ ...primaryBtnStyleSmall, backgroundColor: 'var(--accent-gold)' }}>
                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
-                     <span>Importar Excel</span>
+                     <span>Importar Residentes</span>
+                  </button>
+                  <input type="file" id="import-debts" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportDebts} />
+                  <button onClick={() => document.getElementById('import-debts')?.click()} style={{ ...primaryBtnStyleSmall, backgroundColor: '#0f5551' }}>
+                     <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>history</span>
+                     <span>Migrar Deudas</span>
                   </button>
                 </div>
              </div>
@@ -530,6 +648,9 @@ export const Admin: React.FC = () => {
                         </div>
                      </div>
                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => toggleConvenio(u.id)} style={{ ...miniBtnStyle, borderColor: u.hasConvenio ? 'var(--accent-gold)' : 'var(--border-color)', backgroundColor: u.hasConvenio ? 'rgba(120, 89, 25, 0.1)' : 'transparent' }} title="Convenio de Pago">
+                           <span className="material-symbols-outlined" style={{ fontSize: '18px', color: u.hasConvenio ? 'var(--accent-gold)' : 'inherit' }}>handshake</span>
+                        </button>
                         <button onClick={() => generateStatementPDF(u)} style={{ ...miniBtnStyle, borderColor: 'var(--primary-color)', color: 'var(--primary-color)' }} title="Descargar PDF">
                            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>picture_as_pdf</span>
                         </button>
@@ -563,15 +684,34 @@ export const Admin: React.FC = () => {
                         </div>
                      </div>
 
+                     {p.description && (
+                        <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', borderLeft: '4px solid var(--accent-gold)' }}>
+                           <p style={{ margin: 0, fontSize: '12px', fontStyle: 'italic' }}>"{p.description}"</p>
+                        </div>
+                     )}
+
                      {p.screenshot_url && (
                         <div style={{ marginBottom: '15px' }}>
                            <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px' }}>COMPROBANTE:</p>
-                           <img
-                              src={p.screenshot_url}
-                              alt="Comprobante"
-                              style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
-                              onClick={() => window.open(p.screenshot_url, '_blank')}
-                           />
+                           {p.screenshot_url.toLowerCase().endsWith('.pdf') ? (
+                              <div
+                                onClick={() => window.open(p.screenshot_url, '_blank')}
+                                style={{ padding: '20px', backgroundColor: '#fde8e8', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', border: '1px solid #f8b4b4' }}
+                              >
+                                <span className="material-symbols-outlined" style={{ color: '#c82333', fontSize: '32px' }}>picture_as_pdf</span>
+                                <div>
+                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#c82333' }}>Ver Comprobante PDF</p>
+                                  <p style={{ margin: 0, fontSize: '11px', color: '#666' }}>Haga clic para abrir en nueva pestaña</p>
+                                </div>
+                              </div>
+                           ) : (
+                              <img
+                                 src={p.screenshot_url}
+                                 alt="Comprobante"
+                                 style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
+                                 onClick={() => window.open(p.screenshot_url, '_blank')}
+                              />
+                           )}
                         </div>
                      )}
 
@@ -589,52 +729,124 @@ export const Admin: React.FC = () => {
 
         {activeTab === 'polls' && (
           <section style={{ width: '100%' }}>
-             <h3 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", marginBottom: '25px' }}>Nueva Votación</h3>
-             <div style={cardStyle}>
-                <div style={{ marginBottom: '20px' }}>
-                   <label style={labelStyle}>Título</label>
-                   <input value={newPollTitle} onChange={e => setNewPollTitle(e.target.value)} style={inputStyle} />
+             <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", textAlign: 'center', marginBottom: '30px' }}>Votaciones y Decisiones</h3>
+
+             <div style={{ ...cardStyle, marginBottom: '30px' }}>
+                <p style={labelStyle}>CREAR NUEVA PROPUESTA</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
+                   <div>
+                      <label style={labelStyle}>Título</label>
+                      <input value={newPollTitle} onChange={e => setNewPollTitle(e.target.value)} style={inputStyle} placeholder="Ej: Cambio Bomba" />
+                   </div>
+                   <div>
+                      <label style={labelStyle}>Monto Estimado ($)</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={newPollAmount}
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          setNewPollAmount(val);
+                        }}
+                        style={inputStyle}
+                        placeholder="0.00"
+                      />
+                   </div>
                 </div>
                 <div style={{ marginBottom: '20px' }}>
                    <label style={labelStyle}>Descripción</label>
-                   <textarea value={newPollDesc} onChange={e => setNewPollDesc(e.target.value)} style={{ ...inputStyle, height: '100px' }} />
+                   <textarea value={newPollDesc} onChange={e => setNewPollDesc(e.target.value)} style={{ ...inputStyle, height: '100px' }} placeholder="Explique la necesidad del gasto..." />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '25px' }}>
-                   <div><label style={labelStyle}>Opción 1</label><input value={opt1} onChange={e => setOpt1(e.target.value)} style={inputStyle} /></div>
-                   <div><label style={labelStyle}>Opción 2</label><input value={opt2} onChange={e => setOpt2(e.target.value)} style={inputStyle} /></div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
+                   <div><label style={labelStyle}>Opción 1</label><input value={opt1} onChange={e => setOpt1(e.target.value)} style={inputStyle} placeholder="A Favor" /></div>
+                   <div><label style={labelStyle}>Opción 2</label><input value={opt2} onChange={e => setOpt2(e.target.value)} style={inputStyle} placeholder="En Contra" /></div>
                 </div>
-                <button onClick={handleCreatePoll} style={primaryBtnStyle}>Publicar</button>
+                <button onClick={handleCreatePoll} style={primaryBtnStyle}>Publicar Votación</button>
+             </div>
+
+             <p style={labelStyle}>VOTACIONES ACTIVAS / CERRADAS</p>
+             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {polls.map(p => (
+                   <div key={p.id} style={cardStyle}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
+                         <div>
+                            <p style={{ margin: 0, fontWeight: 700 }}>{p.title}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: Activa • Cierra: {p.endDate}</p>
+                         </div>
+                         <button
+                          onClick={() => {
+                            if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
+                              alert("¡Éxito! Se ha generado la deuda masiva.");
+                            }
+                          }}
+                          style={{ ...primaryBtnStyleSmall, backgroundColor: 'var(--accent-gold)' }}
+                         >
+                            Ejecutar Gasto
+                         </button>
+                      </div>
+                      <div style={{ marginTop: '15px', display: 'flex', gap: '20px' }}>
+                         {p.options.map((o, idx) => (
+                           <div key={idx} style={{ textAlign: 'center' }}>
+                              <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: idx === 0 ? 'var(--primary-color)' : '#ba1a1a' }}>{o.votes}</p>
+                              <p style={{ margin: 0, fontSize: '9px', fontWeight: 800 }}>{o.text}</p>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+                ))}
+             </div>
+          </section>
+        )}
+        {activeTab === 'security' && (
+          <section style={{ width: '100%' }}>
+             <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", textAlign: 'center', marginBottom: '30px' }}>Super Administrador</h3>
+
+             <div style={cardStyle}>
+                <p style={labelStyle}>CREAR NUEVO CONJUNTO / RESIDENCIA</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Adjunte el archivo Excel con la base de datos de propietarios para inicializar un nuevo conjunto residencial.</p>
+
+                <input type="file" id="super-import" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportResidents} />
+                <button
+                  onClick={() => document.getElementById('super-import')?.click()}
+                  style={{ ...primaryBtnStyle, backgroundColor: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                >
+                  <span className="material-symbols-outlined">add_business</span>
+                  IMPORTAR EXCEL Y CREAR CONJUNTO
+                </button>
+             </div>
+
+             <div style={{ ...cardStyle, marginTop: '20px' }}>
+                <p style={labelStyle}>SEGURIDAD Y API KEYS</p>
+                <input
+                  placeholder="Nombre del cliente (Ej: n8n Reportes)"
+                  value={newKeyName}
+                  onChange={e => setNewKeyName(e.target.value)}
+                  style={{ ...inputStyle, marginBottom: '15px' }}
+                />
+                <button
+                  onClick={async () => {
+                    if(!newKeyName) return alert('Ingresa un nombre');
+                    const fakeKey = 'condo_' + Math.random().toString(36).substring(2, 15);
+                    setGeneratedKey(fakeKey);
+                    setApiKeys([{ id: Date.now(), nombre_cliente: newKeyName, activo: true, fecha_creacion: new Date().toISOString() }, ...apiKeys]);
+                    setNewKeyName('');
+                  }}
+                  style={{ ...primaryBtnStyle, backgroundColor: 'var(--accent-gold)' }}
+                >
+                  Generar Key de Integración
+                </button>
              </div>
           </section>
         )}
       </main>
-
-      <nav style={bottomNavStyle}>
-        <NavIcon icon="account_balance_wallet" label="Finanzas" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
-        <NavIcon icon="group" label="Usuarios" active={activeTab === 'users'} onClick={() => setActiveTab('users')} />
-        <NavIcon icon="receipt_long" label="Pagos" active={activeTab === 'payments'} onClick={() => setActiveTab('payments')} />
-        <NavIcon icon="payments" label="Nómina" active={false} onClick={() => navigate('/admin/payroll')} />
-        <NavIcon icon="settings" label="Perfil" active={false} onClick={() => navigate('/profile')} />
-      </nav>
     </div>
   )
 }
 
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
-const mainContentStyle = { paddingTop: '100px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any }
+const mainContentStyle = { paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '850px', margin: '0 auto', boxSizing: 'border-box' as any }
 const actionBtnStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', color: 'var(--primary-color)', padding: '12px 20px', borderRadius: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', fontWeight: 700, fontSize: '14px' }
 const cardStyle = { backgroundColor: 'var(--card-bg)', padding: '30px', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any, boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
 const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', width: 'fit-content' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', outline: 'none', fontSize: '16px' }
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as any, letterSpacing: '0.5px' }
 const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, cursor: 'pointer', fontSize: '16px' }
-const bottomNavStyle = { position: 'fixed' as any, bottom: 0, width: '100%', height: '85px', backgroundColor: 'var(--card-bg)', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 1000 }
-
-const NavIcon = ({ icon, label, active, onClick }: any) => (
-  <div onClick={onClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ backgroundColor: active ? 'rgba(198, 160, 89, 0.15)' : 'transparent', padding: '8px 20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <span className="material-symbols-outlined" style={{ color: active ? 'var(--accent-gold)' : 'var(--text-sub)', fontSize: '28px', fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>{icon}</span>
-      <span style={{ fontSize: '10px', color: active ? 'var(--accent-gold)' : 'var(--text-sub)', fontWeight: active ? 700 : 500, marginTop: '4px' }}>{label}</span>
-    </div>
-  </div>
-)

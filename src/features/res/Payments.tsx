@@ -1,9 +1,25 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { formatBs, formatUSD } from '../../utils/currency'
 import { useCurrencyStore } from '../../store/useCurrencyStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
+import { sanitizeString } from '../../utils/security'
+
+const THEME = {
+  colors: {
+    primary: '#0f5551',
+    accentGold: '#785919',
+    bg: '#F4F7F6',
+    white: '#ffffff',
+    text: '#1b1c1a',
+    textSub: '#5f6b69',
+    border: '#E2E8E7',
+    success: '#27ae60',
+  },
+  shadow: '0px 10px 30px rgba(0,0,0,0.05)',
+  radius: '24px'
+}
 
 export const Payments: React.FC = () => {
   const navigate = useNavigate()
@@ -12,9 +28,36 @@ export const Payments: React.FC = () => {
   const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
   const [fileAttached, setFileAttached] = useState<File | null>(null)
   const [senderName, setSenderName] = useState('')
+  const [reference, setReference] = useState('')
+  const [originBank, setOriginBank] = useState('')
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
+  const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
+  const [debts, setDebts] = useState<any[]>([])
+  const [loadingDebts, setLoadingDebts] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const debtUSD = 20.00
+  const debtUSD = debts.length > 0 ? debts.reduce((acc, d) => acc + d.monto_pendiente, 0) : 0
+
+  useEffect(() => {
+    fetchDebts()
+  }, [])
+
+  const fetchDebts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('residente_id', user?.id)
+        .eq('pagada', false)
+
+      if (error) throw error
+      setDebts(data || [])
+    } catch (err) {
+      console.error("Error al cargar deudas:", err)
+    } finally {
+      setLoadingDebts(false)
+    }
+  }
 
   const handleAttachCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -52,16 +95,23 @@ export const Payments: React.FC = () => {
         screenshotUrl = publicUrl
       }
 
+      const cleanReference = sanitizeString(reference)
+      const cleanBank = sanitizeString(originBank)
+      const cleanDescription = sanitizeString(description)
+      const cleanSender = sanitizeString(senderName)
+
       const { error: dbError } = await supabase
         .from('payments')
         .insert([
           {
-            user_id: user?.id,
-            amount_usd: debtUSD,
-            method: selectedMethod,
-            screenshot_url: screenshotUrl,
-            status: 'pending',
-            details: selectedMethod === 'zelle' ? { sender: senderName } : {}
+            profile_id: user?.id,
+            monto_bs: debtUSD * bcvRate,
+            referencia: cleanReference,
+            banco_origen: cleanBank,
+            status: 'pendiente',
+            evidencia_url: screenshotUrl,
+            description: cleanDescription,
+            details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate } : { fecha: paymentDate }
           }
         ])
 
@@ -118,11 +168,57 @@ export const Payments: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <InfoRow label="BANCO" value="Banco Nacional de Crédito (0191)" />
+                  <InfoRow label="BANCO RECEPTOR" value="Banco Nacional de Crédito (0191)" />
                   <InfoRow label="RIF" value="J-299007323" />
                   {!isPM && <InfoRow label="CUENTA" value="0191-0000-00-0000000000" />}
-                  {!isPM && <InfoRow label="NOMBRE" value="Adm. Conj. Las Huertas" />}
-                  <InfoRow label="TELÉFONO" value="04121064643" />
+                  <InfoRow label="NOMBRE" value="Adm. Conj. Las Huertas" />
+
+                  <div style={{ marginTop: '20px', borderTop: '1px solid #efeeeb', paddingTop: '20px' }}>
+                    <label style={labelStyle}>DATOS DE TU PAGO</label>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>BANCO DE ORIGEN</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Banesco, Mercantil..."
+                        value={originBank}
+                        onChange={(e) => setOriginBank(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
+                      <input
+                        type="text"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>FECHA DEL PAGO</label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
+                      <textarea
+                        placeholder="Ej: Pago de condominio Octubre y cuota extra de bomba"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        style={{ ...inputStyle, height: '80px', resize: 'none' }}
+                      />
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -157,9 +253,9 @@ export const Payments: React.FC = () => {
                 }}
               >
                 <span className="material-symbols-outlined">{fileAttached ? 'check_circle' : 'cloud_upload'}</span>
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>{fileAttached ? 'Capture Adjuntado' : 'Subir Capture de Pantalla'}</span>
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>{fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}</span>
               </button>
-              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*" style={{ display: 'none' }} />
+              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
             </div>
 
             <button
@@ -246,14 +342,14 @@ const PaymentOption = ({ icon, label, sublabel, highlight, onClick }: any) => (
   </div>
 )
 
-const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5', borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
-const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }
-const titleStyle = { fontFamily: "'EB Garamond', serif", fontSize: '20px', color: '#0f5551', fontWeight: 700, margin: '0 0 0 15px' }
-const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any }
-const cardStyle = { backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '24px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
+const containerStyle = { backgroundColor: THEME.colors.bg, fontFamily: "'Inter', sans-serif", color: THEME.colors.text, display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: THEME.colors.white, borderBottom: `1px solid ${THEME.colors.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
+const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: THEME.colors.primary }
+const titleStyle = { fontSize: '18px', color: THEME.colors.primary, fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
+const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px' }
+const cardStyle = { backgroundColor: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: THEME.radius, padding: '30px', boxShadow: THEME.shadow }
 const infoGridStyle = { display: 'flex', flexDirection: 'column' as any, gap: '15px' }
-const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #efeeeb', paddingBottom: '10px' }
-const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: '#785919', marginBottom: '12px', letterSpacing: '1px' }
-const inputStyle = { width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #bfc8c7', fontSize: '15px', boxSizing: 'border-box' as any, outline: 'none' }
-const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: '#0f5551', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }
+const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #efeeeb', paddingBottom: '12px' }
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 900, color: THEME.colors.textSub, marginBottom: '12px', letterSpacing: '1px' }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: `1px solid ${THEME.colors.border}`, fontSize: '16px', boxSizing: 'border-box' as any, outline: 'none', backgroundColor: THEME.colors.bg }
+const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: THEME.colors.primary, color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }

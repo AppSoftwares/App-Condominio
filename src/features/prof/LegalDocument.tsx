@@ -15,15 +15,19 @@ export const LegalDocument: React.FC = () => {
           p: 'Recopilamos datos de perfil (nombre, cédula, correo), información residencial (etapa, conjunto, casa), registros de acceso de invitados y comprobantes de pago adjuntos por el usuario.'
         },
         {
-          h: '2. Uso de la Información',
+          h: '2. Etiqueta de Privacidad (Datos Tratados)',
+          p: 'Lista de datos recolectados: Identificadores Personales (Nombre, Email, ID), Ubicación (GPS para validación de entrada), Datos Sensibles (Biometría si se activa), Contenido del Usuario (Fotos de recibos), y Diagnósticos de la App.'
+        },
+        {
+          h: '3. Uso de la Información',
           p: 'Sus datos se utilizan exclusivamente para la gestión administrativa del condominio, la seguridad en garita (vía pases QR) y la facilitación de pagos y reservas de áreas comunes.'
         },
         {
-          h: '3. Protección de Datos',
+          h: '4. Protección de Datos',
           p: 'Implementamos encriptación de nivel bancario y Seguridad a Nivel de Fila (RLS) para asegurar que ningún usuario pueda ver la información privada de otro vecino.'
         },
         {
-          h: '4. Sus Derechos',
+          h: '5. Sus Derechos',
           p: 'Usted puede acceder, rectificar o solicitar la eliminación de sus datos en cualquier momento desde la sección de Ajustes o contactando a la administración.'
         }
       ]
@@ -32,16 +36,16 @@ export const LegalDocument: React.FC = () => {
       title: 'Términos y Condiciones',
       sections: [
         {
-          h: '1. Responsabilidad del Usuario',
-          p: 'El usuario se compromete a proporcionar información veraz y a no compartir sus credenciales de acceso con terceros.'
+          h: '1. Responsabilidad del Usuario y Takedown',
+          p: 'El usuario es el único responsable por cualquier contenido (imágenes, textos o documentos) que suba a la plataforma. La administración se reserva el derecho de retirar (Takedown) cualquier contenido indebido o que infrinja derechos de autor sin previo aviso, trasladando cualquier responsabilidad legal al usuario que realizó la carga.'
         },
         {
-          h: '2. Uso del Sistema de Pagos',
-          p: 'Los pagos registrados a través de la app (Pago Móvil, Zelle o Venflow) están sujetos a validación administrativa en un plazo de 24 a 48 horas hábiles.'
+          h: '2. Cláusula de Arbitraje',
+          p: 'Cualquier controversia derivada del uso de esta plataforma o interpretación de estos términos se resolverá exclusivamente mediante arbitraje institucional, renunciando las partes a cualquier otra jurisdicción ordinaria.'
         },
         {
-          h: '3. Normas de Convivencia',
-          p: 'El uso de la aplicación implica la aceptación del manual de convivencia del condominio, incluyendo el respeto a los horarios de ruidos y áreas comunes.'
+          h: '3. Uso del Sistema de Pagos',
+          p: 'Los pagos registrados a través de la app están sujetos a validación administrativa. El intento de registro de pagos falsos resultará en la suspensión inmediata de la cuenta.'
         },
         {
           h: '4. Seguridad y QR',

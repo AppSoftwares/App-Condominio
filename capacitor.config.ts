@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.caminos.lagunita',
-  appName: 'Caminos de la Lagunita',
+  appName: 'Condominio',
   webDir: 'dist'
 };
 

@@ -20,8 +20,10 @@
 ## 📱 Instalación
 1. Clonar el repositorio.
 2. `npm install`
-3. `npx cap sync android`
-4. `npx cap open android` (Para generar el APK)
+3. `npm run build`
+4. `npx cap sync android`
+5. `npm run build:apk` (Para generar el archivo .apk final)
+6. El APK se generará en: `android/app/build/outputs/apk/release/`
 
 ---
 *Desarrollado para la excelencia en la convivencia residencial.*

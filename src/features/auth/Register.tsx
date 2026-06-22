@@ -21,7 +21,7 @@ export const Register: React.FC = () => {
 
     try {
       // 1. Validación contra la lista importada del Excel
-      const cleanEmail = email.toLowerCase().trim();
+      const cleanEmail = email.toUpperCase().trim();
       const whitelistedUser = whitelist.find(u => u.email === cleanEmail);
 
       if (!whitelistedUser) {
@@ -75,7 +75,7 @@ export const Register: React.FC = () => {
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
   const inputStyle: React.CSSProperties = { width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
-  const containerStyle: React.CSSProperties = { minHeight: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' }
+  const containerStyle: React.CSSProperties = { height: '100%', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' }
 
   if (step === 1) {
     return (
@@ -102,11 +102,25 @@ export const Register: React.FC = () => {
           <div style={cardStyle}>
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>Correo Electrónico</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="ejemplo@email.com" style={inputStyle} />
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value.toUpperCase())}
+                placeholder="EJEMPLO@EMAIL.COM"
+                autoCapitalize="characters"
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+              />
             </div>
             <div style={{ marginBottom: '30px' }}>
               <label style={labelStyle}>Contraseña</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value.toUpperCase())}
+                placeholder="••••••••"
+                autoCapitalize="characters"
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+              />
             </div>
             <button onClick={() => setStep(2)} style={primaryBtnStyle}>Siguiente</button>
           </div>
@@ -140,11 +154,25 @@ export const Register: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
             <div>
               <label style={labelStyle}>Nombre</label>
-              <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Juan" style={inputStyle} />
+              <input
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value.toUpperCase())}
+                placeholder="JUAN"
+                autoCapitalize="characters"
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+              />
             </div>
             <div>
               <label style={labelStyle}>Apellido</label>
-              <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Pérez" style={inputStyle} />
+              <input
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value.toUpperCase())}
+                placeholder="PÉREZ"
+                autoCapitalize="characters"
+                style={{ ...inputStyle, textTransform: 'uppercase' }}
+              />
             </div>
           </div>
           <div style={{ marginBottom: '20px' }}>
@@ -157,7 +185,14 @@ export const Register: React.FC = () => {
           </div>
           <div style={{ marginBottom: '30px' }}>
             <label style={labelStyle}>Número de Casa</label>
-            <input type="text" value={house} onChange={e => setHouse(e.target.value)} placeholder="Ej: 14-02" style={inputStyle} />
+            <input
+              type="text"
+              value={house}
+              onChange={e => setHouse(e.target.value.toUpperCase())}
+              placeholder="EJ: 14-02"
+              autoCapitalize="characters"
+              style={{ ...inputStyle, textTransform: 'uppercase' }}
+            />
           </div>
           <button type="submit" disabled={loading} style={primaryBtnStyle}>
             {loading ? 'Validando...' : 'Enviar Solicitud'}
