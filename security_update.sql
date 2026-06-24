@@ -86,3 +86,25 @@ CREATE INDEX IF NOT EXISTS idx_profiles_house ON profiles(house_number);
 -- Se recomienda configurar en el Dashboard de Supabase:
 -- Auth > Settings > Rate Limits
 -- Email: 3 solicitudes por hora por IP/Usuario.
+
+-- 6. CORRECCIÓN DE SEGURIDAD PARA FUNCIONES (is_admin)
+-- Corrige "Function Search Path Mutable" y acceso RPC no autorizado
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM anon;
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO service_role;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO postgres;

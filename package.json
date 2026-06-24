@@ -7,13 +7,15 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "sync": "cap sync",
-    "build:apk": "pnpm run build && pnpm cap sync android && cd android && ./gradlew.bat assembleRelease",
+    "build:apk": "pnpm run build && pnpm cap sync android && cd android && gradlew.bat assembleRelease",
     "release:android": "pnpm run build && pnpm cap copy android && pnpm cap sync android",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/browser": "^6.0.0",
     "@capacitor/cli": "^6.0.0",
     "@capacitor/core": "^6.0.0",
     "@capacitor/ios": "^6.0.0",

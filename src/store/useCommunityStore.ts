@@ -43,29 +43,9 @@ interface CommunityState {
 export const useCommunityStore = create<CommunityState>()(
   persist(
     (set, get) => ({
-      polls: [
-        {
-          id: '1',
-          title: 'Nuevo color de fachada',
-          description: 'Seleccione la paleta cromática para la renovación exterior de los edificios Fase 1.',
-          priority: 'Alta',
-          endDate: '2024-10-15',
-          totalVotes: 100,
-          votedHouses: [],
-          options: [
-            { text: 'Verde Musgo & Piedra', votes: 64 },
-            { text: 'Arena & Ochre', votes: 36 }
-          ]
-        }
-      ],
-      announcements: [
-        { id: '1', title: 'Informe de Mantenimiento Trimestral Q3', date: 'Hace 2 días', type: 'PDF', size: '1.2MB' },
-        { id: '2', title: 'Nuevos Protocolos de Seguridad', date: 'Publicado el 12 Oct', type: 'Doc' },
-        { id: '3', title: 'Minuta Asamblea General de Propietarios', date: 'Publicado el 5 Oct', type: 'Minuta' }
-      ],
-      incidents: [
-        { id: '1', category: 'Ruidos', location: 'Casa 14-05', description: 'Música alta a la 1:00 AM.', date: 'Hace 10 min', status: 'Pendiente', houseNumber: '14-05' }
-      ],
+      polls: [],
+      announcements: [],
+      incidents: [],
       addPoll: (poll) => set((state) => ({ polls: [poll, ...state.polls] })),
       addAnnouncement: (ann) => set((state) => ({ announcements: [ann, ...state.announcements] })),
       addIncident: (incident) => set((state) => ({ incidents: [incident, ...state.incidents] })),

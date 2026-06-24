@@ -31,7 +31,56 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       whitelist: [
-        // ... (se mantienen los datos existentes para compatibilidad)
+        {
+          id: '11f36bf3-d939-4844-bd48-84cb151b8f55',
+          name: 'JESÚS ADMIN',
+          email: 'admin@caminos.com',
+          password: 'JESUS.ADMIN.CAMINOS',
+          role: 'ADMINISTRADOR',
+          conjunto: 'LAS HUERTAS',
+          house_number: 'ADMIN-01',
+          etapa: 'I'
+        },
+        {
+          id: '7386a821-2d6d-4add-b923-db6aa3974bc0',
+          name: 'JESÚS ADMIN',
+          email: 'admin@huertas.com',
+          password: 'JESUS.ADMIN.HUERTAS',
+          role: 'ADMINISTRADOR',
+          conjunto: 'LAS HUERTAS',
+          house_number: 'ADMIN-02',
+          etapa: 'III ETAPA'
+        },
+        {
+          id: 'c0abf806-8d6d-4836-b738-5fa9c0351c0a',
+          name: 'CARLOS PIRELA',
+          email: 'ofi.pirela@gmail.com',
+          password: 'CARLOS.HUERTAS.123',
+          role: 'RESIDENTE',
+          conjunto: 'LAS HUERTAS',
+          house_number: '14-28',
+          etapa: 'III ETAPA'
+        },
+        {
+          id: 'f9075e77-2e22-4c9f-9109-4f2f7d82f0df',
+          name: 'JESÚS PIRELA',
+          email: 'jess.pirela@gmail.com',
+          password: 'JESUS.HUERTAS.123',
+          role: 'RESIDENTE',
+          conjunto: 'LAS HUERTAS',
+          house_number: '14-28',
+          etapa: 'III ETAPA'
+        },
+        {
+          id: 'a4b19db7-6a38-4803-b33e-b6e0908ab909',
+          name: 'JESÚS VIGILANTE',
+          email: 'vigilante@huertas.com',
+          password: 'JESUS.VIGILANTE.HUERTAS',
+          role: 'VIGILANTE',
+          conjunto: 'LAS HUERTAS',
+          house_number: 'CASETA',
+          etapa: 'III ETAPA'
+        }
       ],
       setUser: (user) => set({ user }),
       setWhitelist: (list) => set({ whitelist: list }),
@@ -62,6 +111,6 @@ export const useAuthStore = create<AuthState>()(
         })
       }
     }),
-    { name: 'auth-storage-v2' }
+    { name: 'auth-storage-v5' }
   )
 )

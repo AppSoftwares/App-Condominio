@@ -15,28 +15,35 @@ export const Incidents: React.FC = () => {
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!location || !description) return alert('Por favor complete todos los campos.')
 
     setIsSubmitting(true)
-    setTimeout(() => {
-      const newIncident: Incident = {
-        id: Date.now().toString(),
-        category,
-        location: sanitizeString(location),
-        description: sanitizeString(description),
-        date: 'Recién publicado',
-        status: 'Pendiente',
-        houseNumber: user?.house_number || 'UNKNOWN'
-      }
-      addIncident(newIncident)
-      setIsSubmitting(false)
+    try {
+      const { error } = await supabase
+        .from('incidents')
+        .insert([{
+          profile_id: user?.id,
+          category,
+          location: sanitizeString(location),
+          description: sanitizeString(description),
+          status: 'Pendiente'
+        }])
+
+      if (error) throw error
+
       alert('Reporte enviado con éxito. La administración revisará su caso.')
       setLocation('')
       setDescription('')
+
+      // Forzar recarga de incidentes si fuera necesario, o simplemente limpiar
       setActiveTab('report')
-    }, 1200)
+    } catch (err: any) {
+      alert('Error al enviar incidencia: ' + err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -47,7 +54,7 @@ export const Incidents: React.FC = () => {
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>
-            {activeTab === 'rules' ? 'Normas de Convivencia' : 'Reportar Incidente'}
+            Condominio
           </h1>
         </div>
       </header>

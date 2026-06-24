@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 
 export const Register: React.FC = () => {
@@ -9,6 +10,7 @@ export const Register: React.FC = () => {
   const [step, setStep] = useState(1)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [cluster, setCluster] = useState('Punta de Piedra')
@@ -85,9 +87,7 @@ export const Register: React.FC = () => {
             onClick={() => navigate('/auth')}
             style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="#0f5551"/>
-            </svg>
+            <ArrowLeft size={24} color="#0f5551" />
           </button>
           <h1 style={{ ...titleStyle, margin: 0 }}>Crear Cuenta</h1>
         </header>
@@ -113,14 +113,36 @@ export const Register: React.FC = () => {
             </div>
             <div style={{ marginBottom: '30px' }}>
               <label style={labelStyle}>Contraseña</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value.toUpperCase())}
-                placeholder="••••••••"
-                autoCapitalize="characters"
-                style={{ ...inputStyle, textTransform: 'uppercase' }}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ ...inputStyle, paddingRight: '50px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary-color)',
+                    padding: '8px',
+                    zIndex: 10
+                  }}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
             <button onClick={() => setStep(2)} style={primaryBtnStyle}>Siguiente</button>
           </div>
@@ -136,9 +158,7 @@ export const Register: React.FC = () => {
           onClick={() => setStep(1)}
           style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 11H7.83L13.42 5.41L12 4L4 12L12 20L13.41 18.59L7.83 13H20V11Z" fill="#0f5551"/>
-          </svg>
+          <ArrowLeft size={24} color="#0f5551" />
         </button>
         <h1 style={{ ...titleStyle, margin: 0 }}>Datos Residenciales</h1>
       </header>

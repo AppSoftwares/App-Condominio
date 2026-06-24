@@ -8,27 +8,55 @@ export const ResDash: React.FC = () => {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [announcements, setAnnouncements] = React.useState<any[]>([])
+  const [totalDebt, setTotalDebt] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    const fetchAnnouncements = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch Announcements
+        const { data: annData } = await supabase
           .from('announcements')
           .select('*')
           .order('fecha_creacion', { ascending: false })
           .limit(3)
 
-        if (error) throw error
-        setAnnouncements(data || [])
+        setAnnouncements(annData || [])
+
+        // Fetch Total Debt logic
+        const { data: debtData } = await supabase
+          .from('debts')
+          .select('monto_pendiente')
+          .eq('residente_id', user?.id)
+          .eq('pagada', false)
+
+        // Fetch Condo Settings
+        const { data: settings } = await supabase
+          .from('condo_settings')
+          .select('*')
+          .eq('id', 1)
+          .single()
+
+        if (debtData && debtData.length > 0) {
+          const total = debtData.reduce((acc, d) => acc + Number(d.monto_pendiente), 0)
+          setTotalDebt(total)
+        } else if (settings) {
+          // If no specific debt entries, calculate based on monthly settings
+          const today = new Date()
+          const currentDay = today.getDate()
+          const isProntoPago = currentDay <= settings.dias_pronto_pago
+          const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
+          setTotalDebt(Number(montoACobrar))
+        }
+
       } catch (err) {
-        console.error("Error al cargar anuncios:", err)
+        console.error("Error al cargar datos del dashboard:", err)
       } finally {
         setLoading(false)
       }
     }
-    fetchAnnouncements()
-  }, [])
+    fetchData()
+  }, [user?.id])
 
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
@@ -39,7 +67,7 @@ export const ResDash: React.FC = () => {
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '2px solid var(--accent-gold)', flexShrink: 0 }}>
             {user?.first_name?.[0]}{user?.last_name?.[0]}
           </div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Caminos de la Lagunita</h1>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio</h1>
         </div>
       </header>
 
@@ -48,7 +76,7 @@ export const ResDash: React.FC = () => {
         {/* Welcome Section */}
         <section style={{ marginBottom: '32px', textAlign: 'center' }}>
           <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '38px', color: 'var(--primary-color)', margin: '0 0 8px 0', lineHeight: 1.1 }}>¡Bienvenido, {user?.first_name || 'Residente'}!</h2>
-          <p style={{ fontSize: '15px', color: 'var(--text-sub)', margin: 0, fontWeight: 500 }}>Conjunto {user?.residential_cluster || 'Punta de Piedra'}, Casa {user?.house_number || '11-45'}</p>
+          <p style={{ fontSize: '15px', color: 'var(--text-sub)', margin: 0, fontWeight: 500 }}>Conjunto {user?.residential_cluster || 'Punta de Piedra'}, Casa {user?.house_number || 'N/A'}</p>
           <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '15px auto 0', borderRadius: '2px' }}></div>
         </section>
 
@@ -58,13 +86,19 @@ export const ResDash: React.FC = () => {
           <div style={{ ...cardStyle, textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>Estado de Cuenta</span>
-              <span style={{ backgroundColor: 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>PENDIENTE</span>
+              <span style={{ backgroundColor: totalDebt > 0 ? '#ba1a1a' : 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>
+                {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
+              </span>
             </div>
             <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>$20.00</h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-sub)', fontWeight: 600 }}>Próximo Vencimiento: 15 Oct, 2024</p>
+              <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>
+                ${totalDebt.toFixed(2)}
+              </h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-sub)', fontWeight: 600 }}>Saldo actual a pagar</p>
             </div>
-            <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>Pagar Ahora</button>
+            <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>
+              {totalDebt > 0 ? 'Pagar Ahora' : 'Ver Detalles'}
+            </button>
           </div>
 
           {/* Quick Actions Grid */}

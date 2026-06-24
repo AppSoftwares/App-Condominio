@@ -25,8 +25,10 @@ import { Incidents } from './features/res/Incidents'
 import { useAuthStore, UserRole } from './store/useAuthStore'
 import { useCurrencyStore } from './store/useCurrencyStore'
 import { useThemeStore } from './store/useThemeStore'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { ScrollToTop } from './components/ScrollToTop'
+import { useUpdateCheck } from './hooks/useUpdateCheck'
+import { UpdateModal } from './components/UpdateModal'
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -47,6 +49,15 @@ function App() {
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
 
+  const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+
+  useEffect(() => {
+    if (isUpdateAvailable) {
+      setShowUpdateModal(true)
+    }
+  }, [isUpdateAvailable])
+
   useEffect(() => {
     initializeAuth()
   }, [initializeAuth])
@@ -66,6 +77,15 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      {updateInfo && (
+        <UpdateModal
+          isOpen={showUpdateModal}
+          versionName={updateInfo.versionName}
+          releaseNotes={updateInfo.releaseNotes}
+          onUpdate={performUpdate}
+          onClose={() => setShowUpdateModal(false)}
+        />
+      )}
       <Routes>
         <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
         <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />

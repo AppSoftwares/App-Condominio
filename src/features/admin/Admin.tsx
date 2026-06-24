@@ -51,6 +51,14 @@ export const Admin: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Condo Settings State
+  const [condoSettings, setCondoSettings] = useState({
+    cuota_mensual_usd: 25,
+    monto_pronto_pago_usd: 20,
+    dias_pronto_pago: 5
+  })
+  const [isSavingSettings, setIsSavingSettings] = useState(false)
+
   // Poll state
   const [polls, setPolls] = useState<Poll[]>([
     {
@@ -106,6 +114,21 @@ export const Admin: React.FC = () => {
       if (paymentError) throw paymentError
       setPayments(paymentData)
 
+      // Fetch Condo Settings
+      const { data: settingsData } = await supabase
+        .from('condo_settings')
+        .select('*')
+        .eq('id', 1)
+        .single()
+
+      if (settingsData) {
+        setCondoSettings({
+          cuota_mensual_usd: settingsData.cuota_mensual_usd,
+          monto_pronto_pago_usd: settingsData.monto_pronto_pago_usd,
+          dias_pronto_pago: settingsData.dias_pronto_pago
+        })
+      }
+
     } catch (err: any) {
       console.error('Error fetching admin data:', err.message)
     } finally {
@@ -140,6 +163,28 @@ export const Admin: React.FC = () => {
       fetchData()
     } catch (err: any) {
       alert('Error al validar pago: ' + err.message)
+    }
+  }
+
+  const saveCondoSettings = async () => {
+    setIsSavingSettings(true)
+    try {
+      const { error } = await supabase
+        .from('condo_settings')
+        .upsert({
+          id: 1,
+          cuota_mensual_usd: condoSettings.cuota_mensual_usd,
+          monto_pronto_pago_usd: condoSettings.monto_pronto_pago_usd,
+          dias_pronto_pago: condoSettings.dias_pronto_pago,
+          updated_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+      alert('Configuración guardada exitosamente')
+    } catch (err: any) {
+      alert('Error al guardar configuración: ' + err.message)
+    } finally {
+      setIsSavingSettings(false)
     }
   }
 
@@ -466,7 +511,7 @@ export const Admin: React.FC = () => {
 
       <header style={{ width: '100%', padding: '20px 0', borderBottom: '1px solid var(--border-color)', marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Caminos Admin</h1>
+          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio Admin</h1>
           <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-sub)', letterSpacing: '1px', fontWeight: 800, textAlign: 'center' }}>PANEL DE CONTROL</p>
         </div>
       </header>
@@ -572,10 +617,51 @@ export const Admin: React.FC = () => {
 
                 <div style={{ marginTop: '25px', paddingTop: '20px', borderTop: '2px dashed var(--border-color)' }}>
                    <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)', marginBottom: '15px', letterSpacing: '1px' }}>GESTIÓN DE PERSONAL</p>
-                   <button onClick={() => navigate('/admin/payroll')} style={{ ...primaryBtnStyleSmall, width: '100%', justifyContent: 'center', backgroundColor: 'var(--primary-color)' }}>
+                   <button onClick={() => navigate('/admin/payroll')} style={{ ...primaryBtnStyleSmall, width: '100%', justifyContent: 'center', backgroundColor: 'var(--primary-color)', marginBottom: '20px' }}>
                       <span className="material-symbols-outlined">payments</span>
                       <span>GESTIONAR NÓMINA DE EMPLEADOS</span>
                    </button>
+
+                   <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '15px', letterSpacing: '1px', marginTop: '10px' }}>CONFIGURACIÓN DE CUOTAS</p>
+                   <div style={{ ...cardStyle, padding: '20px', backgroundColor: 'rgba(198, 160, 89, 0.05)', border: '1px solid var(--accent-gold)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+                         <div>
+                            <label style={labelStyle}>CUOTA MENSUAL ($)</label>
+                            <input
+                              type="number"
+                              style={inputStyle}
+                              value={condoSettings.cuota_mensual_usd}
+                              onChange={e => setCondoSettings({...condoSettings, cuota_mensual_usd: parseFloat(e.target.value)})}
+                            />
+                         </div>
+                         <div>
+                            <label style={labelStyle}>PRONTO PAGO ($)</label>
+                            <input
+                              type="number"
+                              style={inputStyle}
+                              value={condoSettings.monto_pronto_pago_usd}
+                              onChange={e => setCondoSettings({...condoSettings, monto_pronto_pago_usd: parseFloat(e.target.value)})}
+                            />
+                         </div>
+                      </div>
+                      <div style={{ marginBottom: '20px' }}>
+                         <label style={labelStyle}>DÍAS LÍMITE PRONTO PAGO (HASTA EL DÍA...)</label>
+                         <input
+                           type="number"
+                           style={inputStyle}
+                           value={condoSettings.dias_pronto_pago}
+                           onChange={e => setCondoSettings({...condoSettings, dias_pronto_pago: parseInt(e.target.value)})}
+                         />
+                      </div>
+                      <button
+                        onClick={saveCondoSettings}
+                        disabled={isSavingSettings}
+                        style={{ ...primaryBtnStyleSmall, width: '100%', justifyContent: 'center', backgroundColor: 'var(--accent-gold)' }}
+                      >
+                         <span className="material-symbols-outlined">save</span>
+                         <span>{isSavingSettings ? 'GUARDANDO...' : 'GUARDAR CONFIGURACIÓN'}</span>
+                      </button>
+                   </div>
                 </div>
              </div>
           </section>

@@ -1,6 +1,7 @@
 // Creado por Jesús Pirela.
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useAuthStore, UserRole } from '../../store/useAuthStore'
 import { sanitizeString, isValidEmail } from '../../utils/security'
 import icono from '../../assets/icono.png'
@@ -11,6 +12,7 @@ export const Login: React.FC = () => {
   const { setUser, whitelist } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isForgot, setIsForgot] = useState(false)
   const [resetSent, setResetSent] = useState(false)
@@ -20,14 +22,15 @@ export const Login: React.FC = () => {
     setLoading(true)
 
     const cleanEmail = sanitizeString(email).toUpperCase().trim()
-    const cleanPassword = password.toUpperCase().trim()
+    const cleanPassword = password.trim()
 
     console.log('Login attempt:', { email: cleanEmail, password: cleanPassword });
 
     // 1. Intentar validación con Whitelist (Excel de la imagen)
+    // Para la whitelist, comparamos en mayúsculas para mayor flexibilidad
     let localUser = whitelist.find(u =>
       u.email.toUpperCase().trim() === cleanEmail &&
-      u.password.toUpperCase().trim() === cleanPassword
+      u.password.toUpperCase().trim() === cleanPassword.toUpperCase()
     )
 
     if (localUser) {
@@ -111,16 +114,18 @@ export const Login: React.FC = () => {
     try {
       const cleanEmail = sanitizeString(email).toUpperCase().trim()
 
-      // Enviamos el correo directamente. Supabase no revelará si el correo existe o no por seguridad,
-      // pero esto evita la recursión infinita en la tabla profiles.
+      // Para recuperación de contraseña en producción, el redirectTo debe ser la URL pública.
+      // Si aún no tienes dominio, se recomienda usar la URL de Vercel/Netlify.
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: `${window.location.origin}/login`,
       })
 
       if (error) throw error
+      alert('Se ha enviado un enlace de recuperación a su correo. Revise su bandeja de entrada (y spam).')
       setResetSent(true)
+      setIsForgot(false)
     } catch (error: any) {
-      alert(error.message || 'Error al enviar enlace')
+      alert('Error: ' + (error.message || 'No se pudo enviar el enlace. Verifique que el correo esté registrado.'))
     } finally {
       setLoading(false)
     }
@@ -135,7 +140,7 @@ export const Login: React.FC = () => {
             onClick={() => navigate('/auth')}
             style={{ position: 'absolute', left: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
           >
-            <span className="material-symbols-outlined" style={{ color: 'var(--primary-color)' }}>arrow_back</span>
+            <ArrowLeft size={24} color="#0f5551" />
           </button>
        </header>
 
@@ -155,12 +160,11 @@ export const Login: React.FC = () => {
                <div style={{ textAlign: 'left' }}>
                   <label style={labelStyle}>Correo Electrónico</label>
                   <input
-                    type="text"
+                    type="email"
                     value={email}
                     onChange={e => setEmail(e.target.value.toUpperCase())}
                     required
                     placeholder="EJEMPLO@CORREO.COM"
-                    autoCapitalize="characters"
                     autoCorrect="off"
                     spellCheck="false"
                     style={{ ...inputStyle, textTransform: 'uppercase' }}
@@ -169,17 +173,39 @@ export const Login: React.FC = () => {
 
                <div style={{ textAlign: 'left' }}>
                   <label style={labelStyle}>Contraseña</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value.toUpperCase())}
-                    required
-                    placeholder="••••••••"
-                    autoCapitalize="characters"
-                    autoCorrect="off"
-                    spellCheck="false"
-                    style={{ ...inputStyle, textTransform: 'uppercase' }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                      placeholder="••••••••"
+                      autoCorrect="off"
+                      spellCheck="false"
+                      style={{ ...inputStyle, paddingRight: '50px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--primary-color)',
+                        padding: '8px',
+                        zIndex: 10
+                      }}
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                </div>
 
                <button type="submit" disabled={loading} style={primaryBtnStyle}>

@@ -11,6 +11,7 @@
 ## 2. Validación de Entradas e Inyecciones
 - **XSS (Cross-Site Scripting)**: React escapa automáticamente todas las variables renderizadas en el DOM. Se ha verificado que NO se utiliza `dangerouslySetInnerHTML`.
 - **SQL Injection**: Al usar Supabase (PostgREST), todas las consultas son parametrizadas automáticamente por el cliente oficial, eliminando el riesgo de inyecciones SQL tradicionales.
+- **Funciones de Seguridad**: Se ha corregido la función `is_admin` para usar un `search_path` fijo y restringir su ejecución vía RPC, mitigando vulnerabilidades de `SECURITY DEFINER`.
 - **Sanitización**: Se recomienda añadir la librería `dompurify` si en el futuro se permite contenido HTML enviado por el usuario.
 
 ## 3. Protección de Secretos y Configuración
