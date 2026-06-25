@@ -1,5 +1,34 @@
 import React from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import {
+  MdOutlineHome,
+  MdOutlineGroups,
+  MdOutlineAccountBalanceWallet,
+  MdOutlineBarChart,
+  MdOutlinePerson,
+  MdOutlineQrCodeScanner,
+  MdOutlineWarningAmber,
+  MdOutlineHistory,
+  MdHome,
+  MdGroups,
+  MdAccountBalanceWallet,
+  MdBarChart,
+  MdPerson,
+  MdQrCodeScanner,
+  MdWarning,
+  MdHistory,
+  MdArrowBackIosNew,
+  MdOutlineBusiness,
+  MdPeople,
+  MdOutlinePeople,
+  MdHowToVote,
+  MdOutlineHowToVote,
+  MdPayments,
+  MdOutlinePayments,
+  MdBusiness,
+  MdReceiptLong,
+  MdOutlineReceiptLong
+} from 'react-icons/md'
 import { useAuthStore } from '../store/useAuthStore'
 
 export const Layout: React.FC = () => {
@@ -8,6 +37,8 @@ export const Layout: React.FC = () => {
   const { user } = useAuthStore()
 
   if (!user) return <Outlet />
+
+  const isHome = ['/dashboard', '/admin', '/guard'].includes(location.pathname)
 
   return (
     <div style={{
@@ -20,18 +51,51 @@ export const Layout: React.FC = () => {
       backgroundColor: 'var(--bg-color)',
       margin: '0 auto'
     }}>
+      {/* Shared Header with Back Button */}
+      {!isHome && (
+        <header style={{
+          width: '100%',
+          height: '60px',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 20px',
+          backgroundColor: 'var(--bg-color)',
+          borderBottom: '1px solid var(--border-color)',
+          zIndex: 1100,
+          position: 'sticky',
+          top: 0
+        }}>
+          <button
+            onClick={() => navigate(-1)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--primary-color)',
+              display: 'flex',
+              alignItems: 'center',
+              cursor: 'pointer',
+              padding: '10px 0'
+            }}
+          >
+            <MdArrowBackIosNew size={20} />
+            <span style={{ marginLeft: '5px', fontWeight: 600 }}>Volver</span>
+          </button>
+        </header>
+      )}
+
       {/* Content Container */}
       <div style={{
         flex: 1,
         width: '100%',
         overflowY: 'auto',
+        overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         paddingBottom: '20px'
       }}>
-        <div style={{ width: '100%', maxWidth: '500px' }}>
+        <div style={{ width: '100%', maxWidth: '1200px' }}>
             <Outlet />
         </div>
       </div>
@@ -53,22 +117,57 @@ export const Layout: React.FC = () => {
         {user.role === 'guard' ? (
           <>
             <NavIcon
-              icon="qr_code_scanner"
+              icon={location.pathname === '/guard' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'control') ? MdQrCodeScanner : MdOutlineQrCodeScanner}
               active={location.pathname === '/guard' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'control')}
               onClick={() => navigate('/guard?tab=control')}
             />
             <NavIcon
-              icon="warning"
+              icon={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'alerts' ? MdWarning : MdOutlineWarningAmber}
               active={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'alerts'}
               onClick={() => navigate('/guard?tab=alerts')}
             />
             <NavIcon
-              icon="history"
+              icon={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'history' ? MdHistory : MdOutlineHistory}
               active={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'history'}
               onClick={() => navigate('/guard?tab=history')}
             />
             <NavIcon
-              icon="person"
+              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
+              active={location.pathname.startsWith('/profile')}
+              onClick={() => navigate('/profile')}
+            />
+          </>
+        ) : (user.role === 'admin' || user.role === 'superadmin') ? (
+          <>
+            <NavIcon
+              icon={location.pathname === '/admin' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'finance') ? MdHome : MdOutlineHome}
+              active={location.pathname === '/admin' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'finance')}
+              onClick={() => navigate('/admin?tab=finance')}
+            />
+            <NavIcon
+              icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'users' ? MdPeople : MdOutlinePeople}
+              active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'users'}
+              onClick={() => navigate('/admin?tab=users')}
+            />
+            <NavIcon
+              icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'payments' ? MdReceiptLong : MdOutlineReceiptLong}
+              active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'payments'}
+              onClick={() => navigate('/admin?tab=payments')}
+            />
+            <NavIcon
+              icon={location.pathname === '/admin/payroll' ? MdPayments : MdOutlinePayments}
+              active={location.pathname === '/admin/payroll'}
+              onClick={() => navigate('/admin/payroll')}
+            />
+            {user.role === 'superadmin' && (
+              <NavIcon
+                icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security' ? MdBusiness : MdOutlineBusiness}
+                active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security'}
+                onClick={() => navigate('/admin?tab=security')}
+              />
+            )}
+            <NavIcon
+              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
               active={location.pathname.startsWith('/profile')}
               onClick={() => navigate('/profile')}
             />
@@ -76,27 +175,27 @@ export const Layout: React.FC = () => {
         ) : (
           <>
             <NavIcon
-              icon="home"
-              active={location.pathname === '/dashboard' || location.pathname === '/admin'}
-              onClick={() => navigate((user.role === 'admin' || user.role === 'superadmin') ? '/admin' : '/dashboard')}
+              icon={location.pathname === '/dashboard' ? MdHome : MdOutlineHome}
+              active={location.pathname === '/dashboard'}
+              onClick={() => navigate('/dashboard')}
             />
             <NavIcon
-              icon="account_tree"
+              icon={location.pathname === '/requests' ? MdGroups : MdOutlineGroups}
               active={location.pathname === '/requests'}
               onClick={() => navigate('/requests')}
             />
             <NavIcon
-              icon="account_balance_wallet"
-              active={location.pathname === '/payments' || location.pathname === '/admin/payroll'}
-              onClick={() => navigate((user.role === 'admin' || user.role === 'superadmin') ? '/admin/payroll' : '/payments')}
+              icon={location.pathname === '/payments' ? MdAccountBalanceWallet : MdOutlineAccountBalanceWallet}
+              active={location.pathname === '/payments'}
+              onClick={() => navigate('/payments')}
             />
             <NavIcon
-              icon="bar_chart"
+              icon={location.pathname === '/incidents' ? MdBarChart : MdOutlineBarChart}
               active={location.pathname === '/incidents'}
               onClick={() => navigate('/incidents')}
             />
             <NavIcon
-              icon="person"
+              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
               active={location.pathname.startsWith('/profile')}
               onClick={() => navigate('/profile')}
             />
@@ -107,7 +206,8 @@ export const Layout: React.FC = () => {
   )
 }
 
-const NavIcon = ({ icon, active, onClick }: any) => (
+
+const NavIcon = ({ icon: Icon, active, onClick }: any) => (
   <div
     onClick={onClick}
     style={{
@@ -130,12 +230,7 @@ const NavIcon = ({ icon, active, onClick }: any) => (
       alignItems: 'center',
       justifyContent: 'center'
     }}>
-      <span className="material-symbols-outlined" style={{
-        fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0",
-        fontSize: '26px'
-      }}>
-        {icon}
-      </span>
+      <Icon size={26} />
     </div>
   </div>
 )

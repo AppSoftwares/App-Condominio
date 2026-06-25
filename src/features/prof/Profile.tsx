@@ -1,5 +1,17 @@
 import React, { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePhotoCamera,
+  MdOutlinePerson,
+  MdOutlineLock,
+  MdOutlinePalette,
+  MdOutlineNotifications,
+  MdOutlineHelpOutline,
+  MdGavel,
+  MdOutlineLogout,
+  MdOutlineChevronRight,
+  MdOutlineEmergency
+} from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
 
 export const Profile: React.FC = () => {
@@ -51,7 +63,7 @@ export const Profile: React.FC = () => {
             <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <button onClick={handleEditAvatar} style={camBtnStyle}>
-            <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>photo_camera</span>
+            <MdOutlinePhotoCamera size={24} />
           </button>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
         </div>
@@ -62,19 +74,20 @@ export const Profile: React.FC = () => {
         {/* Menu Groups */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
            <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/account')} icon="person_outline" label="Configuración de Cuenta" />
-              <MenuItem onClick={() => navigate('/profile/privacy')} icon="lock_outline" label="Privacidad y Seguridad" />
-              <MenuItem onClick={() => navigate('/profile/appearance')} icon="palette" label="Apariencia y Tema" />
-              <MenuItem onClick={() => navigate('/profile/notifications')} icon="notifications_none" label="Notificaciones" last />
+              <MenuItem onClick={() => navigate('/profile/account')} icon={MdOutlinePerson} label="Configuración de Cuenta" />
+              <MenuItem onClick={() => navigate('/profile/emergency')} icon={MdOutlineEmergency} label="Líneas de Emergencia" />
+              <MenuItem onClick={() => navigate('/profile/privacy')} icon={MdOutlineLock} label="Privacidad y Seguridad" />
+              <MenuItem onClick={() => navigate('/profile/appearance')} icon={MdOutlinePalette} label="Apariencia y Tema" />
+              <MenuItem onClick={() => navigate('/profile/notifications')} icon={MdOutlineNotifications} label="Notificaciones" last />
            </div>
 
            <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/support')} icon="help_outline" label="Centro de Ayuda" />
-              <MenuItem onClick={() => navigate('/profile/legal')} icon="gavel" label="Términos y Condiciones" />
+              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
+              <MenuItem onClick={() => navigate('/profile/legal')} icon={MdGavel} label="Términos y Condiciones" />
               <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>
-                       <span className="material-symbols-outlined">logout</span>
+                       <MdOutlineLogout size={24} />
                     </div>
                     <span style={{ fontWeight: 600, color: '#ba1a1a' }}>Cerrar Sesión</span>
                  </div>
@@ -86,15 +99,15 @@ export const Profile: React.FC = () => {
   )
 }
 
-const MenuItem = ({ icon, label, last, onClick }: any) => (
+const MenuItem = ({ icon: Icon, label, last, onClick }: any) => (
   <div onClick={onClick} style={{ ...menuItemStyle, borderBottom: last ? 'none' : '1px solid var(--border-color)' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
       <div style={iconBoxStyle}>
-        <span className="material-symbols-outlined">{icon}</span>
+        <Icon size={24} />
       </div>
       <span style={{ fontWeight: 600, fontSize: '15px' }}>{label}</span>
     </div>
-    <span className="material-symbols-outlined" style={{ color: 'var(--text-sub)', fontSize: '20px' }}>chevron_right</span>
+    <MdOutlineChevronRight size={20} style={{ color: 'var(--text-sub)' }} />
   </div>
 )
 

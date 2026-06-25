@@ -21,7 +21,7 @@ interface AuthState {
   whitelist: any[]
   setUser: (user: UserProfile | null) => void
   setWhitelist: (list: any[]) => void
-  updateAvatar: (url: string) => void
+  updateAvatar: (url: string) => Promise<void>
   signOut: () => Promise<void>
   initialize: () => void
 }
@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
           name: 'JESÚS ADMIN',
           email: 'admin@caminos.com',
           password: 'JESUS.ADMIN.CAMINOS',
-          role: 'ADMINISTRADOR',
+          role: 'superadmin',
           conjunto: 'LAS HUERTAS',
           house_number: 'ADMIN-01',
           etapa: 'I'
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>()(
           name: 'JESÚS ADMIN',
           email: 'admin@huertas.com',
           password: 'JESUS.ADMIN.HUERTAS',
-          role: 'ADMINISTRADOR',
+          role: 'admin',
           conjunto: 'LAS HUERTAS',
           house_number: 'ADMIN-02',
           etapa: 'III ETAPA'
@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
           name: 'CARLOS PIRELA',
           email: 'ofi.pirela@gmail.com',
           password: 'CARLOS.HUERTAS.123',
-          role: 'RESIDENTE',
+          role: 'resident',
           conjunto: 'LAS HUERTAS',
           house_number: '14-28',
           etapa: 'III ETAPA'
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthState>()(
           name: 'JESÚS PIRELA',
           email: 'jess.pirela@gmail.com',
           password: 'JESUS.HUERTAS.123',
-          role: 'RESIDENTE',
+          role: 'resident',
           conjunto: 'LAS HUERTAS',
           house_number: '14-28',
           etapa: 'III ETAPA'
@@ -76,17 +76,45 @@ export const useAuthStore = create<AuthState>()(
           name: 'JESÚS VIGILANTE',
           email: 'vigilante@huertas.com',
           password: 'JESUS.VIGILANTE.HUERTAS',
-          role: 'VIGILANTE',
+          role: 'guard',
           conjunto: 'LAS HUERTAS',
           house_number: 'CASETA',
+          etapa: 'III ETAPA'
+        },
+        {
+          id: 'e29b14c5-55e1-4b10-8b1e-4c5e14b10b1e',
+          name: 'JUAN PERÉZ',
+          email: 'PRUEBA@HUERTAS.COM',
+          password: 'PRUEBA.HUERTAS.123',
+          role: 'RESIDENTE',
+          conjunto: 'LAS HUERTAS',
+          house_number: '14-100',
           etapa: 'III ETAPA'
         }
       ],
       setUser: (user) => set({ user }),
       setWhitelist: (list) => set({ whitelist: list }),
-      updateAvatar: (url) => set((state) => ({
-        user: state.user ? { ...state.user, avatar_url: url } : null
-      })),
+      updateAvatar: async (url) => {
+        const currentUser = get().user
+        if (!currentUser) return
+
+        try {
+          // 1. Actualizar localmente para feedback inmediato
+          set((state) => ({
+            user: state.user ? { ...state.user, avatar_url: url } : null
+          }))
+
+          // 2. Persistir en la base de datos de Supabase
+          const { error } = await supabase
+            .from('profiles')
+            .update({ avatar_url: url })
+            .eq('id', currentUser.id)
+
+          if (error) throw error
+        } catch (err) {
+          console.error('Error al guardar el avatar:', err)
+        }
+      },
       signOut: async () => {
         await supabase.auth.signOut()
         set({ user: null })
@@ -111,6 +139,6 @@ export const useAuthStore = create<AuthState>()(
         })
       }
     }),
-    { name: 'auth-storage-v5' }
+    { name: 'auth-storage-v6' }
   )
 )

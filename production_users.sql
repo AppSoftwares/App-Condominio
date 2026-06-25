@@ -25,3 +25,8 @@ ON CONFLICT (id) DO UPDATE SET status = 'active';
 INSERT INTO public.profiles (id, email, first_name, last_name, role, status, residential_cluster, house_number)
 VALUES ('a4b19db7-6a38-4803-b33e-b6e0908ab909', 'vigilante@huertas.com', 'JESÚS', 'VIGILANTE', 'guard', 'active', 'LAS HUERTAS', 'CASETA')
 ON CONFLICT (id) DO UPDATE SET role = 'guard', status = 'active';
+
+-- 6. USUARIO PRUEBA (prueba@huertas.com)
+INSERT INTO public.profiles (id, email, first_name, last_name, role, status, residential_cluster, house_number, etapa)
+VALUES ('e29b14c5-55e1-4b10-8b1e-4c5e14b10b1e', 'prueba@huertas.com', 'JUAN', 'PERÉZ', 'resident', 'active', 'LAS HUERTAS', '14-100', 'III ETAPA')
+ON CONFLICT (id) DO UPDATE SET status = 'active';

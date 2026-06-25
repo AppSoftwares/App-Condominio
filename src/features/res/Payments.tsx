@@ -1,5 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdArrowBack,
+  MdOutlineSmartphone,
+  MdOutlinePayments,
+  MdOutlineAccountBalance,
+  MdOutlineSync,
+  MdOutlineCheckCircle,
+  MdOutlineCloudUpload,
+  MdOutlineChevronRight
+} from 'react-icons/md'
 import { formatBs, formatUSD } from '../../utils/currency'
 import { useCurrencyStore } from '../../store/useCurrencyStore'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -134,7 +144,7 @@ export const Payments: React.FC = () => {
       <div style={{ backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
         <header style={headerStyle}>
           <button onClick={() => setSelectedStep('main')} style={backBtnStyle}>
-            <span className="material-symbols-outlined">arrow_back</span>
+            <MdArrowBack size={24} />
           </button>
           <h1 style={titleStyle}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
         </header>
@@ -143,9 +153,7 @@ export const Payments: React.FC = () => {
           <div style={cardStyle}>
             <div style={{ textAlign: 'center', marginBottom: '25px' }}>
               <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#ffdea6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '32px', color: '#785919' }}>
-                  {isPM ? 'smartphone' : isZelle ? 'payments' : 'account_balance'}
-                </span>
+                {isPM ? <MdOutlineSmartphone size={32} color="#785919" /> : isZelle ? <MdOutlinePayments size={32} color="#785919" /> : <MdOutlineAccountBalance size={32} color="#785919" />}
               </div>
               <h2 style={{ fontSize: '20px', color: '#0f5551', margin: 0, fontWeight: 700 }}>Datos del Pago</h2>
             </div>
@@ -252,7 +260,7 @@ export const Payments: React.FC = () => {
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
                 }}
               >
-                <span className="material-symbols-outlined">{fileAttached ? 'check_circle' : 'cloud_upload'}</span>
+                {fileAttached ? <MdOutlineCheckCircle size={24} /> : <MdOutlineCloudUpload size={24} />}
                 <span style={{ fontSize: '14px', fontWeight: 600 }}>{fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}</span>
               </button>
               <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
@@ -275,7 +283,7 @@ export const Payments: React.FC = () => {
     <div style={containerStyle}>
       <header style={headerStyle}>
         <button onClick={() => navigate('/dashboard')} style={backBtnStyle}>
-          <span className="material-symbols-outlined">arrow_back</span>
+          <MdArrowBack size={24} />
         </button>
         <h1 style={titleStyle}>Pagos de Condominio</h1>
       </header>
@@ -293,25 +301,25 @@ export const Payments: React.FC = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}>
            <PaymentOption
-              icon="sync"
+              icon={MdOutlineSync}
               label="Domiciliación Digital (Venflow)"
               sublabel="Cobra y concilia automáticamente"
               highlight
            />
            <PaymentOption
-              icon="smartphone"
+              icon={MdOutlineSmartphone}
               label="Pago Móvil"
               sublabel="Validación manual en 24h"
               onClick={() => setSelectedStep('pagomovil')}
            />
            <PaymentOption
-              icon="account_balance"
+              icon={MdOutlineAccountBalance}
               label="Transferencia Bancaria"
               sublabel="Datos BNC y adjuntar capture"
               onClick={() => setSelectedStep('transferencia')}
            />
            <PaymentOption
-              icon="payments"
+              icon={MdOutlinePayments}
               label="Zelle"
               sublabel="CONDOMINIOLAS HUERTAS@GMAIL.COM"
               onClick={() => setSelectedStep('zelle')}
@@ -329,16 +337,16 @@ const InfoRow = ({ label, value }: any) => (
   </div>
 )
 
-const PaymentOption = ({ icon, label, sublabel, highlight, onClick }: any) => (
+const PaymentOption = ({ icon: Icon, label, sublabel, highlight, onClick }: any) => (
   <div onClick={onClick} style={{ backgroundColor: highlight ? '#fdf8ef' : 'white', border: highlight ? '2px solid #C6A059' : '1px solid #bfc8c7', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', boxSizing: 'border-box' }}>
      <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: highlight ? '#C6A059' : '#f5f3f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: highlight ? 'white' : '#785919', flexShrink: 0 }}>
-        <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>{icon}</span>
+        <Icon size={24} />
      </div>
      <div style={{ flex: 1 }}>
         <span style={{ fontWeight: 700, fontSize: '15px', color: '#1B1C1A', display: 'block' }}>{label}</span>
         {sublabel && <span style={{ fontSize: '11px', color: '#785919', fontWeight: 600 }}>{sublabel}</span>}
      </div>
-     <span className="material-symbols-outlined" style={{ color: highlight ? '#C6A059' : '#bfc8c7' }}>chevron_right</span>
+     <MdOutlineChevronRight size={24} style={{ color: highlight ? '#C6A059' : '#bfc8c7' }} />
   </div>
 )
 

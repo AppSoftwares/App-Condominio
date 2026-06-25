@@ -1,5 +1,13 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePerson,
+  MdOutlineHowToVote,
+  MdOutlineHistory,
+  MdOutlinePictureAsPdf,
+  MdOutlineEventNote,
+  MdOutlineDownload
+} from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCommunityStore } from '../../store/useCommunityStore'
 
@@ -23,7 +31,7 @@ export const Requests: React.FC = () => {
       <header style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(15, 85, 81, 0.1)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span className="material-symbols-outlined">person</span>
+            <MdOutlinePerson size={24} />
           </div>
           <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio</h1>
         </div>
@@ -36,7 +44,7 @@ export const Requests: React.FC = () => {
         </section>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
-           <span className="material-symbols-outlined" style={{ color: '#785919' }}>how_to_vote</span>
+           <MdOutlineHowToVote size={24} style={{ color: '#785919' }} />
            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Votaciones Activas</h3>
         </div>
 
@@ -51,7 +59,7 @@ export const Requests: React.FC = () => {
 
         <div style={historyCardStyle}>
            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span className="material-symbols-outlined">history</span>
+              <MdOutlineHistory size={24} />
               <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Historial</h4>
            </div>
            <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Resultados de votaciones anteriores.</p>
@@ -63,13 +71,13 @@ export const Requests: React.FC = () => {
            {announcements.map(ann => (
              <div key={ann.id} style={annCardStyle}>
                 <div style={annIconStyle}>
-                   <span className="material-symbols-outlined">{ann.type === 'PDF' ? 'picture_as_pdf' : 'event_note'}</span>
+                   {ann.type === 'PDF' ? <MdOutlinePictureAsPdf size={24} /> : <MdOutlineEventNote size={24} />}
                 </div>
                 <div style={{ flex: 1 }}>
                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.title}</p>
                    <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{ann.date}</p>
                 </div>
-                <span className="material-symbols-outlined" style={{ color: 'var(--text-sub)', fontSize: '20px' }}>download</span>
+                <MdOutlineDownload size={20} style={{ color: 'var(--text-sub)' }} />
              </div>
            ))}
         </div>

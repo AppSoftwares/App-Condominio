@@ -1,21 +1,78 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MdArrowBack } from 'react-icons/md'
+import html2canvas from 'html2canvas'
 
 export const Guests: React.FC = () => {
   const navigate = useNavigate()
   const [guestName, setGuestName] = useState('')
   const [showQR, setShowQR] = useState(false)
+  const qrRef = useRef<HTMLDivElement>(null)
 
   const handleGenerateQR = () => {
     if (!guestName) return alert('Por favor ingrese el nombre del invitado')
     setShowQR(true)
   }
 
+  const handleShareWA = async () => {
+    const msg = `Hola ${guestName}, aquí tienes tu pase QR de acceso para Caminos de la Lagunita.`;
+
+    if (qrRef.current) {
+      try {
+        const canvas = await html2canvas(qrRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          logging: false,
+          useCORS: true
+        });
+
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+          const file = new File([blob], `Pase_${guestName.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'Pase de Acceso QR',
+              text: msg,
+            });
+          } else {
+            // Fallback: solo texto si no se puede compartir archivos
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+          }
+        }, 'image/png');
+      } catch (err) {
+        console.error('Error sharing QR:', err);
+        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+      }
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  }
+
+  const handleDownload = async () => {
+    if (qrRef.current) {
+      try {
+        const canvas = await html2canvas(qrRef.current, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          useCORS: true
+        });
+        const link = document.createElement('a');
+        link.download = `Pase_QR_${guestName}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('Error al descargar el pase');
+      }
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '100px' }}>
       <header style={{ position: 'fixed', top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' }}>
         <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--primary-color)' }}>arrow_back</span>
+          <MdArrowBack size={24} style={{ color: 'var(--primary-color)' }} />
         </button>
         <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', marginLeft: '15px', color: 'var(--primary-color)', fontWeight: 700 }}>Acceso de Invitados</h1>
       </header>
@@ -37,27 +94,28 @@ export const Guests: React.FC = () => {
         </div>
 
         {showQR && (
-          <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '32px', marginBottom: '30px', textAlign: 'center', animation: 'fadeIn 0.5s ease' }}>
-            <p style={{ color: 'var(--success-color)', fontWeight: 800, fontSize: '12px', marginBottom: '20px' }}>QR GENERADO EXITOSAMENTE</p>
-            <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '20px', display: 'inline-block', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
-              <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GUEST-${guestName.replace(' ', '-')}`} alt="QR Code" style={{ width: '180px', height: '180px' }} />
+          <div style={{ marginBottom: '30px', animation: 'fadeIn 0.5s ease' }}>
+            <div ref={qrRef} style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '32px', textAlign: 'center' }}>
+              <p style={{ color: '#27ae60', fontWeight: 800, fontSize: '12px', marginBottom: '20px' }}>PASE DE ACCESO DIGITAL</p>
+              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '20px', display: 'inline-block', marginBottom: '20px', border: '1px solid #efeeeb' }}>
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GUEST-${guestName.replace(' ', '-')}`} alt="QR Code" style={{ width: '180px', height: '180px' }} />
+              </div>
+              <h4 style={{ margin: '0 0 5px 0', fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700 }}>{guestName.toUpperCase()}</h4>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-sub)', fontWeight: 600 }}>CAMINOS DE LA LAGUNITA</p>
             </div>
-            <p style={{ fontWeight: 700, marginBottom: '20px' }}>{guestName.toUpperCase()}</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button
-                onClick={() => alert('Iniciando descarga de pase digital...')}
+                onClick={handleDownload}
                 style={{ ...primaryBtnStyle, backgroundColor: 'var(--accent-gold)', flex: 1 }}
               >
-                Descargar Pase
+                Descargar
               </button>
               <button
-                onClick={() => {
-                  const msg = `Hola ${guestName}, aquí tienes tu pase QR de acceso para Caminos de la Lagunita.`;
-                  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                }}
+                onClick={handleShareWA}
                 style={{ ...primaryBtnStyle, backgroundColor: '#25D366', flex: 1 }}
               >
-                Enviar por WA
+                Enviar WA
               </button>
             </div>
           </div>

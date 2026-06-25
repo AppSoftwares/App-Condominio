@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { MdArrowBack } from 'react-icons/md'
 
 export const Reservations: React.FC = () => {
   const navigate = useNavigate()
@@ -25,7 +26,7 @@ export const Reservations: React.FC = () => {
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '100px' }}>
       <header style={{ position: 'fixed', top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' }}>
         <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--primary-color)' }}>arrow_back</span>
+          <MdArrowBack size={24} style={{ color: 'var(--primary-color)' }} />
         </button>
         <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: '0 0 0 15px' }}>Reservación de Áreas</h1>
       </header>

@@ -1,5 +1,14 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePayments,
+  MdOutlineErrorOutline,
+  MdOutlineGroups,
+  MdOutlineVpnKey,
+  MdOutlineCalendarToday,
+  MdGavel,
+  MdOutlineImage
+} from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
 import logoPremium from '../../assets/logo_premium.png'
@@ -103,12 +112,12 @@ export const ResDash: React.FC = () => {
 
           {/* Quick Actions Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <ActionBtn icon="payments" label="Pagos" onClick={() => navigate('/payments')} />
-            <ActionBtn icon="report" label="Incidencias" onClick={() => navigate('/incidents')} />
-            <ActionBtn icon="how_to_vote" label="Comunidad" onClick={() => navigate('/requests')} />
-            <ActionBtn icon="vpn_key" label="Invitados" onClick={() => navigate('/guests')} />
-            <ActionBtn icon="calendar_today" label="Reservas" onClick={() => navigate('/reservations')} />
-            <ActionBtn icon="gavel" label="Normas" onClick={() => navigate('/incidents')} />
+            <ActionBtn icon={MdOutlinePayments} label="Pagos" onClick={() => navigate('/payments')} />
+            <ActionBtn icon={MdOutlineErrorOutline} label="Incidencias" onClick={() => navigate('/incidents')} />
+            <ActionBtn icon={MdOutlineGroups} label="Comunidad" onClick={() => navigate('/requests')} />
+            <ActionBtn icon={MdOutlineVpnKey} label="Invitados" onClick={() => navigate('/guests')} />
+            <ActionBtn icon={MdOutlineCalendarToday} label="Reservas" onClick={() => navigate('/reservations')} />
+            <ActionBtn icon={MdGavel} label="Normas" onClick={() => navigate('/incidents')} />
           </div>
 
           {/* News Section */}
@@ -138,10 +147,10 @@ export const ResDash: React.FC = () => {
   )
 }
 
-const ActionBtn = ({ icon, label, onClick }: any) => (
+const ActionBtn = ({ icon: Icon, label, onClick }: any) => (
   <div onClick={onClick} style={{ backgroundColor: 'var(--icon-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
     <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', flexShrink: 0 }}>
-      <span className="material-symbols-outlined" style={{ fontSize: '28px', display: 'block', width: '28px', height: '28px' }}>{icon}</span>
+      <Icon size={28} style={{ display: 'block' }} />
     </div>
     <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-color)' }}>{label}</span>
   </div>
@@ -153,7 +162,7 @@ const NewsItem = ({ title, desc, tag, color, imageUrl }: any) => (
       {imageUrl ? (
         <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectCover: 'cover' } as any} />
       ) : (
-        <span className="material-symbols-outlined" style={{ fontSize: '40px', color: 'var(--text-sub)', opacity: 0.2 }}>image</span>
+        <MdOutlineImage size={40} style={{ color: 'var(--text-sub)', opacity: 0.2 }} />
       )}
     </div>
     <div style={{ padding: '20px' }}>

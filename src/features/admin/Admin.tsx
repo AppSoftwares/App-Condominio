@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { formatBs, formatUSD } from '../../utils/currency'
 import { useCurrencyStore } from '../../store/useCurrencyStore'
@@ -37,10 +37,25 @@ const TabItem = ({ active, label, icon, onClick }: any) => (
 
 export const Admin: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, setWhitelist } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
   const { addPoll } = useCommunityStore()
-  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security'>('finance')
+
+  const initialTab = (searchParams.get('tab') as any) || 'finance'
+  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security'>(initialTab)
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['finance', 'users', 'payments', 'polls', 'security'].includes(tab)) {
+      setActiveTab(tab as any)
+    }
+  }, [searchParams])
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab as any)
+    setSearchParams({ tab })
+  }
   const [sedematData, setSedematData] = useState<{ aseoBs: number, gasBs: number, aseoUsd: number, gasUsd: number } | null>(null)
   const [users, setUsers] = useState<any[]>([])
   const [apiKeys, setApiKeys] = useState<any[]>([])
@@ -507,23 +522,15 @@ export const Admin: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '40px' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '40px', paddingTop: '20px' }}>
 
-      <header style={{ width: '100%', padding: '20px 0', borderBottom: '1px solid var(--border-color)', marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio Admin</h1>
-          <p style={{ margin: 0, fontSize: '10px', color: 'var(--text-sub)', letterSpacing: '1px', fontWeight: 800, textAlign: 'center' }}>PANEL DE CONTROL</p>
+      {/* Tabs Selector Contextual */}
+      {(activeTab === 'finance' || activeTab === 'polls') && (
+        <div style={{ display: 'flex', width: '100%', gap: '10px', padding: '0 20px 25px', marginBottom: '10px', justifyContent: 'center' }}>
+          <TabItem active={activeTab === 'finance'} label="Finanzas" icon="finance" onClick={() => handleTabChange('finance')} />
+          <TabItem active={activeTab === 'polls'} label="Votos" icon="how_to_vote" onClick={() => handleTabChange('polls')} />
         </div>
-      </header>
-
-      {/* Tabs Selector */}
-      <div style={{ display: 'flex', width: '100%', gap: '6px', padding: '0 10px 20px', marginBottom: '10px', justifyContent: 'center', flexWrap: 'nowrap', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-        <TabItem active={activeTab === 'finance'} label="Finanzas" icon="finance" onClick={() => setActiveTab('finance')} />
-        <TabItem active={activeTab === 'users'} label="Usuarios" icon="group" onClick={() => setActiveTab('users')} />
-        <TabItem active={activeTab === 'payments'} label="Validar" icon="receipt_long" onClick={() => setActiveTab('payments')} />
-        <TabItem active={activeTab === 'polls'} label="Votos" icon="how_to_vote" onClick={() => setActiveTab('polls')} />
-        {user?.role === 'superadmin' && <TabItem active={activeTab === 'security'} label="Soporte" icon="admin_panel_settings" onClick={() => setActiveTab('security')} />}
-      </div>
+      )}
 
       <main style={mainContentStyle}>
 

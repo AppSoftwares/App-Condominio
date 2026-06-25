@@ -1,8 +1,16 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdArrowBack,
+  MdVolumeOff,
+  MdPets,
+  MdDeck,
+  MdDirectionsCar
+} from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCommunityStore, Incident } from '../../store/useCommunityStore'
 import { sanitizeString } from '../../utils/security'
+import { supabase } from '../../lib/supabase'
 
 export const Incidents: React.FC = () => {
   const navigate = useNavigate()
@@ -50,8 +58,8 @@ export const Incidents: React.FC = () => {
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <header style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '600px' }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)' }}>
-            <span className="material-symbols-outlined">arrow_back</span>
+          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)', display: 'flex', alignItems: 'center' }}>
+            <MdArrowBack size={24} />
           </button>
           <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>
             Condominio
@@ -98,25 +106,25 @@ export const Incidents: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <RuleCard
-                icon="volume_off"
+                icon={MdVolumeOff}
                 title="Ruidos Molestos"
                 desc="Prohibido exceder 50dB entre las 10:00 PM y las 8:00 AM. Los eventos sociales en casas requieren aviso previo a la administración."
                 color="rgba(15, 85, 81, 0.1)"
               />
               <RuleCard
-                icon="pets"
+                icon={MdPets}
                 title="Mascotas"
                 desc="Uso obligatorio de correa en áreas comunes. Los dueños deben recoger los desechos de inmediato. Se prohíben mascotas en el área de piscina."
                 color="rgba(198, 160, 89, 0.1)"
               />
               <RuleCard
-                icon="deck"
+                icon={MdDeck}
                 title="Áreas Comunes"
                 desc="Horario de piscina y canchas: 7:00 AM a 9:00 PM. No se permiten envases de vidrio ni consumo excesivo de alcohol en estas áreas."
                 color="rgba(61, 80, 62, 0.1)"
               />
               <RuleCard
-                icon="directions_car"
+                icon={MdDirectionsCar}
                 title="Estacionamiento"
                 desc="Respetar los puestos asignados. Los visitantes solo pueden estacionar en las áreas marcadas para tal fin."
                 color="rgba(15, 85, 81, 0.1)"
@@ -198,10 +206,10 @@ export const Incidents: React.FC = () => {
   )
 }
 
-const RuleCard = ({ icon, title, desc, color }: any) => (
+const RuleCard = ({ icon: Icon, title, desc, color }: any) => (
   <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '20px', display: 'flex', gap: '15px' }}>
     <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <span className="material-symbols-outlined" style={{ color: 'var(--primary-color)' }}>{icon}</span>
+      <Icon size={24} style={{ color: 'var(--primary-color)' }} />
     </div>
     <div>
       <h4 style={{ margin: '0 0 5px 0', fontSize: '16px', fontWeight: 700 }}>{title}</h4>

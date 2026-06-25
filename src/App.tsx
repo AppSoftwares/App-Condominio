@@ -14,6 +14,7 @@ import { InviteFriend } from './features/prof/InviteFriend'
 import { Support } from './features/prof/Support'
 import { HelpCenter } from './features/prof/HelpCenter'
 import { LegalDocument } from './features/prof/LegalDocument'
+import { EmergencyLines } from './features/prof/EmergencyLines'
 import { Admin } from './features/admin/Admin'
 import { Payroll } from './features/admin/Payroll'
 import { GuardPortal } from './features/guard/GuardPortal'
@@ -29,6 +30,7 @@ import { useEffect, useState } from 'react'
 import { ScrollToTop } from './components/ScrollToTop'
 import { useUpdateCheck } from './hooks/useUpdateCheck'
 import { UpdateModal } from './components/UpdateModal'
+import { App as CapApp } from '@capacitor/app'
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -51,6 +53,24 @@ function App() {
 
   const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
   const [showUpdateModal, setShowUpdateModal] = useState(false)
+
+  useEffect(() => {
+    // Manejar botón de atrás en Android
+    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+      const path = window.location.pathname;
+      if (path === '/dashboard' || path === '/admin' || path === '/guard' || path === '/login' || path === '/') {
+        CapApp.exitApp();
+      } else if (!canGoBack) {
+        CapApp.exitApp();
+      } else {
+        window.history.back();
+      }
+    });
+
+    return () => {
+      backButtonListener.then(l => l.remove());
+    };
+  }, []);
 
   useEffect(() => {
     if (isUpdateAvailable) {
@@ -138,6 +158,9 @@ function App() {
           } />
           <Route path="/profile/legal" element={
             <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><LegalDocument /></ProtectedRoute>
+          } />
+          <Route path="/profile/emergency" element={
+            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><EmergencyLines /></ProtectedRoute>
           } />
 
           <Route path="/admin" element={

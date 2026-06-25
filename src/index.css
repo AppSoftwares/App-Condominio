@@ -49,13 +49,12 @@ body.dark-mode {
 
   #root {
     width: 100%;
-    max-width: 500px; /* Tamaño máximo para que parezca una app móvil siempre */
+    max-width: 100%; /* Permitir que ocupe todo el ancho disponible */
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     background-color: var(--bg-color);
-    box-shadow: 0 0 40px rgba(0,0,0,0.1);
     position: relative;
   }
 

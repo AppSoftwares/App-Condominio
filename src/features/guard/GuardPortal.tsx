@@ -89,19 +89,17 @@ export const GuardPortal: React.FC = () => {
 
       {activeTab === 'alerts' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.5s ease' }}>
-           <div style={{ ...cardStyle, backgroundColor: 'rgba(186, 26, 26, 0.05)', borderColor: 'rgba(186, 26, 26, 0.2)' }}>
-              <AlertItem text="Vehículo no identificado en zona norte." time="15 min" />
-              <div style={{ height: '1px', backgroundColor: 'rgba(186, 26, 26, 0.1)', margin: '15px 0' }}></div>
-              <AlertItem text="Portón B con falla de cierre." time="1 hora" />
+           <div style={{ ...cardStyle, backgroundColor: 'rgba(15, 85, 81, 0.05)', borderColor: 'rgba(15, 85, 81, 0.1)' }}>
+              <p style={{ textAlign: 'center', color: 'var(--text-sub)', margin: 0 }}>No hay alertas activas en este momento.</p>
            </div>
         </div>
       )}
 
       {activeTab === 'history' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', animation: 'fadeIn 0.5s ease' }}>
-           <HistoryItem name="Ricardo Mendoza" house="Casa 14-22" time="14:20" type="Invitado" />
-           <HistoryItem name="PedidosYa (Moto)" house="Casa 14-05" time="14:05" type="Delivery" />
-           <HistoryItem name="Servicio Eléctrico" house="Áreas Comunes" time="13:45" type="Servicio" />
+           <div style={cardStyle}>
+              <p style={{ textAlign: 'center', color: 'var(--text-sub)', margin: 0 }}>No hay registros de ingreso recientes.</p>
+           </div>
         </div>
       )}
 
