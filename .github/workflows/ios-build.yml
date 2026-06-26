@@ -46,7 +46,10 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          rm -f .npmrc
+          rm -f pnpm-lock.yaml
+          pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
