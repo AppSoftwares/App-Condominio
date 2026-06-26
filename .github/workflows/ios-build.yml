@@ -45,18 +45,14 @@ jobs:
           npm install --legacy-peer-deps
 
       - name: Build Web Project
-        run: npm run build
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Debug iOS Folder
-        run: ls -R ios/App
-
       - name: Build App
         run: |
           cd ios/App
-          # Force project build since workspace was not found in listing
           xcodebuild -project App.xcodeproj \
                      -scheme "${{ inputs.scheme }}" \
                      -configuration "${{ inputs.configuration }}" \
