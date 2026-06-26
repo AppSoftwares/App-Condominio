@@ -4,43 +4,38 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID de compilación'
+        description: 'Build ID'
         required: true
         default: 'manual'
-
-env:
-  # Solo dejamos esta para cumplir con la nueva norma de GitHub
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node 22 (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
 
-      - name: Enable Corepack (pnpm)
+      - name: Clean Environment
         run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-
-      - name: Clean and Prepare
-        run: |
-          # Eliminar sharp y rastros locales para evitar fallos en Mac
-          sed -i.bak '/"sharp":/d' package.json
+          # Eliminamos archivos que pueden causar cortocircuitos en el servidor Mac
           rm -f pnpm-lock.yaml package-lock.json .npmrc
-          rm -rf node_modules
+          # Quitamos sharp de raíz porque no es necesaria para el build de iOS y rompe el CI
+          sed -i.bak '/"sharp":/d' package.json
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-scripts
+        run: |
+          # Instalación ultra-limpia ignorando scripts de compilación nativos
+          npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
-        run: npx vite build
+        run: |
+          # Usamos vite directamente para saltar tsc y asegurar que el build web se genere
+          npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -48,10 +43,10 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver paquetes de Swift
+          # Resolver dependencias de SPM (Capacitor 6)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar binario (Debug)
+          # Compilar el binario nativo (Debug)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -63,13 +58,14 @@ jobs:
           
       - name: Create IPA
         run: |
+          # Empaquetamos el resultado para que lo puedas descargar
           mkdir -p Payload
           cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
           zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
+          name: ios-ipa-final
           path: app.ipa
           retention-days: 1
