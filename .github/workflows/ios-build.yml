@@ -5,8 +5,9 @@ on:
     inputs:
       build_id:
         description: 'Unique build identifier'
-        required: true
+        required: false
         type: string
+        default: 'manual'
       ios_path:
         description: 'Path to iOS project'
         required: false
