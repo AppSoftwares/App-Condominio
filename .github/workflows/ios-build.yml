@@ -1,4 +1,4 @@
-name: iOS Build (Final Fix)
+name: iOS Build
 
 on:
   workflow_dispatch:
@@ -8,69 +8,54 @@ on:
         required: true
         default: 'v1'
 
-env:
-  # Eliminamos los avisos de Node 20 de raíz
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      - name: Fix package.json for CI
+      - name: List Files (Debug)
         run: |
-          # Evitamos que sharp rompa la instalación en el servidor
-          sed -i '' 's/"sharp": "/"_sharp_": "/g' package.json
-          rm -f pnpm-lock.yaml package-lock.json .npmrc
+          pwd
+          ls -R ios/App
 
       - name: Install dependencies
         run: |
-          # Instalación limpia ignorando scripts nativos que fallan en Mac
-          npm install --legacy-peer-deps --no-audit --ignore-scripts
+          rm -f package-lock.json pnpm-lock.yaml .npmrc
+          npm install --legacy-peer-deps --ignore-scripts
 
-      - name: Build Web Project
-        run: |
-          # Generamos el build de Vite saltando errores de TypeScript
-          npx vite build
+      - name: Build Web
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Xcode Build
         run: |
           cd ios/App
-          # Resolver dependencias de SPM (Capacitor 6)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
-          
-          # Compilar proyecto directamente
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app en un archivo descargable
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
-          mkdir -p build/Payload
-          cp -R "$APP_PATH" build/Payload/
-          cd build
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          mkdir -p Payload
+          cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
+          zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
-          path: build/*.ipa
-          retention-days: 1
+          name: ios-app
+          path: app.ipa
