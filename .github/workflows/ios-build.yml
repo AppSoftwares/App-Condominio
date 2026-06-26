@@ -17,11 +17,6 @@ on:
         required: false
         type: string
         default: 'App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
       configuration:
         description: 'Configuration'
         required: false
@@ -30,7 +25,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,12 +33,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: |
-          rm -f package-lock.json pnpm-lock.yaml
-          npm install --legacy-peer-deps
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
@@ -53,19 +51,19 @@ jobs:
 
       - name: Build App
         run: |
-          cd ios/App
+          cd "${{ inputs.ios_path }}"
           
-          # Install pods if Podfile exists
-          if [ -f "Podfile" ]; then
-            pod install
-          fi
+          # Resolve SPM packages
+          xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Try workspace first, then project
-          if [ -d "App.xcworkspace" ]; then
-            xcodebuild -workspace App.xcworkspace -scheme "${{ inputs.scheme }}" -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
-          else
-            xcodebuild -project App.xcodeproj -scheme "${{ inputs.scheme }}" -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
-          fi
+          # Build
+          xcodebuild -project App.xcodeproj \
+                     -scheme "${{ inputs.scheme }}" \
+                     -configuration "${{ inputs.configuration }}" \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     -quiet build
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
