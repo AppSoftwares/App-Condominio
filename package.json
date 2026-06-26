@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:ci": "vite build",
     "sync": "cap sync",
     "build:apk": "pnpm run build && pnpm cap sync android && cd android && gradlew.bat assembleRelease",
     "release:android": "pnpm run build && pnpm cap copy android && pnpm cap sync android",
