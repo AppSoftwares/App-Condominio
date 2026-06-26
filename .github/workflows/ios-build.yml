@@ -4,15 +4,40 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID'
+        description: 'Unique build identifier'
         required: true
         type: string
+      ios_path:
+        description: 'Path to iOS project'
+        required: false
+        type: string
+        default: 'ios/App'
+      scheme:
+        description: 'Xcode scheme'
+        required: false
+        type: string
+        default: 'App'
+      use_signing:
+        description: 'Enable code signing'
+        required: false
+        type: boolean
+        default: false
+      configuration:
+        description: 'Configuration'
+        required: false
+        type: string
+        default: 'Debug'
+      flutter_version:
+        description: 'Flutter version'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -20,8 +45,10 @@ jobs:
         with:
           node-version: 22
 
-      - name: Test
+      - name: Debug Output
         run: |
+          echo "Build ID: ${{ inputs.build_id }}"
+          echo "iOS Path: ${{ inputs.ios_path }}"
           node -v
           npm -v
           ls -R
