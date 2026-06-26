@@ -4,70 +4,73 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'Unique build identifier'
         required: true
-        default: 'manual'
+        type: string
+        default: 'v1'
 
 env:
-  # Forzamos Node 24 en todo el runner para evitar el error de versiones
+  # Esto mata el error de Node 20 y fuerza el entorno moderno de GitHub
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '24'
 
-      - name: Enable Corepack (pnpm)
+      - name: Install dependencies
         run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
-
-      - name: Install Dependencies
-        run: |
-          # Limpiamos para evitar conflictos entre Windows y Mac
+          # Limpiamos para evitar el error de "si" y otros conflictos
           rm -f pnpm-lock.yaml package-lock.json .npmrc
-          pnpm install --no-frozen-lockfile
+          npm install --legacy-peer-deps
 
       - name: Build Web Project
-        run: |
-          # Usamos vite directamente para evitar errores de tsc
-          npx vite build
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
       - name: Build iOS App
         run: |
+          # Entramos a la carpeta real (no "si")
           cd ios/App
-          # Resolver paquetes de Swift Package Manager
+          
+          # Resolver paquetes de Apple
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el proyecto nativo (Sin firma para el IPA)
+          # Compilar proyecto directamente
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath build \
+                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
+                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          # Empaquetamos el binario en un archivo IPA instalable
-          mkdir -p Payload
-          cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
-          zip -rq app.ipa Payload
+          # Buscamos el .app generado y lo empaquetamos
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No se encontró el binario .app"
+            exit 1
+          fi
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -rq "${{ inputs.build_id }}.ipa" Payload
           
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
-          path: app.ipa
+          name: ios-ipa-final
+          path: build/*.ipa
           retention-days: 1
