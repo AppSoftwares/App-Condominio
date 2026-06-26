@@ -38,17 +38,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
-      - name: Debug Info
-        run: |
-          node -v
-          npm -v
-          ls -R ios/App
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: |
-          npm install --legacy-peer-deps
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
