@@ -9,10 +9,6 @@ on:
         type: string
         default: 'manual-build'
 
-env:
-  # Forzar a GitHub a usar Node 24 en todas las acciones internas
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: macos-14
@@ -20,38 +16,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9
 
       - name: Install dependencies
-        run: |
-          # Eliminar archivos que pueden causar conflictos en CI
-          rm -f .npmrc
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Build Web Project (Skip Type Check)
-        run: |
-          # Usamos vite build directamente para saltar tsc y evitar que el build falle por errores de TypeScript
-          npx vite build
+      - name: Build Web Project
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Build iOS App (SPM)
         run: |
           cd ios/App
-          
-          # Resolver dependencias de Swift Package Manager
+          # Resolver dependencias de Swift Package Manager (Capacitor 6 standard)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar usando el proyecto directamente (Capacitor 6 standard)
+          # Compilar proyecto
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -61,10 +51,10 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Empaquetar el .ipa
+          # Empaquetar .ipa
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el archivo .app"
+            echo "Error: No se encontró el binario .app"
             exit 1
           fi
           
