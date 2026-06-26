@@ -1,16 +1,12 @@
-name: iOS Build (Success Path)
+name: iOS Build
 
 on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID de compilación'
+        description: 'ID'
         required: true
         default: 'v1'
-
-env:
-  # Eliminamos de raíz los conflictos de versiones de Node en GitHub
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -19,64 +15,52 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node (Stable LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-
-      - name: Clean Environment
-        run: |
-          # Limpiamos rastros que puedan causar conflictos en Mac
-          rm -rf node_modules
-          rm -f package-lock.json pnpm-lock.yaml .npmrc
-          # Quitamos sharp solo para el CI (no se necesita para el build de iOS)
-          sed -i.bak '/"sharp":/d' package.json
+          node-version: '22'
 
       - name: Install dependencies
         run: |
-          # Instalación rápida ignorando errores de scripts nativos
+          # Limpieza preventiva
+          rm -f package-lock.json pnpm-lock.yaml .npmrc
+          # Instalación ignorando scripts nativos (como sharp) que rompen el build
           npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
         run: |
-          # Compilamos directamente con Vite para saltar errores de TypeScript
+          # Usamos vite directamente para saltar errores de TypeScript
           npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App (Direct Xcode)
+      - name: Build App
         run: |
           cd ios/App
-          # Resolver dependencias de SPM (Capacitor 6)
+          # Resolver dependencias de Capacitor 6
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario nativo (Sin firma para descarga)
+          # Compilar binario nativo
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app generado en un archivo .ipa descargable
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
-            exit 1
-          fi
-          mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
-          cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
-          cd "${GITHUB_WORKSPACE}/build"
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          mkdir -p Payload
+          # Localizar el archivo .app generado y empaquetarlo
+          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
+          cp -R "$APP_PATH" Payload/
+          zip -rq app.ipa Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-success
-          path: build/*.ipa
+          name: ios-ipa-unsigned
+          path: app.ipa
           retention-days: 1
