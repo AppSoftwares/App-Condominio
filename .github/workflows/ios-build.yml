@@ -7,6 +7,26 @@ on:
         description: 'Unique build identifier'
         required: true
         type: string
+      ios_path:
+        description: 'Path to iOS project'
+        required: false
+        type: string
+        default: 'ios/App'
+      scheme:
+        description: 'Xcode scheme'
+        required: false
+        type: string
+        default: 'App'
+      use_signing:
+        description: 'Enable code signing'
+        required: false
+        type: boolean
+        default: false
+      configuration:
+        description: 'Configuration'
+        required: false
+        type: string
+        default: 'Debug'
 
 jobs:
   build:
@@ -15,13 +35,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
@@ -31,10 +56,24 @@ jobs:
 
       - name: Build App
         run: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          cd ${{ inputs.ios_path }}
+          # Intentar compilar con xcodebuild (sin firma)
+          xcodebuild -workspace App.xcworkspace \
+                     -scheme ${{ inputs.scheme }} \
+                     -configuration ${{ inputs.configuration }} \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     COMPILER_INDEX_STORE_ENABLE=NO \
+                     -quiet build
           
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
+          # Buscar el .app generado y empaquetar en .ipa
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No se encontró el archivo .app"
+            exit 1
+          fi
+
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
