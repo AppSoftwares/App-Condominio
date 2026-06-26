@@ -17,11 +17,6 @@ on:
         required: false
         type: string
         default: 'App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
       configuration:
         description: 'Build configuration'
         required: false
@@ -43,13 +38,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies (NPM fallback)
+      - name: Install dependencies
         run: |
-          rm -f pnpm-lock.yaml package-lock.json .npmrc
+          rm -f package-lock.json pnpm-lock.yaml .npmrc
           npm install --legacy-peer-deps
 
-      - name: Build Web Project (CI Mode)
-        run: npm run build:ci
+      - name: Build Web Project
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -57,7 +52,10 @@ jobs:
       - name: Build iOS App
         run: |
           cd "ios/App"
+          # Resolve SPM
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          
+          # Build
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration "${{ inputs.configuration }}" \
@@ -69,6 +67,7 @@ jobs:
           
       - name: Create IPA
         run: |
+          # Buscar el .app
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: No se encontró el binario .app"
