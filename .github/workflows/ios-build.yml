@@ -1,15 +1,15 @@
-name: iOS Build
+name: iOS Build Success
 
 on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'Build Identifier'
         required: true
         default: 'v1'
 
 env:
-  # Solución para el aviso de Node deprecado
+  # Mata el error de versiones de raíz
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -19,33 +19,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
 
-      - name: Clean and Install
+      - name: Clean Environment
         run: |
-          # Evitamos que sharp rompa el build en el servidor
+          rm -rf node_modules
+          rm -f package-lock.json pnpm-lock.yaml .npmrc
+          # Desactivamos sharp para que no rompa la instalación en Mac
           export SHARP_IGNORE_GLOBAL_LIBVIPS=1
-          rm -f pnpm-lock.yaml package-lock.json .npmrc
+
+      - name: Install Dependencies
+        run: |
+          # Instalación rápida ignorando scripts nativos que fallan en CI
           npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
         run: |
-          # Build directo de Vite (sin tsc para evitar bloqueos)
+          # Build directo de Vite saltando errores de TypeScript
           npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Xcode Build
+      - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de Swift (Capacitor 6 SPM)
+          # Resolver dependencias de Capacitor 6 (SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario nativo (Debug)
+          # Compilar el binario nativo
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -57,14 +62,14 @@ jobs:
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app en un .ipa para que puedas descargarlo
+          # Empaquetamos el .app en un .ipa para descarga directa
           mkdir -p Payload
           cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
           zip -rq app.ipa Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-manual
+          name: ios-ipa-unsigned
           path: app.ipa
           retention-days: 1
