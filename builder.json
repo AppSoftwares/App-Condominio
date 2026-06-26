@@ -1,0 +1,16 @@
+{
+  "project": "CaminosApp",
+  "platform": "ios",
+  "github": {
+    "owner": "AppSoftwares",
+    "repo": "App-Condominio"
+  },
+  "ios": {
+    "path": "ios/App"
+  },
+  "flutter": {
+    "watch": {}
+  },
+  "reactNative": {},
+  "mobai": {}
+}
