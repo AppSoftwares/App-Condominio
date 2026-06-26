@@ -4,15 +4,35 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'Unique build identifier'
         required: true
-        default: 'manual-v1'
+        type: string
+      ios_path:
+        description: 'Path to iOS project'
+        required: false
+        type: string
+        default: 'ios/App'
+      scheme:
+        description: 'Xcode scheme'
+        required: false
+        type: string
+        default: 'App'
+      use_signing:
+        description: 'Enable code signing'
+        required: false
+        type: boolean
+        default: false
+      configuration:
+        description: 'Configuration'
+        required: false
+        type: string
+        default: 'Debug'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build_ios:
+  build:
     runs-on: macos-14
     steps:
       - name: Checkout repository
@@ -39,14 +59,14 @@ jobs:
 
       - name: Build iOS App
         run: |
-          cd ios/App
+          cd "${{ inputs.ios_path }}"
           # Resolver dependencias de SPM
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
           # Compilar
           xcodebuild -project App.xcodeproj \
-                     -scheme App \
-                     -configuration Debug \
+                     -scheme "${{ inputs.scheme }}" \
+                     -configuration "${{ inputs.configuration }}" \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
@@ -55,7 +75,7 @@ jobs:
           
       - name: Create IPA
         run: |
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: No se encontró el binario .app"
             exit 1
