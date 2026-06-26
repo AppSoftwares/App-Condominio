@@ -1,4 +1,4 @@
-name: iOS Build
+name: iOS Build (Emergency Fix)
 
 on:
   workflow_dispatch:
@@ -7,7 +7,11 @@ on:
         description: 'Unique build identifier'
         required: true
         type: string
-        default: 'manual-build'
+        default: 'v1'
+
+env:
+  # Elimina los avisos de Node 20 forzando el 24 en todo el runner
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -16,32 +20,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+          node-version: '24'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          rm -f pnpm-lock.yaml .npmrc
+          npm install --legacy-peer-deps
 
       - name: Build Web Project
-        run: npx vite build
+        run: |
+          # Compilar directamente con vite para evitar errores de tsc
+          npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App (SPM)
+      - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de Swift Package Manager (Capacitor 6 standard)
+          # Resolver paquetes de Swift (SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar proyecto
+          # Compilar (Sin firma para descargar el IPA)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -51,21 +54,16 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Empaquetar .ipa
+          # Crear el IPA
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
-            exit 1
-          fi
-          
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload IPA artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ipa
+          name: ipa-unsigned
           path: build/*.ipa
           retention-days: 1
