@@ -4,32 +4,35 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID de compilación'
+        description: 'Build ID'
         required: true
         default: 'manual-v1'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  build:
+  build_ios:
     runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build Web Project
-        run: pnpm run build
+      - name: Build Web Project (CI Mode)
+        run: pnpm run build:ci
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -37,9 +40,10 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Capacitor 6 utiliza Swift Package Manager por defecto
+          # Resolver dependencias de SPM
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
+          # Compilar
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -49,20 +53,20 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Crear el archivo .ipa
+      - name: Create IPA
+        run: |
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el .app"
+            echo "Error: No se encontró el binario .app"
             exit 1
           fi
-          mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
-          cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
-          cd "${GITHUB_WORKSPACE}/build"
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-final
-          path: build/*.ipa
+          name: ios-ipa
+          path: "*.ipa"
           retention-days: 1
