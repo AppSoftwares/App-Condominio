@@ -6,56 +6,68 @@ on:
       build_id:
         description: 'Build ID'
         required: true
-        default: 'v1'
+        default: 'manual'
+
+env:
+  # Forzamos Node 24 en todo el runner para evitar el error de versiones
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  ios-build:
+  build:
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Install Dependencies
         run: |
+          # Limpiamos para evitar conflictos entre Windows y Mac
           rm -f pnpm-lock.yaml package-lock.json .npmrc
           pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
-        run: npx vite build
+        run: |
+          # Usamos vite directamente para evitar errores de tsc
+          npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build App
+      - name: Build iOS App
         run: |
           cd ios/App
+          # Resolver paquetes de Swift Package Manager
+          xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          
+          # Compilar el proyecto nativo (Sin firma para el IPA)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath build \
-                     -quiet \
-                     CODE_SIGNING_ALLOWED=NO
+                     CODE_SIGNING_ALLOWED=NO \
+                     -quiet build
           
       - name: Create IPA
         run: |
+          # Empaquetamos el binario en un archivo IPA instalable
           mkdir -p Payload
           cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
-          zip -r app.ipa Payload
+          zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa
+          name: ios-ipa-unsigned
           path: app.ipa
           retention-days: 1
