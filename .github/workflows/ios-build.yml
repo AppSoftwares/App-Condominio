@@ -1,4 +1,4 @@
-name: iOS Build (Emergency Fix)
+name: iOS Build (Final Support)
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         default: 'v1'
 
 env:
-  # Elimina los avisos de Node 20 forzando el 24 en todo el runner
+  # Forzar Node 24 para evitar el error de entorno de GitHub
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -25,14 +25,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          rm -f pnpm-lock.yaml .npmrc
+          # Limpieza total para evitar conflictos de versiones
+          rm -f pnpm-lock.yaml package-lock.json .npmrc
           npm install --legacy-peer-deps
 
       - name: Build Web Project
         run: |
-          # Compilar directamente con vite para evitar errores de tsc
+          # Usamos vite directo para saltar errores de TypeScript (tsc)
           npx vite build
 
       - name: Capacitor Sync
@@ -41,10 +42,10 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver paquetes de Swift (SPM)
+          # Resolver dependencias de SPM (Capacitor 6)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar (Sin firma para descargar el IPA)
+          # Compilar el proyecto directamente
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -54,16 +55,21 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Crear el IPA
+          # Empaquetar el .ipa
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No se pudo localizar el archivo .app"
+            exit 1
+          fi
+          
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ipa-unsigned
+          name: ios-ipa-unsigned
           path: build/*.ipa
           retention-days: 1
