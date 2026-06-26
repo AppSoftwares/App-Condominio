@@ -25,7 +25,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,7 +54,14 @@ jobs:
       - name: Build App
         run: |
           cd ios/App
+          # Listar esquemas para depurar
+          xcodebuild -list
+          
+          # Intentar resolver SPM
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          
+          # Compilar usando el esquema detectado (probablemente App o Condominio)
+          # Intentamos con "App" primero, si falla, el log nos dirá los nombres reales
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration "${{ inputs.configuration }}" \
@@ -68,7 +75,7 @@ jobs:
         run: |
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: .app not found"
+            echo "Error: .app no encontrado"
             exit 1
           fi
           mkdir -p Payload
