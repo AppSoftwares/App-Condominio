@@ -35,16 +35,11 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm install --legacy-peer-deps
 
       - name: Build Web Project
-        run: npx vite build
+        run: npm run build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -52,7 +47,6 @@ jobs:
       - name: Build App
         run: |
           cd "${{ inputs.ios_path }}"
-          # Si no hay workspace, usamos el project
           if [ -f "App.xcworkspace" ]; then
             xcodebuild -workspace App.xcworkspace -scheme App -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
           else
