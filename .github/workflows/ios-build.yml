@@ -88,14 +88,13 @@ jobs:
 
       - name: Build Web Project
         run: |
-          node --version
-          pnpm run build
+          npx vite build
+          ls -la dist
 
       - name: Capacitor Sync
         run: |
-          npx cap --version
           npx cap sync ios
-          ls -R ios/App
+          ls -la ios/App
 
       - name: Restore Pods cache
         uses: actions/cache@v4
