@@ -51,23 +51,21 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: List iOS Files
-        run: |
-          ls -R ios/App
-
       - name: Build App
         run: |
           cd ios/App
-          # List schemes to see what's available
-          xcodebuild -list
-
-          xcodebuild -project App.xcodeproj \
-                     -scheme "${{ inputs.scheme }}" \
-                     -configuration "${{ inputs.configuration }}" \
-                     -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     -quiet build
+          
+          # Install pods if Podfile exists
+          if [ -f "Podfile" ]; then
+            pod install
+          fi
+          
+          # Try workspace first, then project
+          if [ -d "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme "${{ inputs.scheme }}" -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          else
+            xcodebuild -project App.xcodeproj -scheme "${{ inputs.scheme }}" -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          fi
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
