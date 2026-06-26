@@ -37,9 +37,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          rm -f .npmrc
-          rm -f pnpm-lock.yaml
-          npm install --legacy-peer-deps
+          echo "--- SISTEMA ---"
+          node -v
+          npm -v
+          pwd
+          ls -la
+          echo "--- INTENTANDO INSTALACIÓN ---"
+          npm install --legacy-peer-deps || (echo "FALLÓ NPM, PROBANDO CON LOGS" \u0026\u0026 npm install --legacy-peer-deps --verbose)
 
       - name: Build Web Project
         run: npm run build
