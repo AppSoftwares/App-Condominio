@@ -30,7 +30,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-13
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
 
       - name: Install
         run: |
@@ -46,9 +46,7 @@ jobs:
           npm install --legacy-peer-deps --ignore-scripts
 
       - name: Build Web
-        run: |
-          npm run build:ci
-          ls -la dist
+        run: npm run build:ci
 
       - name: Sync
         run: npx cap sync ios
@@ -56,10 +54,7 @@ jobs:
       - name: Xcode
         run: |
           cd ios/App
-          # Resolver dependencias
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
-          
-          # Intentar compilar el esquema App
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration Debug \
@@ -71,10 +66,9 @@ jobs:
       - name: Export
         run: |
           mkdir -p Payload
-          # Encontrar el .app generado
           APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
+            echo "Error: .app not found"
             exit 1
           fi
           cp -R "$APP_PATH" Payload/
