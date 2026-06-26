@@ -4,45 +4,43 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'ID de compilación'
         required: true
-        default: 'v1'
+        default: 'manual'
 
 env:
-  # Forzar el uso de Node 24 para cumplir con la nueva política de GitHub
+  # Solo dejamos esta para cumplir con la nueva norma de GitHub
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  # Permitir versiones de Node que GitHub considera inseguras si fuera necesario
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
+
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@latest --activate
 
       - name: Clean and Prepare
         run: |
-          # 1. Eliminar librerías problemáticas que no son necesarias para el build web
+          # Eliminar sharp y rastros locales para evitar fallos en Mac
           sed -i.bak '/"sharp":/d' package.json
-          # 2. Limpiar archivos de configuración que causan conflicto
-          rm -f package-lock.json pnpm-lock.yaml .npmrc
+          rm -f pnpm-lock.yaml package-lock.json .npmrc
           rm -rf node_modules
 
       - name: Install dependencies
-        run: |
-          # Instalación limpia sin ejecutar scripts nativos que fallan en Mac
-          npm install --legacy-peer-deps --no-audit --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Build Web Project
-        run: |
-          # Usamos vite directamente para saltar tsc y evitar bloqueos por tipos
-          npx vite build
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -50,35 +48,28 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de SPM (Capacitor 6)
+          # Resolver paquetes de Swift
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar binario nativo (Debug)
+          # Compilar binario (Debug)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app generado en un .ipa
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
-            exit 1
-          fi
-          mkdir -p build/Payload
-          cp -R "$APP_PATH" build/Payload/
-          cd build
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          mkdir -p Payload
+          cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
+          zip -rq app.ipa Payload
           
-      - name: Upload IPA artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-final
-          path: build/*.ipa
+          name: ios-ipa-unsigned
+          path: app.ipa
           retention-days: 1
