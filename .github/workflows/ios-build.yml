@@ -18,13 +18,10 @@ on:
         type: string
         default: 'App'
       configuration:
-        description: 'Build configuration'
+        description: 'Configuration'
         required: false
         type: string
         default: 'Debug'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -33,31 +30,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
+      - name: Install pnpm
+        run: npm install -g pnpm@latest
+
       - name: Install dependencies
         run: |
           rm -f package-lock.json pnpm-lock.yaml .npmrc
-          npm install --legacy-peer-deps
+          pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
-        run: npx vite build
+        run: pnpm run build:ci
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Build App
         run: |
-          cd "ios/App"
-          # Resolve SPM
+          cd ios/App
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
-          
-          # Build
           xcodebuild -project App.xcodeproj \
-                     -scheme "App" \
+                     -scheme App \
                      -configuration "${{ inputs.configuration }}" \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
@@ -67,19 +64,17 @@ jobs:
           
       - name: Create IPA
         run: |
-          # Buscar el .app
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
+            echo "Error: .app not found"
             exit 1
           fi
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
           path: "*.ipa"
-          retention-days: 1
