@@ -21,26 +21,20 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Xcode Version
-        run: xcodebuild -version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          npm install -g pnpm
+          pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
@@ -50,7 +44,7 @@ jobs:
 
       - name: Build App
         run: |
-          cd "${{ inputs.ios_path }}"
+          cd "ios/App"
           xcodebuild -workspace App.xcworkspace \
                      -scheme App \
                      -configuration "${{ inputs.configuration }}" \
@@ -60,7 +54,6 @@ jobs:
                      -quiet build
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
-          echo "Found app at: $APP_PATH"
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
