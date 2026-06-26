@@ -7,11 +7,6 @@ on:
         description: 'Unique build identifier'
         required: true
         type: string
-      ios_path:
-        description: 'Path'
-        required: false
-        type: string
-        default: 'ios/App'
 
 jobs:
   build:
@@ -30,7 +25,7 @@ jobs:
           rm -f package-lock.json pnpm-lock.yaml .npmrc
           npm install --legacy-peer-deps --ignore-scripts
 
-      - name: Build
+      - name: Build Web
         run: npm run build:ci
 
       - name: Sync
@@ -39,6 +34,13 @@ jobs:
       - name: Xcode
         run: |
           cd ios/App
+          # Resolver paquetes de SPM
+          xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          
+          # Listar esquemas para depurar
+          xcodebuild -list
+          
+          # Compilar
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration Debug \
@@ -50,7 +52,11 @@ jobs:
       - name: Export
         run: |
           mkdir -p Payload
-          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
+          APP_PATH=$(find ios/App/build/Build/Products/Debug-iphoneos -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: Binario .app no encontrado"
+            exit 1
+          fi
           cp -R "$APP_PATH" Payload/
           zip -rq app.ipa Payload
           
