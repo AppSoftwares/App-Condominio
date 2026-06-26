@@ -4,56 +4,55 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID'
+        description: 'Build ID'
         required: true
         default: 'manual'
 
 env:
-  # Cumplimos con GitHub: Forzamos Node 24 para evitar el error de entorno
+  # Forzamos Node 24 para cumplir con la norma de GitHub de Junio 2026
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      - name: Prepare Architecture (CI Fix)
+      - name: Clean Environment
         run: |
-          # 1. Eliminar sharp porque rompe el instalador de Mac en CI
+          # 1. Quitar sharp y tsc para evitar el error "Exit Code 1"
           sed -i.bak '/"sharp":/d' package.json
-          # 2. Eliminar el chequeo de TypeScript del script de build
           sed -i.bak 's/tsc && //g' package.json
-          # 3. Limpiar rastros locales
+          # 2. Borrar lockfiles para que GitHub no intente seguir reglas de Windows
           rm -f package-lock.json pnpm-lock.yaml .npmrc
+          rm -rf node_modules
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          # Instalación ultra-ligera sin scripts nativos
+          # Instalación fresca sin ejecutar scripts que rompan el Mac
           npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
         run: |
-          # Ejecutamos el build (que ahora ya no corre tsc gracias al sed)
+          # Build directo de Vite
           npm run build
 
       - name: Capacitor Sync
-        run: |
-          npx cap sync ios
+        run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Xcode Build
         run: |
           cd ios/App
-          # Resolver dependencias SPM de Apple
+          # Resolver dependencias de Apple (Capacitor 6 SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar binario nativo directamente
+          # Compilar el binario
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -65,13 +64,13 @@ jobs:
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app en un IPA para descarga
+          # Empaquetamos el binario para descarga
           mkdir -p Payload
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           cp -R "$APP_PATH" Payload/
           zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-final
