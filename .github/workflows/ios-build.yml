@@ -13,7 +13,7 @@ on:
         type: string
         default: 'ios/App'
       scheme:
-        description: 'Xcode scheme'
+        description: 'Xcode scheme to build'
         required: false
         type: string
         default: 'App'
@@ -23,7 +23,7 @@ on:
         type: boolean
         default: false
       configuration:
-        description: 'Configuration'
+        description: 'Build configuration'
         required: false
         type: string
         default: 'Debug'
@@ -43,13 +43,23 @@ jobs:
         with:
           node-version: 24
 
+      - name: Debug Environment
+        run: |
+          node -v
+          npm -v
+          pwd
+          ls -R
+
       - name: Enable Corepack (pnpm)
         run: |
           corepack enable
           corepack prepare pnpm@latest --activate
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          # Eliminar .npmrc local por si acaso tiene configs de red restrictivas
+          rm -f .npmrc
+          pnpm install --no-frozen-lockfile
 
       - name: Build Web Project (CI Mode)
         run: pnpm run build:ci
