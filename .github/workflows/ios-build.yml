@@ -23,6 +23,9 @@ on:
         type: string
         default: 'Debug'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: macos-14
@@ -30,12 +33,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
-      - name: Install pnpm
+      - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -44,7 +47,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
-        run: npx vite build
+        run: pnpm run build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -53,21 +56,23 @@ jobs:
         run: |
           cd "${{ inputs.ios_path }}"
           
-          # Resolve SPM packages
+          # Capacitor 6 usa SPM. Resolvemos paquetes primero.
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Build
+          # Compilar el proyecto directamente
           xcodebuild -project App.xcodeproj \
                      -scheme "${{ inputs.scheme }}" \
                      -configuration "${{ inputs.configuration }}" \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
+                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
+          # Localizar el binario y empaquetar
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: .app not found"
+            echo "Error: No se pudo encontrar el archivo .app generado"
             exit 1
           fi
           
