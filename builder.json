@@ -1,12 +1,12 @@
 {
-  "project": "CaminosApp",
+  "project": "ios/App",
   "platform": "ios",
   "github": {
     "owner": "AppSoftwares",
     "repo": "App-Condominio"
   },
   "ios": {
-    "path": "ios/App"
+    "path": "si"
   },
   "flutter": {
     "watch": {}
