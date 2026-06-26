@@ -1,4 +1,4 @@
-name: iOS Build (Final Support)
+name: iOS Build
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         default: 'v1'
 
 env:
-  # Forzar Node 24 para evitar el error de entorno de GitHub
+  # Esto le dice a todas las piezas de GitHub que usen Node 24 sí o sí
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -25,15 +25,15 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          # Limpieza total para evitar conflictos de versiones
+          # Limpiamos archivos locales que confunden al servidor
           rm -f pnpm-lock.yaml package-lock.json .npmrc
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --no-audit
 
       - name: Build Web Project
         run: |
-          # Usamos vite directo para saltar errores de TypeScript (tsc)
+          # Compilamos saltando TypeScript (tsc) para que no nos frene ningún error de código
           npx vite build
 
       - name: Capacitor Sync
@@ -42,10 +42,11 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de SPM (Capacitor 6)
+          
+          # 1. Resolver paquetes de Apple (SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el proyecto directamente
+          # 2. Compilar binario (Debug es más rápido para probar)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -55,10 +56,10 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Empaquetar el .ipa
+          # 3. Empaquetar en .ipa
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se pudo localizar el archivo .app"
+            echo "Error: No se generó el archivo .app"
             exit 1
           fi
           
@@ -67,9 +68,9 @@ jobs:
           cd "${GITHUB_WORKSPACE}/build"
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
+          name: ios-app-manual
           path: build/*.ipa
           retention-days: 1
