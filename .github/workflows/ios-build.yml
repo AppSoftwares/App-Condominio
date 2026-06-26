@@ -82,14 +82,20 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          pnpm --version
+          pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
-        run: pnpm run build
+        run: |
+          node --version
+          pnpm run build
 
       - name: Capacitor Sync
         run: |
+          npx cap --version
           npx cap sync ios
+          ls -R ios/App
 
       - name: Restore Pods cache
         uses: actions/cache@v4
