@@ -48,16 +48,13 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install pnpm
-        run: npm install -g pnpm@latest
-
-      - name: Install dependencies
+      - name: Install dependencies (NPM)
         run: |
           rm -f package-lock.json pnpm-lock.yaml .npmrc
-          pnpm install --no-frozen-lockfile
+          npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Build Web Project
-        run: pnpm run build:ci
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -65,10 +62,7 @@ jobs:
       - name: Build iOS App
         run: |
           cd "${{ inputs.ios_path }}"
-          # Resolve SPM
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
-          
-          # Build
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration "${{ inputs.configuration }}" \
