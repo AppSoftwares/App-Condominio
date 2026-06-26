@@ -7,16 +7,6 @@ on:
         description: 'Unique build identifier'
         required: true
         type: string
-      ios_path:
-        description: 'Path to iOS project'
-        required: false
-        type: string
-        default: 'ios/App'
-      configuration:
-        description: 'Build configuration'
-        required: false
-        type: string
-        default: 'Debug'
 
 jobs:
   build:
@@ -28,39 +18,23 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+          node-version: '20'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --force
+        run: npm install --legacy-peer-deps
 
-      - name: Build Web Project (No Type Check)
-        run: |
-          # Saltamos el chequeo de tipos de TypeScript para evitar errores en CI
-          npx vite build
+      - name: Build Web Project
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
       - name: Build App
         run: |
-          cd "${{ inputs.ios_path }}"
-          # Forzar resolución de dependencias de CocoaPods
-          pod install
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
           
-          xcodebuild -workspace App.xcworkspace \
-                     -scheme App \
-                     -configuration "${{ inputs.configuration }}" \
-                     -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     -quiet build
-          
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
