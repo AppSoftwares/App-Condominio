@@ -4,70 +4,63 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'Build Identifier'
         required: true
-        default: 'manual'
-
-env:
-  # Cumplimos con la exigencia de GitHub de Junio 2026
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        default: 'v1'
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
 
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          # Solo queda pnpm-lock.yaml, así que será una instalación limpia
+          # Limpiamos para evitar conflictos entre Windows y Mac
+          rm -f package-lock.json pnpm-lock.yaml .npmrc
           pnpm install --no-frozen-lockfile --ignore-scripts
 
-      - name: Build Web Project
-        run: |
-          # Saltamos tsc para evitar bloqueos por errores de tipos
-          npx vite build
+      - name: Build Web
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Xcode Build
         run: |
           cd ios/App
-          # Resolver dependencias SPM
+          # Resolver dependencias SPM (Capacitor 6)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario nativo
+          # Compilar el proyecto nativo
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
           mkdir -p Payload
-          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
-          cp -R "$APP_PATH" Payload/
+          cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
           zip -rq app.ipa Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-final
+          name: ios-ipa-unsigned
           path: app.ipa
           retention-days: 1
