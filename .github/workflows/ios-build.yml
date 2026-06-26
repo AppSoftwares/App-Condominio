@@ -30,7 +30,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,44 +38,32 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+          node-version: '20'
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          npm install --legacy-peer-deps
 
       - name: Build Web Project
-        run: pnpm run build
+        run: npm run build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
+      - name: Debug iOS Folder
+        run: ls -R ios/App
+
       - name: Build App
         run: |
-          cd "${{ inputs.ios_path }}"
-          
-          # Capacitor 6 uses SPM by default, so we check for workspace
-          if [ -d "App.xcworkspace" ]; then
-            xcodebuild -workspace App.xcworkspace \
-                       -scheme "${{ inputs.scheme }}" \
-                       -configuration "${{ inputs.configuration }}" \
-                       -destination 'generic/platform=iOS' \
-                       -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                       CODE_SIGNING_ALLOWED=NO \
-                       -quiet build
-          else
-            xcodebuild -project App.xcodeproj \
-                       -scheme "${{ inputs.scheme }}" \
-                       -configuration "${{ inputs.configuration }}" \
-                       -destination 'generic/platform=iOS' \
-                       -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                       CODE_SIGNING_ALLOWED=NO \
-                       -quiet build
-          fi
+          cd ios/App
+          # Force project build since workspace was not found in listing
+          xcodebuild -project App.xcodeproj \
+                     -scheme "${{ inputs.scheme }}" \
+                     -configuration "${{ inputs.configuration }}" \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     -quiet build
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
