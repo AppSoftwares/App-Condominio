@@ -61,6 +61,8 @@ jobs:
         run: |
           if [ -f "pubspec.yaml" ]; then
             echo "type=flutter" >> $GITHUB_OUTPUT
+          elif [ -f "capacitor.config.ts" ] || [ -f "capacitor.config.json" ]; then
+            echo "type=capacitor" >> $GITHUB_OUTPUT
           elif [ -f "package.json" ] && grep -q '"expo"' package.json; then
             echo "type=expo" >> $GITHUB_OUTPUT
           elif [ -f "package.json" ] && grep -q '"react-native"' package.json; then
@@ -68,18 +70,6 @@ jobs:
           else
             echo "type=native" >> $GITHUB_OUTPUT
           fi
-
-      - name: Setup Flutter
-        if: steps.detect.outputs.type == 'flutter'
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ inputs.flutter_version || '' }}
-          channel: ${{ inputs.flutter_version && 'stable' || 'stable' }}
-          cache: true
-
-      - name: Flutter pub get
-        if: steps.detect.outputs.type == 'flutter'
-        run: flutter pub get
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -92,13 +82,17 @@ jobs:
           version: 8
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: pnpm run build
 
       - name: Capacitor Sync
-        run: npx cap sync ios
+        run: |
+          npx cap sync ios
+          # Limpiar caches potencialmente corruptos en el runner
+          rm -rf ios/App/Pods
+          rm -f ios/App/Podfile.lock
 
       - name: Restore Pods cache
         uses: actions/cache@v4
