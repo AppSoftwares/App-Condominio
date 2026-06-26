@@ -10,8 +10,14 @@ export const Support: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
+    const subject = type === 'feedback' ? 'Comentario de la App' : 'Reclamo de la App';
+    const mailtoUrl = `mailto:Jess.pirela@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+
+    window.location.href = mailtoUrl;
+
     setTimeout(() => {
-      alert("Su mensaje ha sido enviado al equipo de soporte. Le contactaremos pronto.")
+      alert("Se ha abierto su aplicación de correo para enviar el mensaje.")
       setLoading(false)
       setMessage('')
       setStep(null)
@@ -19,22 +25,8 @@ export const Support: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', paddingBottom: '40px' }}>
-      <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5',
-        borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px',
-        zIndex: 100, boxSizing: 'border-box'
-      }}>
-        <button
-          onClick={() => type ? setStep(null) : navigate('/profile')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
-        </button>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: '#0f5551', fontWeight: 700, textTransform: 'uppercase' }}>Soporte y Ayuda</h1>
-      </header>
-
-      <main style={{ paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#FAF8F5', color: '#1B1C1A', paddingBottom: '40px' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
 
         {!type ? (
           <>
@@ -66,7 +58,12 @@ export const Support: React.FC = () => {
             <div style={{ marginTop: '40px', textAlign: 'center', padding: '20px', backgroundColor: 'white', borderRadius: '16px', border: '1px solid #bfc8c7' }}>
                <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f5551', marginBottom: '10px' }}>Contacto Directo</p>
                <p style={{ fontSize: '13px', color: '#3f4947', marginBottom: '15px' }}>Lunes a Viernes: 8:00 AM - 5:00 PM</p>
-               <button style={{ backgroundColor: '#2f6d69', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Llamar a Administración</button>
+               <button
+                  onClick={() => window.open('https://wa.me/584149665870', '_blank')}
+                  style={{ backgroundColor: '#2f6d69', color: 'white', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+               >
+                  Llamar a Administración
+               </button>
             </div>
           </>
         ) : (

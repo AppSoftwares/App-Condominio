@@ -1,0 +1,62 @@
+name: Build iOS (Capacitor)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Build Web Project
+        run: pnpm run build
+
+      - name: Capacitor Sync iOS
+        run: npx cap sync ios
+
+      - name: Install CocoaPods
+        run: |
+          cd ios/App
+          pod install
+        
+      # Este paso requiere que configures tus Certificados en GitHub Secrets
+      # Para una cuenta gratuita, puedes intentar un build sin firma (solo para verificar)
+      # o configurar los secretos si ya tienes el .p12 y el .mobileprovision
+      - name: Build Xcode Archive
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace \
+                     -scheme App \
+                     -configuration Release \
+                     -archivePath ios/App/App.xcarchive \
+                     archive \
+                     CODE_SIGNING_ALLOWED=NO
+
+      - name: Export IPA (Unsigned)
+        run: |
+          mkdir -p build-output
+          # Nota: Esto genera un .app, para un .ipa real se requiere firma obligatoria
+          cp -r ios/App/App.xcarchive/Products/Applications/App.app build-output/Condominio.app
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app-unsigned
+          path: build-output/

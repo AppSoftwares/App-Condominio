@@ -28,16 +28,7 @@ export const Requests: React.FC = () => {
 
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'rgba(15, 85, 81, 0.1)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <MdOutlinePerson size={24} />
-          </div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio</h1>
-        </div>
-      </header>
-
-      <main style={{ paddingTop: '100px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box', paddingTop: '10px' }}>
         <section style={{ marginBottom: '30px' }}>
            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Portal de Comunidad</h2>
            <p style={{ fontSize: '14px', color: 'var(--text-sub)', margin: 0 }}>Participe en las decisiones de nuestra comunidad.</p>

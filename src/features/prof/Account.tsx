@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
+import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md'
 
 export const Account: React.FC = () => {
   const navigate = useNavigate()
@@ -11,6 +12,10 @@ export const Account: React.FC = () => {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const [showCurrent, setShowCurrent] = useState(false)
+  const [showNew, setShowNew] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleUpdateEmail = (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,22 +40,8 @@ export const Account: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', paddingBottom: '40px' }}>
-      <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5',
-        borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px',
-        zIndex: 100, boxSizing: 'border-box'
-      }}>
-        <button
-          onClick={() => navigate('/profile')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
-        </button>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: '#0f5551', fontWeight: 700, textTransform: 'uppercase' }}>Configuración de Cuenta</h1>
-      </header>
-
-      <main style={{ paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: '#FAF8F5', color: '#1B1C1A', paddingBottom: '40px' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
 
         {/* Update Email Section */}
         <section style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
@@ -74,38 +65,59 @@ export const Account: React.FC = () => {
         <section style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
           <h3 style={{ fontSize: '18px', color: '#0f5551', marginBottom: '20px', fontWeight: 700 }}>Cambiar Contraseña</h3>
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div>
+            <div style={{ position: 'relative' }}>
               <label style={labelStyle}>Contraseña Actual</label>
               <input
-                type="password"
+                type={showCurrent ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 style={inputStyle}
                 required
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowCurrent(!showCurrent)}
+                style={eyeBtnStyle}
+              >
+                {showCurrent ? <MdOutlineVisibilityOff size={20} /> : <MdOutlineVisibility size={20} />}
+              </button>
             </div>
-            <div>
+            <div style={{ position: 'relative' }}>
               <label style={labelStyle}>Nueva Contraseña</label>
               <input
-                type="password"
+                type={showNew ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 style={inputStyle}
                 required
                 placeholder="Mín. 8 caracteres"
               />
+              <button
+                type="button"
+                onClick={() => setShowNew(!showNew)}
+                style={eyeBtnStyle}
+              >
+                {showNew ? <MdOutlineVisibilityOff size={20} /> : <MdOutlineVisibility size={20} />}
+              </button>
             </div>
-            <div>
+            <div style={{ position: 'relative' }}>
               <label style={labelStyle}>Confirmar Nueva Contraseña</label>
               <input
-                type="password"
+                type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 style={inputStyle}
                 required
                 placeholder="Repita la nueva contraseña"
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                style={eyeBtnStyle}
+              >
+                {showConfirm ? <MdOutlineVisibilityOff size={20} /> : <MdOutlineVisibility size={20} />}
+              </button>
             </div>
             <button type="submit" disabled={loading} style={primaryBtnStyle}>Actualizar Contraseña</button>
           </form>
@@ -120,5 +132,6 @@ export const Account: React.FC = () => {
 }
 
 const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, color: '#3d503e', marginBottom: '8px', textTransform: 'uppercase' as const }
-const inputStyle = { width: '100%', padding: '12px 15px', borderRadius: '10px', border: '1px solid #bfc8c7', fontSize: '15px', boxSizing: 'border-box' as const, outline: 'none' }
+const inputStyle = { width: '100%', padding: '12px 15px', paddingRight: '45px', borderRadius: '10px', border: '1px solid #bfc8c7', fontSize: '15px', boxSizing: 'border-box' as const, outline: 'none' }
 const primaryBtnStyle = { width: '100%', padding: '14px', backgroundColor: '#2f6d69', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', marginTop: '5px' }
+const eyeBtnStyle = { position: 'absolute' as const, right: '10px', bottom: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#6f7978', display: 'flex', alignItems: 'center', justifyContent: 'center' }

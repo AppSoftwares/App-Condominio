@@ -69,15 +69,9 @@ export const Guests: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '100px' }}>
-      <header style={{ position: 'fixed', top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' }}>
-        <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <MdArrowBack size={24} style={{ color: 'var(--primary-color)' }} />
-        </button>
-        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', marginLeft: '15px', color: 'var(--primary-color)', fontWeight: 700 }}>Acceso de Invitados</h1>
-      </header>
-
-      <main style={{ paddingTop: '100px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', paddingBottom: '100px' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
+        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', fontWeight: 700, textAlign: 'center', marginBottom: '30px' }}>Acceso de Invitados</h1>
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '32px', marginBottom: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>
            <h3 style={{ fontSize: '13px', color: 'var(--accent-gold)', marginBottom: '24px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center' }}>Autorizar Nuevo Invitado</h3>
            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

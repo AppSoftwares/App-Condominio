@@ -141,15 +141,9 @@ export const Payments: React.FC = () => {
     const isZelle = selectedMethod === 'zelle'
 
     return (
-      <div style={{ backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
-        <header style={headerStyle}>
-          <button onClick={() => setSelectedStep('main')} style={backBtnStyle}>
-            <MdArrowBack size={24} />
-          </button>
-          <h1 style={titleStyle}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
-        </header>
-
-        <main style={mainContentStyle}>
+      <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
+        <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
+          <h1 style={{ fontSize: '32px', color: '#0f5551', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
           <div style={cardStyle}>
             <div style={{ textAlign: 'center', marginBottom: '25px' }}>
               <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#ffdea6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
@@ -280,15 +274,9 @@ export const Payments: React.FC = () => {
   }
 
   return (
-    <div style={containerStyle}>
-      <header style={headerStyle}>
-        <button onClick={() => navigate('/dashboard')} style={backBtnStyle}>
-          <MdArrowBack size={24} />
-        </button>
-        <h1 style={titleStyle}>Pagos de Condominio</h1>
-      </header>
-
-      <main style={mainContentStyle}>
+    <div style={{ ...containerStyle, minHeight: 'auto' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
+        <h1 style={{ fontSize: '32px', color: '#0f5551', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>Pagos de Condominio</h1>
         <div style={{ backgroundColor: '#2f6d69', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(47,109,105,0.2)' }}>
            <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO PENDIENTE</p>
            <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(debtUSD)}</h2>

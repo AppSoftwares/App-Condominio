@@ -27,10 +27,11 @@ export const EmergencyLines: React.FC = () => {
 
   return (
     <div style={{ padding: '20px', paddingBottom: '100px', backgroundColor: 'var(--bg-color)', minHeight: '100vh' }}>
-      <header style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Líneas de Atención</h2>
-        <p style={{ color: 'var(--text-sub)', fontSize: '15px' }}>Asistencia inmediata y cuerpos de seguridad</p>
-      </header>
+      <main style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <header style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Líneas de Atención</h2>
+          <p style={{ color: 'var(--text-sub)', fontSize: '15px' }}>Asistencia inmediata y cuerpos de seguridad</p>
+        </header>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {emergencyContacts.map((contact, index) => (
@@ -71,6 +72,7 @@ export const EmergencyLines: React.FC = () => {
           En caso de emergencia vital, siempre priorice llamar al 911.
         </p>
       </div>
+      </main>
     </div>
   )
 }

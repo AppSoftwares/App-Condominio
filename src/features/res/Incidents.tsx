@@ -56,18 +56,7 @@ export const Incidents: React.FC = () => {
 
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '600px' }}>
-          <button onClick={() => navigate('/dashboard')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary-color)', display: 'flex', alignItems: 'center' }}>
-            <MdArrowBack size={24} />
-          </button>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>
-            Condominio
-          </h1>
-        </div>
-      </header>
-
-      <main style={{ paddingTop: '100px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box', paddingTop: '10px' }}>
 
         {/* Tab Switcher */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', backgroundColor: 'var(--icon-bg)', padding: '5px', borderRadius: '16px' }}>

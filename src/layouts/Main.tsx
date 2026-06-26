@@ -35,6 +35,24 @@ export const Layout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
+  const contentRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const resetScroll = () => {
+      if (contentRef.current) {
+        contentRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
+      }
+      window.scrollTo(0, 0);
+    };
+
+    // Resetear inmediatamente
+    resetScroll();
+
+    // Resetear después de un breve delay por si el renderizado tarda
+    const timeout = setTimeout(resetScroll, 100);
+
+    return () => clearTimeout(timeout);
+  }, [location.pathname, location.search])
 
   if (!user) return <Outlet />
 
@@ -63,7 +81,8 @@ export const Layout: React.FC = () => {
           borderBottom: '1px solid var(--border-color)',
           zIndex: 1100,
           position: 'sticky',
-          top: 0
+          top: 0,
+          marginTop: 'env(safe-area-inset-top)'
         }}>
           <button
             onClick={() => navigate(-1)}
@@ -84,17 +103,20 @@ export const Layout: React.FC = () => {
       )}
 
       {/* Content Container */}
-      <div style={{
-        flex: 1,
-        width: '100%',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        WebkitOverflowScrolling: 'touch',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingBottom: '20px'
-      }}>
+      <div
+        ref={contentRef}
+        style={{
+          flex: 1,
+          width: '100%',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          paddingBottom: '20px'
+        }}
+      >
         <div style={{ width: '100%', maxWidth: '1200px' }}>
             <Outlet />
         </div>
