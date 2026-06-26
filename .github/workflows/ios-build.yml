@@ -51,9 +51,16 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
+      - name: List iOS Files
+        run: |
+          ls -R ios/App
+
       - name: Build App
         run: |
           cd ios/App
+          # List schemes to see what's available
+          xcodebuild -list
+
           xcodebuild -project App.xcodeproj \
                      -scheme "${{ inputs.scheme }}" \
                      -configuration "${{ inputs.configuration }}" \
