@@ -3,8 +3,6 @@ dist
 # Security and Access Keys
 src/config/access_keys/
 .env
-android/
-ios/
 .idea
 *.png
 *.jpg
