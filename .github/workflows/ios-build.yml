@@ -8,76 +8,54 @@ on:
         required: true
         type: string
       ios_path:
-        description: 'Path to iOS project'
+        description: 'Path'
         required: false
         type: string
         default: 'ios/App'
-      scheme:
-        description: 'Xcode scheme'
-        required: false
-        type: string
-        default: 'App'
-      configuration:
-        description: 'Build configuration'
-        required: false
-        type: string
-        default: 'Debug'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 24
 
-      - name: Install dependencies
+      - name: Install
         run: |
           rm -f package-lock.json pnpm-lock.yaml .npmrc
           npm install --legacy-peer-deps --ignore-scripts
 
-      - name: Build Web Project
-        run: |
-          npx vite build
-          ls -la dist
+      - name: Build
+        run: npm run build:ci
 
-      - name: Capacitor Sync
+      - name: Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Xcode
         run: |
-          cd "${{ inputs.ios_path }}"
-          xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          cd ios/App
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
-                     -configuration "${{ inputs.configuration }}" \
+                     -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-      - name: Create IPA
+      - name: Export
         run: |
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: .app not found"
-            exit 1
-          fi
           mkdir -p Payload
+          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
           cp -R "$APP_PATH" Payload/
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: "*.ipa"
-          retention-days: 1
+          path: app.ipa
