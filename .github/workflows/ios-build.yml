@@ -13,11 +13,6 @@ on:
         required: false
         type: string
         default: 'ios/App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
       configuration:
         description: 'Build configuration'
         required: false
@@ -26,20 +21,26 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Xcode Version
+        run: xcodebuild -version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: |
-          rm -f pnpm-lock.yaml package-lock.json
-          npm install --no-package-lock
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
@@ -47,20 +48,19 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build IPA
+      - name: Build App
         run: |
-          cd "ios/App"
+          cd "${{ inputs.ios_path }}"
           xcodebuild -workspace App.xcworkspace \
                      -scheme App \
                      -configuration "${{ inputs.configuration }}" \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Create IPA
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
+          echo "Found app at: $APP_PATH"
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
           cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
           cd "${GITHUB_WORKSPACE}/build"
