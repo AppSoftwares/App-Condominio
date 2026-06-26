@@ -4,16 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build ID'
+        description: 'ID de compilación'
         required: true
         default: 'manual'
-      ios_path:
-        description: 'Path iOS'
-        required: false
-        default: 'ios/App'
 
 env:
-  # Forzar Node 24 para evitar el error de entorno de GitHub
+  # Cumplimos con la exigencia de GitHub de Junio 2026
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -28,7 +24,7 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Clean Environment
+      - name: Prepare Architecture (Atomic Cleanup)
         run: |
           # 1. Eliminar sharp porque rompe el instalador de Mac en CI
           sed -i.bak '/"sharp":/d' package.json
@@ -45,20 +41,20 @@ jobs:
 
       - name: Build Web Project
         run: |
-          # Ejecutamos el build de Vite directamente
+          # Generamos el build web directamente
           npm run build
 
       - name: Capacitor Sync
         run: |
           npx cap sync ios
 
-      - name: Build App
+      - name: Xcode Build (SPM)
         run: |
-          cd "${{ inputs.ios_path }}"
-          # Resolver dependencias de Apple automáticamente (Capacitor 6 SPM)
+          cd ios/App
+          # Resolver dependencias de Apple automáticamente (Capacitor 6 standard)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar binario nativo (Debug)
+          # Compilar el binario nativo (Debug)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -71,19 +67,19 @@ jobs:
       - name: Create IPA
         run: |
           # Empaquetamos el .app generado en un .ipa descargable
+          mkdir -p build/Payload
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: No se encontró el binario .app"
             exit 1
           fi
-          mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/
           cd build
-          zip -rq app.ipa Payload
+          zip -rq "${{ inputs.build_id }}.ipa" Payload
           
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-final
-          path: build/app.ipa
+          path: build/*.ipa
           retention-days: 1
