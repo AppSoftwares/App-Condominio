@@ -4,95 +4,67 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Unique build identifier'
-        required: false
-        type: string
+        description: 'Build ID'
+        required: true
         default: 'v1'
-      ios_path:
-        description: 'Path to iOS project'
-        required: false
-        type: string
-        default: 'ios/App'
-      scheme:
-        description: 'Xcode scheme'
-        required: false
-        type: string
-        default: 'App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
-      configuration:
-        description: 'Configuration'
-        required: false
-        type: string
-        default: 'Debug'
+
+env:
+  # Solución para el aviso de Node deprecado
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
-    # Usamos macos-14 que es el estándar para builds de iOS en 2026
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node 24 (Required by GitHub)
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
-      - name: Clean Environment
+      - name: Clean and Install
         run: |
+          # Evitamos que sharp rompa el build en el servidor
+          export SHARP_IGNORE_GLOBAL_LIBVIPS=1
           rm -f pnpm-lock.yaml package-lock.json .npmrc
-          # Limpiamos node_modules si existiera por error en el commit
-          rm -rf node_modules
-
-      - name: Install dependencies
-        run: |
-          # Instalación limpia ignorando errores de scripts nativos no críticos
           npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
         run: |
-          # Ejecutamos el build web directamente con vite
+          # Build directo de Vite (sin tsc para evitar bloqueos)
           npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build App (Xcode)
+      - name: Xcode Build
         run: |
           cd ios/App
-          # Resolver paquetes de Swift Package Manager
+          # Resolver dependencias de Swift (Capacitor 6 SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario
+          # Compilar el binario nativo (Debug)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          # Localizamos el .app y lo empaquetamos
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
-            exit 1
-          fi
-          mkdir -p build/Payload
-          cp -R "$APP_PATH" build/Payload/
-          cd build
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          # Empaquetamos el .app en un .ipa para que puedas descargarlo
+          mkdir -p Payload
+          cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
+          zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
-          path: build/*.ipa
+          name: ios-ipa-manual
+          path: app.ipa
           retention-days: 1
