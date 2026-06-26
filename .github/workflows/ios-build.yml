@@ -82,24 +82,23 @@ jobs:
         run: flutter pub get
 
       - name: Setup Node.js
-        if: steps.detect.outputs.type == 'reactnative' || steps.detect.outputs.type == 'expo'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Restore node_modules cache
-        if: steps.detect.outputs.type == 'reactnative' || steps.detect.outputs.type == 'expo'
-        uses: actions/cache@v4
-        id: node-modules-cache
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
         with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json', 'yarn.lock') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
+          version: 8
 
-      - name: Install npm dependencies
-        if: (steps.detect.outputs.type == 'reactnative' || steps.detect.outputs.type == 'expo') && steps.node-modules-cache.outputs.cache-hit != 'true'
-        run: npm install
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build Web Project
+        run: pnpm run build
+
+      - name: Capacitor Sync
+        run: npx cap sync ios
 
       - name: Restore Pods cache
         uses: actions/cache@v4
