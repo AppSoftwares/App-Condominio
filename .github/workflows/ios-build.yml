@@ -1,4 +1,4 @@
-name: iOS Build Success
+name: iOS Build
 
 on:
   workflow_dispatch:
@@ -6,11 +6,7 @@ on:
       build_id:
         description: 'ID de compilación'
         required: true
-        default: 'manual'
-
-env:
-  # Cumplimos con la exigencia de GitHub de Junio 2026
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        default: 'manual-v1'
 
 jobs:
   build:
@@ -19,42 +15,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
 
-      - name: Prepare Architecture (Atomic Cleanup)
-        run: |
-          # 1. Eliminar sharp porque rompe el instalador de Mac en CI
-          sed -i.bak '/"sharp":/d' package.json
-          # 2. Eliminar el chequeo de TypeScript del script de build
-          sed -i.bak 's/tsc && //g' package.json
-          # 3. Limpiar rastros locales y archivos de bloqueo
-          rm -f package-lock.json pnpm-lock.yaml .npmrc
-          rm -rf node_modules
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: |
-          # Instalación rápida ignorando scripts nativos que fallan en CI
-          npm install --legacy-peer-deps --ignore-scripts --no-audit
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
-        run: |
-          # Generamos el build web directamente
-          npm run build
+        run: pnpm run build
 
       - name: Capacitor Sync
-        run: |
-          npx cap sync ios
+        run: npx cap sync ios
 
-      - name: Xcode Build (SPM)
+      - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de Apple automáticamente (Capacitor 6 standard)
+          # Capacitor 6 utiliza Swift Package Manager por defecto
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario nativo (Debug)
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -64,20 +49,18 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-      - name: Create IPA
-        run: |
-          # Empaquetamos el .app generado en un .ipa descargable
-          mkdir -p build/Payload
+          # Crear el archivo .ipa
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el binario .app"
+            echo "Error: No se encontró el .app"
             exit 1
           fi
-          cp -R "$APP_PATH" build/Payload/
-          cd build
+          mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
+          cp -R "$APP_PATH" "${GITHUB_WORKSPACE}/build/Payload/"
+          cd "${GITHUB_WORKSPACE}/build"
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa-final
