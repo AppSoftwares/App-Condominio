@@ -7,24 +7,7 @@ on:
         description: 'Unique build identifier'
         required: true
         type: string
-      ios_path:
-        description: 'Path to iOS project'
-        required: false
-        type: string
-        default: 'ios/App'
-      scheme:
-        description: 'Xcode scheme'
-        required: false
-        type: string
-        default: 'App'
-      configuration:
-        description: 'Configuration'
-        required: false
-        type: string
-        default: 'Debug'
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Otros inputs son ignorados para evitar errores de escritura manual
 
 jobs:
   build:
@@ -33,15 +16,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 9
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -54,25 +37,24 @@ jobs:
 
       - name: Build App
         run: |
-          cd "${{ inputs.ios_path }}"
-          
-          # Capacitor 6 usa SPM. Resolvemos paquetes primero.
+          cd ios/App
+          # Resolver dependencias de Apple automáticamente
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el proyecto directamente
+          # Compilar
           xcodebuild -project App.xcodeproj \
-                     -scheme "${{ inputs.scheme }}" \
-                     -configuration "${{ inputs.configuration }}" \
+                     -scheme App \
+                     -configuration Debug \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # Localizar el binario y empaquetar
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
+          # Empaquetar IPA
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se pudo encontrar el archivo .app generado"
+            echo "Error: No se encontró el .app"
             exit 1
           fi
           
@@ -86,3 +68,4 @@ jobs:
         with:
           name: ipa
           path: build/*.ipa
+          retention-days: 1
