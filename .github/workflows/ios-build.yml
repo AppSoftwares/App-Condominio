@@ -17,21 +17,11 @@ on:
         required: false
         type: string
         default: 'App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
       configuration:
         description: 'Build configuration'
         required: false
         type: string
         default: 'Debug'
-      flutter_version:
-        description: 'Flutter version'
-        required: false
-        type: string
-        default: ''
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -48,13 +38,15 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies (NPM)
+      - name: Install dependencies
         run: |
           rm -f package-lock.json pnpm-lock.yaml .npmrc
-          npm install --legacy-peer-deps --no-audit --no-fund
+          npm install --legacy-peer-deps --ignore-scripts
 
       - name: Build Web Project
-        run: npx vite build
+        run: |
+          npx vite build
+          ls -la dist
 
       - name: Capacitor Sync
         run: npx cap sync ios
