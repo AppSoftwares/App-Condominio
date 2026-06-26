@@ -4,30 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Unique build identifier'
+        description: 'Build Identifier'
         required: true
         type: string
       ios_path:
-        description: 'Path to iOS project'
+        description: 'Path'
         required: false
         type: string
         default: 'ios/App'
-      scheme:
-        description: 'Xcode scheme'
-        required: false
-        type: string
-        default: 'App'
-      configuration:
-        description: 'Build configuration'
-        required: false
-        type: string
-        default: 'Debug'
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -41,49 +31,44 @@ jobs:
           version: 9
 
       - name: Install dependencies
-        run: |
-          rm -f package-lock.json pnpm-lock.yaml .npmrc
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Build Web Project
+      - name: Build Web
         run: pnpm run build:ci
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build App
+      - name: Build Xcode
         run: |
           cd ios/App
-          # Listar esquemas para depurar
-          xcodebuild -list
+          if [ -f "Podfile" ]; then
+            pod install
+          fi
           
-          # Intentar resolver SPM
-          xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          # Determinar si usar workspace o project
+          if [ -d "App.xcworkspace" ]; then
+            XCODE_CMD="xcodebuild -workspace App.xcworkspace -scheme App"
+          else
+            XCODE_CMD="xcodebuild -project App.xcodeproj -scheme App"
+          fi
           
-          # Compilar usando el esquema detectado (probablemente App o Condominio)
-          # Intentamos con "App" primero, si falla, el log nos dirá los nombres reales
-          xcodebuild -project App.xcodeproj \
-                     -scheme "App" \
-                     -configuration "${{ inputs.configuration }}" \
+          $XCODE_CMD -configuration Debug \
                      -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     -derivedDataPath build \
                      CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
       - name: Create IPA
         run: |
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
-          if [ -z "$APP_PATH" ]; then
-            echo "Error: .app no encontrado"
-            exit 1
-          fi
           mkdir -p Payload
+          # Buscar el .app en la ruta de salida
+          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
           cp -R "$APP_PATH" Payload/
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
+          zip -rq app.ipa Payload
           
-      - name: Upload IPA
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: "*.ipa"
+          path: app.ipa
