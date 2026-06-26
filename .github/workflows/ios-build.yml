@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Unique build identifier'
+        description: 'ID'
         required: true
         type: string
       ios_path:
@@ -46,7 +46,9 @@ jobs:
           npm install --legacy-peer-deps --ignore-scripts
 
       - name: Build Web
-        run: npm run build:ci
+        run: |
+          npm run build:ci
+          ls -la dist
 
       - name: Sync
         run: npx cap sync ios
@@ -54,7 +56,10 @@ jobs:
       - name: Xcode
         run: |
           cd ios/App
+          # Resolver dependencias
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          
+          # Intentar compilar el esquema App
           xcodebuild -project App.xcodeproj \
                      -scheme "App" \
                      -configuration Debug \
@@ -66,7 +71,12 @@ jobs:
       - name: Export
         run: |
           mkdir -p Payload
+          # Encontrar el .app generado
           APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No se encontró el binario .app"
+            exit 1
+          fi
           cp -R "$APP_PATH" Payload/
           zip -rq app.ipa Payload
           
