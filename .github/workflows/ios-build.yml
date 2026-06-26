@@ -36,10 +36,12 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile --force
 
       - name: Build Web Project (No Type Check)
-        run: npx vite build
+        run: |
+          # Saltamos el chequeo de tipos de TypeScript para evitar errores en CI
+          npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
