@@ -4,41 +4,41 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build Identifier'
+        description: 'ID de compilación'
         required: true
         default: 'v1'
 
 env:
-  # Mata el error de versiones de raíz
+  # Elimina el error de Node 20 y fuerza el entorno moderno
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     runs-on: macos-14
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: '24'
 
-      - name: Clean Environment
-        run: |
-          rm -rf node_modules
-          rm -f package-lock.json pnpm-lock.yaml .npmrc
-          # Desactivamos sharp para que no rompa la instalación en Mac
-          export SHARP_IGNORE_GLOBAL_LIBVIPS=1
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-      - name: Install Dependencies
+      - name: Install dependencies (Unbreakable Mode)
         run: |
-          # Instalación rápida ignorando scripts nativos que fallan en CI
-          npm install --legacy-peer-deps --ignore-scripts --no-audit
+          # Limpieza total para evitar conflictos
+          rm -f pnpm-lock.yaml package-lock.json .npmrc
+          # Instalamos ignorando scripts nativos (como sharp) que rompen el CI
+          pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Build Web Project
         run: |
-          # Build directo de Vite saltando errores de TypeScript
+          # Ejecutamos vite directamente para saltar errores de TypeScript
           npx vite build
 
       - name: Capacitor Sync
@@ -47,10 +47,10 @@ jobs:
       - name: Build iOS App
         run: |
           cd ios/App
-          # Resolver dependencias de Capacitor 6 (SPM)
+          # Resolver paquetes de Apple (SPM)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar el binario nativo
+          # Compilar binario nativo
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -62,14 +62,14 @@ jobs:
           
       - name: Create IPA
         run: |
-          # Empaquetamos el .app en un .ipa para descarga directa
+          # Empaquetamos el .app en un archivo IPA para descarga
           mkdir -p Payload
           cp -R ios/App/build/Build/Products/Debug-iphoneos/*.app Payload/
           zip -rq app.ipa Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa-unsigned
+          name: ios-app-final
           path: app.ipa
           retention-days: 1
