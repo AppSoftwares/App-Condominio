@@ -5,14 +5,18 @@ on:
     inputs:
       build_id:
         description: 'Unique build identifier'
-        required: false
+        required: true
         type: string
-        default: 'manual'
       ios_path:
         description: 'Path to iOS project'
         required: false
         type: string
         default: 'ios/App'
+      use_signing:
+        description: 'Enable code signing'
+        required: false
+        type: boolean
+        default: false
       configuration:
         description: 'Build configuration'
         required: false
@@ -31,10 +35,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: |
-          npm install -g pnpm
-          pnpm install --no-frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build Web Project
         run: npx vite build
@@ -44,14 +51,13 @@ jobs:
 
       - name: Build App
         run: |
-          cd "ios/App"
-          xcodebuild -workspace App.xcworkspace \
-                     -scheme App \
-                     -configuration "${{ inputs.configuration }}" \
-                     -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     -quiet build
+          cd "${{ inputs.ios_path }}"
+          # Si no hay workspace, usamos el project
+          if [ -f "App.xcworkspace" ]; then
+            xcodebuild -workspace App.xcworkspace -scheme App -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          else
+            xcodebuild -project App.xcodeproj -scheme App -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          fi
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
