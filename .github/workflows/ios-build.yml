@@ -1,4 +1,4 @@
-name: iOS Build
+name: iOS Build (Final Bypass)
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
         default: 'v1'
 
 env:
-  # Esto le dice a todas las piezas de GitHub que usen Node 24 sí o sí
+  # Forzar Node 24 y evitar errores de entorno
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -25,28 +25,28 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install dependencies
+      - name: Install dependencies (Bypass Native Errors)
         run: |
-          # Limpiamos archivos locales que confunden al servidor
+          # Limpiamos rastros de instalaciones fallidas
           rm -f pnpm-lock.yaml package-lock.json .npmrc
-          npm install --legacy-peer-deps --no-audit
+          # --ignore-scripts evita que librerías como 'sharp' rompan el build al intentar compilarse
+          npm install --legacy-peer-deps --ignore-scripts --no-audit
 
       - name: Build Web Project
         run: |
-          # Compilamos saltando TypeScript (tsc) para que no nos frene ningún error de código
+          # Ejecutamos vite directamente
           npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Build iOS App (Direct Project)
         run: |
           cd ios/App
-          
-          # 1. Resolver paquetes de Apple (SPM)
+          # Resolver dependencias de SPM necesarias en Capacitor 6
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # 2. Compilar binario (Debug es más rápido para probar)
+          # Compilación limpia
           xcodebuild -project App.xcodeproj \
                      -scheme App \
                      -configuration Debug \
@@ -56,10 +56,10 @@ jobs:
                      COMPILER_INDEX_STORE_ENABLE=NO \
                      -quiet build
           
-          # 3. Empaquetar en .ipa
+          # Empaquetar el IPA
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se generó el archivo .app"
+            echo "Error: No se encontró el .app generado"
             exit 1
           fi
           
@@ -68,9 +68,9 @@ jobs:
           cd "${GITHUB_WORKSPACE}/build"
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload IPA
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-app-manual
+          name: ios-app-success
           path: build/*.ipa
           retention-days: 1
