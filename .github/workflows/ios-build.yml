@@ -1,37 +1,24 @@
-name: iOS Build
+name: iOS Build Success
 
 on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Unique build identifier'
+        description: 'ID de compilación'
         required: true
-        type: string
+        default: 'manual'
       ios_path:
-        description: 'Path to iOS project'
+        description: 'Path iOS'
         required: false
-        type: string
         default: 'ios/App'
       scheme:
-        description: 'Xcode scheme to build'
+        description: 'Scheme'
         required: false
-        type: string
         default: 'App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
-      configuration:
-        description: 'Build configuration'
-        required: false
-        type: string
-        default: 'Debug'
-      flutter_version:
-        description: 'Flutter version'
-        required: false
-        type: string
-        default: ''
+
+env:
+  # Cumplimos con la exigencia de GitHub de Junio 2026
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -40,43 +27,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 22
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '24'
 
-      - name: Prepare CI Environment
+      - name: Prepare Architecture
         run: |
           # 1. Eliminar sharp porque rompe el instalador de Mac en CI
           sed -i.bak '/"sharp":/d' package.json
-          # 2. Eliminar el chequeo de TypeScript del script de build para evitar bloqueos
+          # 2. Eliminar el chequeo de TypeScript del script de build
           sed -i.bak 's/tsc && //g' package.json
-          # 3. Limpiar rastros locales que confunden al servidor
+          # 3. Limpiar rastros locales y archivos de bloqueo conflictivos
           rm -f package-lock.json pnpm-lock.yaml .npmrc
+          rm -rf node_modules
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          # Instalación ultra-limpia ignorando scripts nativos
-          npm install --legacy-peer-deps --ignore-scripts --no-audit
+          # Instalación ultra-limpia ignorando scripts nativos que fallan en CI
+          npm install --legacy-peer-deps --ignore-scripts --no-audit --no-fund
 
       - name: Build Web Project
         run: |
-          # Generamos el build de Vite saltando errores de TypeScript
+          # Ejecutamos el build (que ahora ya no corre tsc)
           npm run build
 
       - name: Capacitor Sync
-        run: npx cap sync ios
-
-      - name: Build iOS App (Capacitor 6 SPM)
         run: |
-          cd "${{ inputs.ios_path }}"
-          # Resolver dependencias de Apple automáticamente
+          # Sincronizar con el proyecto de iOS
+          npx cap sync ios
+
+      - name: Xcode Build
+        run: |
+          cd ios/App
+          # Resolver dependencias SPM (Capacitor 6 standard)
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
-          # Compilar proyecto directamente
+          # Compilar el binario nativo (Debug)
           xcodebuild -project App.xcodeproj \
-                     -scheme "${{ inputs.scheme }}" \
-                     -configuration "${{ inputs.configuration }}" \
+                     -scheme App \
+                     -configuration Debug \
                      -destination 'generic/platform=iOS' \
                      -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                      CODE_SIGNING_ALLOWED=NO \
@@ -85,20 +75,20 @@ jobs:
           
       - name: Create IPA
         run: |
-          # Buscamos el .app generado y lo empaquetamos
-          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
+          # Empaquetamos el .app generado en un archivo IPA descargable
+          mkdir -p build/Payload
+          APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: No se encontró el .app"
+            echo "Error: No se encontró el binario .app"
             exit 1
           fi
-          mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/
           cd build
           zip -rq "${{ inputs.build_id }}.ipa" Payload
           
-      - name: Upload Artifact
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: ipa
+          name: ios-ipa-final
           path: build/*.ipa
           retention-days: 1
