@@ -12,11 +12,6 @@ on:
         required: false
         type: string
         default: 'ios/App'
-      use_signing:
-        description: 'Enable code signing'
-        required: false
-        type: boolean
-        default: false
       configuration:
         description: 'Build configuration'
         required: false
@@ -27,29 +22,24 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Debug Environment
-        run: |
-          echo "Build ID: ${{ inputs.build_id }}"
-          echo "iOS Path: ${{ inputs.ios_path }}"
-          pwd
-          ls -la
-
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: List files after checkout
-        run: ls -R
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Build Web Project
-        run: npm run build
+      - name: Build Web Project (No Type Check)
+        run: npx vite build
 
       - name: Capacitor Sync
         run: npx cap sync ios
@@ -57,7 +47,16 @@ jobs:
       - name: Build App
         run: |
           cd "${{ inputs.ios_path }}"
-          xcodebuild -project App.xcodeproj -scheme App -configuration "${{ inputs.configuration }}" -destination 'generic/platform=iOS' -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" CODE_SIGNING_ALLOWED=NO -quiet build
+          # Forzar resolución de dependencias de CocoaPods
+          pod install
+          
+          xcodebuild -workspace App.xcworkspace \
+                     -scheme App \
+                     -configuration "${{ inputs.configuration }}" \
+                     -destination 'generic/platform=iOS' \
+                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     -quiet build
           
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/${{ inputs.configuration }}-iphoneos" -name "*.app" -type d | head -1)
           mkdir -p "${GITHUB_WORKSPACE}/build/Payload"
