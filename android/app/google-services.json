@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "428135309141",
+    "project_id": "caminos-de-la-lagunita",
+    "storage_bucket": "caminos-de-la-lagunita.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428135309141:android:7e58039a8f368ad7e7d9dc",
+        "android_client_info": {
+          "package_name": "com.caminos.lagunita"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCvksWQWsmSR5QE0_Kthk7UUyQF8nlPBjI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
