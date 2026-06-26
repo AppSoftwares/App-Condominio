@@ -4,14 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Build Identifier'
+        description: 'ID'
         required: true
         type: string
-      ios_path:
-        description: 'Path'
-        required: false
-        type: string
-        default: 'ios/App'
 
 jobs:
   build:
@@ -25,50 +20,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build Web
-        run: pnpm run build:ci
-
-      - name: Capacitor Sync
-        run: npx cap sync ios
-
-      - name: Build Xcode
+      - name: Test
         run: |
-          cd ios/App
-          if [ -f "Podfile" ]; then
-            pod install
-          fi
-          
-          # Determinar si usar workspace o project
-          if [ -d "App.xcworkspace" ]; then
-            XCODE_CMD="xcodebuild -workspace App.xcworkspace -scheme App"
-          else
-            XCODE_CMD="xcodebuild -project App.xcodeproj -scheme App"
-          fi
-          
-          $XCODE_CMD -configuration Debug \
-                     -destination 'generic/platform=iOS' \
-                     -derivedDataPath build \
-                     CODE_SIGNING_ALLOWED=NO \
-                     -quiet build
-          
-      - name: Create IPA
-        run: |
-          mkdir -p Payload
-          # Buscar el .app en la ruta de salida
-          APP_PATH=$(find ios/App/build -name "*.app" -type d | head -1)
-          cp -R "$APP_PATH" Payload/
-          zip -rq app.ipa Payload
-          
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: app.ipa
+          node -v
+          npm -v
+          ls -R
