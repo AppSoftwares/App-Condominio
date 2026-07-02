@@ -23,7 +23,9 @@ import { Requests } from './features/res/Requests'
 import { Guests } from './features/res/Guests'
 import { Reservations } from './features/res/Reservations'
 import { Incidents } from './features/res/Incidents'
+import { PackageLocker } from './features/res/PackageLocker'
 import { useAuthStore, UserRole } from './store/useAuthStore'
+import { usePushNotifications } from './hooks/usePushNotifications'
 import { useCurrencyStore } from './store/useCurrencyStore'
 import { useThemeStore } from './store/useThemeStore'
 import { useEffect, useState } from 'react'
@@ -50,6 +52,9 @@ function App() {
   const initializeAuth = useAuthStore(state => state.initialize)
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
+
+  // Inicializar Notificaciones Push
+  usePushNotifications(user?.id)
 
   const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
   const [showUpdateModal, setShowUpdateModal] = useState(false)
@@ -130,6 +135,9 @@ function App() {
           } />
           <Route path="/incidents" element={
             <ProtectedRoute allowedRoles={['resident']}><Incidents /></ProtectedRoute>
+          } />
+          <Route path="/packages" element={
+            <ProtectedRoute allowedRoles={['resident']}><PackageLocker /></ProtectedRoute>
           } />
 
           <Route path="/profile" element={

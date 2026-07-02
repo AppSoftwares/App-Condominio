@@ -1,6 +1,6 @@
 {
-  "versionCode": 1,
-  "versionName": "1.0.0",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/download/v1.0.0/App.Condominio-1.0.0.apk",
-  "releaseNotes": "¡Bienvenido a la versión oficial de App Condominio! Esta versión incluye todas las funcionalidades de gestión de pagos, invitados y administración."
+  "versionCode": 2,
+  "versionName": "2.0.0",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/download/v1.0.0/App.Condominio-2.0.0.apk",
+  "releaseNotes": "• Gestión de Entregas (Drop-Off Blindado).\n• Notificaciones Push nativas integradas.\n• Corrección de errores en escaneo QR.\n• Versión de producción v2.0.0 lista para pruebas reales."
 }

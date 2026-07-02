@@ -13,10 +13,23 @@ export const Reservations: React.FC = () => {
   const [time, setTime] = useState('')
   const [reservations, setReservations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   useEffect(() => {
+    checkDebtStatus()
     fetchReservations()
   }, [])
+
+  const checkDebtStatus = async () => {
+    if (!user) return
+    try {
+      const { data, error } = await supabase.rpc('check_debt_limit', { res_id: user.id })
+      if (error) throw error
+      setIsBlocked(data === true)
+    } catch (err) {
+      console.error('Error checking debt:', err)
+    }
+  }
 
   const fetchReservations = async () => {
     try {
@@ -37,6 +50,10 @@ export const Reservations: React.FC = () => {
   }
 
   const handleReserve = (title: string) => {
+    if (isBlocked) {
+      alert('Su cuenta presenta una deuda de 3 o más meses. Las reservaciones están bloqueadas temporalmente.')
+      return
+    }
     setSelectedArea(title)
     setShowModal(true)
   }
@@ -81,6 +98,12 @@ export const Reservations: React.FC = () => {
       <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
         <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', fontWeight: 700, textAlign: 'center', marginBottom: '10px' }}>Reservación de Áreas</h1>
         <p style={{ color: 'var(--text-sub)', fontSize: '14px', marginBottom: '30px', textAlign: 'center' }}>Gestione su acceso a las exclusivas instalaciones de la comunidad.</p>
+
+        {isBlocked && (
+          <div style={{ backgroundColor: '#fff5f5', border: '1px solid #feb2b2', borderRadius: '20px', padding: '15px', marginBottom: '25px', textAlign: 'center', color: '#c53030', fontSize: '13px', fontWeight: 600 }}>
+            ⚠️ Cuenta suspendida por deuda (3+ meses). Reservas inhabilitadas.
+          </div>
+        )}
 
         {/* Calendar */}
         <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '24px', marginBottom: '30px' }}>

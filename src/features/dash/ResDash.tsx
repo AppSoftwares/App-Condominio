@@ -6,7 +6,7 @@ import {
   MdOutlineGroups,
   MdOutlineVpnKey,
   MdOutlineCalendarToday,
-  MdGavel,
+  MdOutlineInventory2,
   MdOutlineImage
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -113,11 +113,11 @@ export const ResDash: React.FC = () => {
           {/* Quick Actions Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <ActionBtn icon={MdOutlinePayments} label="Pagos" onClick={() => navigate('/payments')} />
-            <ActionBtn icon={MdOutlineErrorOutline} label="Incidencias" onClick={() => navigate('/incidents')} />
+            <ActionBtn icon={MdOutlineInventory2} label="Casillero" onClick={() => navigate('/packages')} />
             <ActionBtn icon={MdOutlineGroups} label="Comunidad" onClick={() => navigate('/requests')} />
             <ActionBtn icon={MdOutlineVpnKey} label="Invitados" onClick={() => navigate('/guests')} />
             <ActionBtn icon={MdOutlineCalendarToday} label="Reservas" onClick={() => navigate('/reservations')} />
-            <ActionBtn icon={MdGavel} label="Normas" onClick={() => navigate('/incidents')} />
+            <ActionBtn icon={MdOutlineErrorOutline} label="Incidencias" onClick={() => navigate('/incidents')} />
           </div>
 
           {/* News Section */}

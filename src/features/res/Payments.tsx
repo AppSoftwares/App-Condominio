@@ -43,27 +43,50 @@ export const Payments: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
-  const [debts, setDebts] = useState<any[]>([])
+  const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
   const [loadingDebts, setLoadingDebts] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const debtUSD = debts.length > 0 ? debts.reduce((acc, d) => acc + d.monto_pendiente, 0) : 0
+  const debtUSD = totalDebt
 
   useEffect(() => {
-    fetchDebts()
-  }, [])
+    if (user?.id) {
+      fetchDebts()
+    }
+  }, [user?.id])
 
   const fetchDebts = async () => {
     try {
-      const { data, error } = await supabase
+      // 1. Intentar obtener deudas específicas
+      const { data: debtData, error } = await supabase
         .from('debts')
         .select('*')
         .eq('residente_id', user?.id)
         .eq('pagada', false)
 
       if (error) throw error
-      setDebts(data || [])
+
+      // 2. Obtener configuración global (cuota mensual)
+      const { data: settings } = await supabase
+        .from('condo_settings')
+        .select('*')
+        .eq('id', 1)
+        .single()
+
+      if (debtData && debtData.length > 0) {
+        const total = debtData.reduce((acc: number, d: any) => acc + Number(d.monto_pendiente), 0)
+        setTotalDebt(total || 20)
+      } else if (settings) {
+        const today = new Date()
+        const currentDay = today.getDate()
+        const isProntoPago = currentDay <= settings.dias_pronto_pago
+        const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
+        setTotalDebt(Number(montoACobrar) || 20)
+      } else {
+        setTotalDebt(20) // Forzar los 20 si no hay nada en DB
+      }
     } catch (err) {
       console.error("Error al cargar deudas:", err)
+      setTotalDebt(20) // Fallback de seguridad
     } finally {
       setLoadingDebts(false)
     }
@@ -116,6 +139,7 @@ export const Payments: React.FC = () => {
           {
             profile_id: user?.id,
             monto_bs: debtUSD * bcvRate,
+            monto_usd: debtUSD,
             referencia: cleanReference,
             banco_origen: cleanBank,
             status: 'pendiente',
@@ -236,7 +260,7 @@ export const Payments: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                   <span style={{ fontSize: '20px', fontWeight: 800, color: '#0f5551' }}>{formatUSD(debtUSD)}</span>
                   {!isZelle && (
-                    <span style={{ fontSize: '16px', fontWeight: 700, color: '#2f6d69' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f5551' }}>
                       {formatBs(debtUSD, bcvRate)}
                     </span>
                   )}

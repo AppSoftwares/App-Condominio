@@ -9,5 +9,9 @@ src/config/access_keys/
 *.jpeg
 *.pdf
 *.xlsx
+!assets/*.png
+!src/assets/*.png
+!src/assets/*.jpg
+!src/assets/*.jpeg
 residents/
 !src/assets/logo_premium.png
