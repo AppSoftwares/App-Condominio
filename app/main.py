@@ -1,11 +1,18 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import Session
-from app.core.database import get_session, init_db
-from app.core.security import create_tokens, verify_api_key
+from app.core.database import get_session, init_db, engine
+from app.core.security import create_tokens, verify_api_key, hash_password
+from app.core.sentry_integration import init_sentry, wrap_app_with_sentry
 from app.routers import buildings, announcements, accounting, reports, reservations, guests, votings, security_admin, auth
 
 app = FastAPI(title="Caminos de la Lagunita API")
+
+# Inicializar Sentry si está configurado
+try:
+    init_sentry()
+except Exception:
+    pass
 
 @app.on_event("startup")
 def on_startup():
@@ -67,7 +74,7 @@ def on_startup():
                 new_user = Resident(
                     nombre=u_data["nombre"],
                     email=u_data["email"],
-                    password_hash=u_data["password"], # Idealmente hashear en prod real
+                    password_hash=hash_password(u_data["password"]),
                     telefono="",
                     unidad_id=target_unit_id or unit.id,
                     rol=u_data["rol"]
@@ -93,8 +100,9 @@ def on_startup():
                 tipo="mantenimiento"
             ))
 
-        # 6. Crear una Deuda de Prueba para el residente
-        if not session.exec(select(Debt).where(Debt.residente_id == resident.id)).first():
+        # 6. Crear una Deuda de Prueba para un residente existente
+        resident = session.exec(select(Resident).where(Resident.rol == "propietario")).first()
+        if resident and not session.exec(select(Debt).where(Debt.residente_id == resident.id)).first():
             session.add(Debt(
                 residente_id=resident.id,
                 concepto="Mantenimiento Mensual - Octubre",
@@ -115,6 +123,12 @@ app.include_router(reservations.router)
 app.include_router(guests.router)
 app.include_router(votings.router)
 app.include_router(security_admin.router)
+
+# Wrap ASGI app with Sentry middleware if available
+try:
+    app = wrap_app_with_sentry(app)
+except Exception:
+    pass
 
 @app.get("/")
 def root():

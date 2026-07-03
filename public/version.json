@@ -1,6 +1,6 @@
 {
-  "versionCode": 2,
-  "versionName": "2.0.0",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/download/v1.0.0/App.Condominio-2.0.0.apk",
-  "releaseNotes": "• Gestión de Entregas (Drop-Off Blindado).\n• Notificaciones Push nativas integradas.\n• Corrección de errores en escaneo QR.\n• Versión de producción v2.0.0 lista para pruebas reales."
+  "versionCode": 3,
+  "versionName": "2.0.1",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/download/v1.0.0/App.Condominio-2.0.1.apk",
+  "releaseNotes": "• Parches de seguridad críticos para Supabase.\n• Integración inicial de Sentry para monitoreo de errores.\n• Reglas de corte por morosidad automatizadas.\n• Mejoras de estabilidad en la versión 2.0.1."
 }

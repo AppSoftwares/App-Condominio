@@ -21,10 +21,8 @@ export const Login: React.FC = () => {
     e.preventDefault()
     setLoading(true)
 
-    const cleanEmail = sanitizeString(email).toUpperCase().trim()
+    const cleanEmail = sanitizeString(email).trim().toLowerCase()
     const cleanPassword = password.trim()
-
-    console.log('Login attempt:', { email: cleanEmail, password: cleanPassword });
 
     // 1. Intentar validación con Whitelist (Excel de la imagen)
     // Para la whitelist, comparamos en mayúsculas para mayor flexibilidad
@@ -34,7 +32,6 @@ export const Login: React.FC = () => {
     )
 
     if (localUser) {
-      console.log('User found in whitelist:', localUser);
       let role: UserRole = 'resident';
 
       if (localUser.email === 'ADMIN@CAMINOS.COM') {

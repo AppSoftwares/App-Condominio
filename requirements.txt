@@ -1,0 +1,8 @@
+fastapi
+sqlmodel
+python-jose
+uvicorn
+python-multipart
+sqlalchemy
+alembic
+sentry-sdk

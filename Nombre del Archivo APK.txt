@@ -3,5 +3,5 @@ Configuración de Versión (Android)
 Modifica el archivo androidappbuild.gradle
 
 •VersionCode Subido a 2.
-•VersionName Actualizado a 2.0.0.
+•VersionName Actualizado a 2.0.1.
 •Nombre del Archivo El APK se generare automáticamente con el nombre exacto App.Condominio-2.0.0.apk.

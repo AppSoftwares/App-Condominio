@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.core.database import get_session
-from app.core.security import create_tokens
+from app.core.security import create_tokens, verify_password
 from app.models.entities import Resident
 from pydantic import BaseModel
 
@@ -16,8 +16,7 @@ def login(data: LoginRequest, session: Session = Depends(get_session)):
     statement = select(Resident).where(Resident.email == data.email)
     user = session.exec(statement).first()
 
-    # Simulación de validación de password (en real usar verify_password)
-    if not user or user.password_hash != data.password:
+    if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
 
     access, refresh = create_tokens(user.id)

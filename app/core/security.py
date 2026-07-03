@@ -1,5 +1,8 @@
 import os
+import base64
 import hashlib
+import hmac
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import jwt, JWTError
@@ -18,6 +21,27 @@ REFRESH_TOKEN_EXPIRE_DAYS = 90
 
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 reusable_oauth2 = HTTPBearer()
+
+
+def hash_password(password: str) -> str:
+    salt = secrets.token_bytes(16)
+    derived_key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 100_000)
+    return f"pbkdf2_sha256$100000${base64.b64encode(salt).decode('utf-8')}${base64.b64encode(derived_key).decode('utf-8')}"
+
+
+def verify_password(plain_password: str, stored_hash: str) -> bool:
+    if not stored_hash:
+        return False
+
+    if stored_hash.startswith("pbkdf2_sha256$"):
+        _, iterations_str, salt_b64, expected_b64 = stored_hash.split("$", 3)
+        salt = base64.b64decode(salt_b64.encode("utf-8"))
+        expected_hash = base64.b64decode(expected_b64.encode("utf-8"))
+        derived_key = hashlib.pbkdf2_hmac("sha256", plain_password.encode("utf-8"), salt, int(iterations_str))
+        return hmac.compare_digest(derived_key, expected_hash)
+
+    return hmac.compare_digest(plain_password, stored_hash)
+
 
 def verify_api_key(
     api_key: str = Security(API_KEY_HEADER),
