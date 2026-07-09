@@ -16,16 +16,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
 
       - name: Install pnpm
         run: npm install -g pnpm@latest
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Create .env file
+        run: |
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          fi
 
       - name: Build Web Project
         run: pnpm run build:ci
@@ -45,7 +51,7 @@ jobs:
                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                     CODE_SIGNING_ALLOWED=NO \
                     COMPILER_INDEX_STORE_ENABLE=NO \
-                    -quiet build
+                    build
 
       - name: Create IPA for Sideloadly
         run: |
