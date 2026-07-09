@@ -12,6 +12,8 @@ DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can do everything" ON public.profiles;
 DROP POLICY IF EXISTS "owner_access" ON public.profiles;
 DROP POLICY IF EXISTS "admin_read_access" ON public.profiles;
+DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+DROP POLICY IF EXISTS "allow_admin_read" ON public.profiles;
 
 -- 3. Crear función de administrador optimizada (SECURITY DEFINER corre como superusuario y evita recursión)
 CREATE OR REPLACE FUNCTION public.is_admin()
