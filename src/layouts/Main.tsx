@@ -62,9 +62,8 @@ export const Layout: React.FC = () => {
 
   return (
     <div style={{
-      height: '100%',
+      flex: 1,
       width: '100%',
-      overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       position: 'relative',
@@ -82,8 +81,12 @@ export const Layout: React.FC = () => {
           backgroundColor: 'var(--bg-color)',
           borderBottom: '1px solid var(--border-color)',
           zIndex: 1100,
-          position: 'sticky',
-          top: 0
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          paddingTop: 'env(safe-area-inset-top)',
+          height: 'calc(60px + env(safe-area-inset-top))',
+          boxSizing: 'border-box'
         }}>
           <button
             onClick={() => navigate(-1)}
@@ -94,7 +97,8 @@ export const Layout: React.FC = () => {
               display: 'flex',
               alignItems: 'center',
               cursor: 'pointer',
-              padding: '10px 0'
+              padding: '10px 0',
+              marginTop: '5px'
             }}
           >
             <MdArrowBackIosNew size={20} />
@@ -115,6 +119,7 @@ export const Layout: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          paddingTop: !isHome ? 'calc(60px + env(safe-area-inset-top))' : '0px',
           paddingBottom: '20px'
         }}
       >

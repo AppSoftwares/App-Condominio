@@ -1,8 +1,8 @@
 {
-  "versionCode": 10,
-  "versionName": "2.0.8",
+  "versionCode": 11,
+  "versionName": "2.0.9",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.8/App.Condominio-2.0.8.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.8/CaminosApp.ipa",
-  "releaseNotes": "• FULL SCREEN DEFINITIVO: Ajuste de layout para iPhone 16 Pro Max (Edge-to-Edge).\n• ICON FIX: Referencias de iconos corregidas para iOS.\n• VERSION: 2.0.8 sincronizada."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.9/App.Condominio-2.0.9.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.9/CaminosApp.ipa",
+  "releaseNotes": "• SCROLL FIX: Solución al problema de desplazamiento en pantallas largas.\n• FULL SCREEN: Ajuste real de borde a borde para iPhone 16 Pro Max.\n• KEYBOARD: Teclado numérico activado para referencias de pago.\n• SESSION: Mejorada la estabilidad para evitar cierres de sesión inesperados.\n• VERSION: 2.0.9."
 }

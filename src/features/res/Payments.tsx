@@ -265,10 +265,12 @@ export const Payments: React.FC = () => {
                       <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="000000"
                         maxLength={6}
                         value={reference}
-                        onChange={(e) => setReference(e.target.value)}
+                        onChange={(e) => setReference(e.target.value.replace(/[^0-9]/g, ''))}
                         style={inputStyle}
                       />
                     </div>

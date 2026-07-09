@@ -64,7 +64,10 @@ export const useAuthStore = create<AuthState>()(
       },
       initialize: () => {
         const syncSession = async () => {
-          set({ authReady: false })
+          // No bloqueamos el authReady mientras sincronizamos si ya tenemos un usuario local para evitar parpadeos
+          if (!get().user) {
+             set({ authReady: false })
+          }
 
           try {
             const { data, error } = await supabase.auth.getSession()
@@ -102,7 +105,14 @@ export const useAuthStore = create<AuthState>()(
 
         syncSession()
 
-        supabase.auth.onAuthStateChange(async (_event, session) => {
+        supabase.auth.onAuthStateChange(async (event, session) => {
+          console.log('Auth state change event:', event)
+
+          if (event === 'SIGNED_OUT') {
+            set({ user: null, authReady: true })
+            return
+          }
+
           if (session?.user) {
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
