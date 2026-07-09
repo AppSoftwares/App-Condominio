@@ -1,8 +1,8 @@
 {
-  "versionCode": 6,
-  "versionName": "2.0.4",
+  "versionCode": 7,
+  "versionName": "2.0.5",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.4/App.Condominio-2.0.4.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.4/CaminosApp.ipa",
-  "releaseNotes": "• FIX CRÍTICO: Conexión con base de datos restablecida (Load failed).\n• SOPORTE PANTALLA COMPLETA: Ajustado para iPhone 16 Pro Max (Sin barras blancas).\n• ICONO CORREGIDO: El logo ahora se muestra correctamente en la pantalla de inicio.\n• VERSIÓN 2.0.4: Actualización de interfaz y login optimizado."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.5/App.Condominio-2.0.5.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.5/CaminosApp.ipa",
+  "releaseNotes": "• RECURSION FIX: Script SQL definitivo para arreglar el error de políticas (profiles).\n• FULL SCREEN: Ajuste nativo para iPhone 16 Pro Max (Sin barras blancas).\n• ICON FIX: Estructura de iconos regenerada para iOS.\n• LOGIN STABILITY: Hardcoded fallback para evitar 'Load failed'."
 }

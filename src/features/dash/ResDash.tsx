@@ -174,7 +174,7 @@ const NewsItem = ({ title, desc, tag, color, imageUrl }: any) => (
   </div>
 )
 
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '74px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, paddingTop: 'env(safe-area-inset-top)' }
-const mainContentStyle = { paddingTop: 'calc(100px + env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any }
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '60px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, paddingTop: 'env(safe-area-inset-top)' }
+const mainContentStyle = { paddingTop: 'calc(70px + env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any }
 const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.15)' }
