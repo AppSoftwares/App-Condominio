@@ -3,7 +3,7 @@ import { BrowserTracing } from '@sentry/tracing';
 
 export function initSentry() {
   const dsn = (import.meta as any).env.VITE_SENTRY_DSN || ''
-  if (!dsn) return
+  if (!dsn || dsn === 'your-sentry-dsn') return
 
   Sentry.init({
     dsn,

@@ -35,6 +35,7 @@ import { ScrollToTop } from './components/ScrollToTop'
 import { useUpdateCheck } from './hooks/useUpdateCheck'
 import { UpdateModal } from './components/UpdateModal'
 import { App as CapApp } from '@capacitor/app'
+import { SplashScreen } from '@capacitor/splash-screen'
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -51,6 +52,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 
 function App() {
   const user = useAuthStore(state => state.user)
+  const authReady = useAuthStore(state => state.authReady)
   const initializeAuth = useAuthStore(state => state.initialize)
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
@@ -87,6 +89,7 @@ function App() {
 
   useEffect(() => {
     initializeAuth()
+    SplashScreen.hide()
   }, [initializeAuth])
 
   useEffect(() => {
@@ -95,8 +98,10 @@ function App() {
 
   useEffect(() => {
     if (isDarkMode) {
+      document.documentElement.classList.add('dark')
       document.body.classList.add('dark-mode')
     } else {
+      document.documentElement.classList.remove('dark')
       document.body.classList.remove('dark-mode')
     }
   }, [isDarkMode])
@@ -115,80 +120,46 @@ function App() {
           />
         )}
         <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
-          <Routes>
-        <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
-        <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
-        <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
-        <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
+          {!authReady ? (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p>Cargando sesión...</p>
+            </div>
+          ) : (
+            <Routes>
+              <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
+              <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
+              <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
+              <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
 
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['resident']}><ResDash /></ProtectedRoute>
-          } />
-          <Route path="/payments" element={
-            <ProtectedRoute allowedRoles={['resident']}><Payments /></ProtectedRoute>
-          } />
-          <Route path="/requests" element={
-            <ProtectedRoute allowedRoles={['resident']}><Requests /></ProtectedRoute>
-          } />
-          <Route path="/guests" element={
-            <ProtectedRoute allowedRoles={['resident']}><Guests /></ProtectedRoute>
-          } />
-          <Route path="/reservations" element={
-            <ProtectedRoute allowedRoles={['resident']}><Reservations /></ProtectedRoute>
-          } />
-          <Route path="/incidents" element={
-            <ProtectedRoute allowedRoles={['resident']}><Incidents /></ProtectedRoute>
-          } />
-          <Route path="/packages" element={
-            <ProtectedRoute allowedRoles={['resident']}><PackageLocker /></ProtectedRoute>
-          } />
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />
+                <Route path="/payments" element={<ProtectedRoute allowedRoles={["resident"]}><Payments /></ProtectedRoute>} />
+                <Route path="/requests" element={<ProtectedRoute allowedRoles={["resident"]}><Requests /></ProtectedRoute>} />
+                <Route path="/guests" element={<ProtectedRoute allowedRoles={["resident"]}><Guests /></ProtectedRoute>} />
+                <Route path="/reservations" element={<ProtectedRoute allowedRoles={["resident"]}><Reservations /></ProtectedRoute>} />
+                <Route path="/incidents" element={<ProtectedRoute allowedRoles={["resident"]}><Incidents /></ProtectedRoute>} />
+                <Route path="/packages" element={<ProtectedRoute allowedRoles={["resident"]}><PackageLocker /></ProtectedRoute>} />
 
-          <Route path="/profile" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Profile /></ProtectedRoute>
-          } />
-          <Route path="/profile/account" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Account /></ProtectedRoute>
-          } />
-          <Route path="/profile/privacy" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Privacy /></ProtectedRoute>
-          } />
-          <Route path="/profile/appearance" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Appearance /></ProtectedRoute>
-          } />
-          <Route path="/profile/notifications" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Notifications /></ProtectedRoute>
-          } />
-          <Route path="/profile/invite" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><InviteFriend /></ProtectedRoute>
-          } />
-          <Route path="/profile/support" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><Support /></ProtectedRoute>
-          } />
-          <Route path="/profile/help" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><HelpCenter /></ProtectedRoute>
-          } />
-          <Route path="/profile/legal" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><LegalDocument /></ProtectedRoute>
-          } />
-          <Route path="/profile/emergency" element={
-            <ProtectedRoute allowedRoles={['resident', 'admin', 'guard', 'superadmin']}><EmergencyLines /></ProtectedRoute>
-          } />
+                <Route path="/profile" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Profile /></ProtectedRoute>} />
+                <Route path="/profile/account" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Account /></ProtectedRoute>} />
+                <Route path="/profile/privacy" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Privacy /></ProtectedRoute>} />
+                <Route path="/profile/appearance" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Appearance /></ProtectedRoute>} />
+                <Route path="/profile/notifications" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Notifications /></ProtectedRoute>} />
+                <Route path="/profile/invite" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><InviteFriend /></ProtectedRoute>} />
+                <Route path="/profile/support" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Support /></ProtectedRoute>} />
+                <Route path="/profile/help" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><HelpCenter /></ProtectedRoute>} />
+                <Route path="/profile/legal" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalDocument /></ProtectedRoute>} />
+                <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
 
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin', 'superadmin']}><Admin /></ProtectedRoute>
-          } />
-          <Route path="/admin/payroll" element={
-            <ProtectedRoute allowedRoles={['admin', 'superadmin']}><Payroll /></ProtectedRoute>
-          } />
+                <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Admin /></ProtectedRoute>} />
+                <Route path="/admin/payroll" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Payroll /></ProtectedRoute>} />
 
-          <Route path="/guard" element={
-            <ProtectedRoute allowedRoles={['guard']}><GuardPortal /></ProtectedRoute>
-          } />
-        </Route>
+                <Route path="/guard" element={<ProtectedRoute allowedRoles={["guard"]}><GuardPortal /></ProtectedRoute>} />
+              </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          )}
         </Suspense>
       </Router>
     </ErrorBoundary>

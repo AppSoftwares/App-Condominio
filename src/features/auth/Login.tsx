@@ -25,21 +25,20 @@ export const Login: React.FC = () => {
     const cleanPassword = password.trim()
 
     // 1. Intentar validación con Whitelist (Excel de la imagen)
-    // Para la whitelist, comparamos en mayúsculas para mayor flexibilidad
-    let localUser = whitelist.find(u =>
-      u.email.toUpperCase().trim() === cleanEmail &&
-      u.password.toUpperCase().trim() === cleanPassword.toUpperCase()
+    const localUser = whitelist.find(u =>
+      u.email.toLowerCase().trim() === cleanEmail &&
+      u.password.toLowerCase().trim() === cleanPassword.toLowerCase()
     )
 
     if (localUser) {
-      let role: UserRole = 'resident';
+      let role: UserRole = 'resident'
 
-      if (localUser.email === 'ADMIN@CAMINOS.COM') {
-        role = 'superadmin';
+      if (localUser.email.toLowerCase().trim() === 'admin@caminos.com') {
+        role = 'superadmin'
       } else if (localUser.role === 'ADMINISTRADOR') {
-        role = 'admin';
+        role = 'admin'
       } else if (localUser.role === 'VIGILANTE') {
-        role = 'guard';
+        role = 'guard'
       }
 
       setUser({
@@ -47,14 +46,13 @@ export const Login: React.FC = () => {
         email: localUser.email,
         first_name: localUser.name.split(' ')[0],
         last_name: localUser.name.split(' ')[1] || '',
-        role: role,
+        role,
         residential_cluster: localUser.conjunto,
         house_number: localUser.house_number,
         etapa: localUser.etapa
       })
 
-      if (role === 'superadmin') navigate('/admin')
-      else if (role === 'admin') navigate('/admin')
+      if (role === 'superadmin' || role === 'admin') navigate('/admin')
       else if (role === 'guard') navigate('/guard')
       else navigate('/dashboard')
 
@@ -109,7 +107,7 @@ export const Login: React.FC = () => {
 
     setLoading(true)
     try {
-      const cleanEmail = sanitizeString(email).toUpperCase().trim()
+      const cleanEmail = sanitizeString(email).toLowerCase().trim()
 
       // Para recuperación de contraseña en producción, el redirectTo debe ser la URL pública.
       // Si aún no tienes dominio, se recomienda usar la URL de Vercel/Netlify.
@@ -159,12 +157,12 @@ export const Login: React.FC = () => {
                   <input
                     type="email"
                     value={email}
-                    onChange={e => setEmail(e.target.value.toUpperCase())}
+                    onChange={e => setEmail(e.target.value)}
                     required
-                    placeholder="EJEMPLO@CORREO.COM"
+                    placeholder="ejemplo@correo.com"
                     autoCorrect="off"
                     spellCheck="false"
-                    style={{ ...inputStyle, textTransform: 'uppercase' }}
+                    style={inputStyle}
                   />
                </div>
 
@@ -224,13 +222,12 @@ export const Login: React.FC = () => {
                   <input
                     type="email"
                     value={email}
-                    onChange={e => setEmail(e.target.value.toUpperCase())}
+                    onChange={e => setEmail(e.target.value)}
                     required
-                    placeholder="SU@EMAIL.COM"
-                    autoCapitalize="characters"
+                    placeholder="su@email.com"
                     autoCorrect="off"
                     spellCheck="false"
-                    style={{ ...inputStyle, textTransform: 'uppercase' }}
+                    style={inputStyle}
                   />
                   <button type="submit" disabled={loading} style={primaryBtnStyle}>Enviar Enlace</button>
                   <button type="button" onClick={() => setIsForgot(false)} style={{ background: 'none', border: 'none' }}>Volver</button>

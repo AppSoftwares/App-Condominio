@@ -55,19 +55,19 @@ export const Privacy: React.FC = () => {
   }
 
   return (
-    <div style={{ width: '100%', backgroundColor: '#FAF8F5', fontFamily: "'Inter', sans-serif", color: '#1B1C1A', paddingBottom: '30px' }}>
+    <div style={{ width: '100%', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '30px' }}>
       <header style={{
-        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: '#FAF8F5',
-        borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px',
+        position: 'fixed', top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)',
+        borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px',
         zIndex: 100, boxSizing: 'border-box'
       }}>
         <button
           onClick={() => navigate('/profile')}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#1B1C1A' }}>arrow_back</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--text-color)' }}>arrow_back</span>
         </button>
-        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: '#0f5551', fontWeight: 700, textTransform: 'uppercase' }}>Privacidad y Seguridad</h1>
+        <h1 style={{ fontFamily: "'Cinzel', serif", fontSize: '18px', marginLeft: '15px', color: 'var(--primary-color)', fontWeight: 700, textTransform: 'uppercase' }}>Privacidad y Seguridad</h1>
       </header>
 
       <main style={{ paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
@@ -112,13 +112,13 @@ export const Privacy: React.FC = () => {
 
             <Section title="Integraciones y API Keys">
               <div style={{ padding: '20px' }}>
-                <p style={{ fontSize: '12px', color: '#6f7978', marginBottom: '15px' }}>Genera llaves para conectar el condominio con n8n o servicios externos.</p>
+                <p style={{ fontSize: '12px', color: 'var(--text-sub)', marginBottom: '15px' }}>Genera llaves para conectar el condominio con n8n o servicios externos.</p>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <input
                     placeholder="Nombre (ej. n8n Reportes)"
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    style={inputStyle}
+                    style={{ ...inputStyle, backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
                   />
                   <button
                     onClick={handleGenerateKey}
@@ -130,14 +130,14 @@ export const Privacy: React.FC = () => {
               </div>
 
               {apiKeys.length > 0 && (
-                <div style={{ borderTop: '1px solid #efeeeb' }}>
+                <div style={{ borderTop: '1px solid var(--border-color)' }}>
                   {apiKeys.map(key => (
                     <div key={key.id} style={{ ...menuItemStyle, cursor: 'default' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                         <div style={iconBoxStyle}><span className="material-symbols-outlined">key</span></div>
                         <div>
                           <span style={{ fontWeight: 700, fontSize: '14px' }}>{key.name}</span>
-                          <span style={{ fontSize: '11px', color: '#6f7978', display: 'block' }}>Creada: {key.date}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-sub)', display: 'block' }}>Creada: {key.date}</span>
                         </div>
                       </div>
                       <button
@@ -214,7 +214,7 @@ export const Privacy: React.FC = () => {
               <MenuItem onClick={() => navigate('/profile/legal?type=terms')} icon="assignment" label="Términos y Condiciones" />
               <button style={{ ...menuItemStyle, border: 'none', color: '#ba1a1a', marginTop: '10px', width: '100%', backgroundColor: 'transparent' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <div style={{ ...iconBoxStyle, backgroundColor: '#ffdad6' }}>
+                  <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)' }}>
                     <span className="material-symbols-outlined">delete_forever</span>
                   </div>
                   <span style={{ fontWeight: 700 }}>Eliminar mi cuenta</span>
@@ -318,7 +318,7 @@ export const Privacy: React.FC = () => {
 const Modal = ({ title, children, onClose }: any) => (
   <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 2000 }}>
     <div style={{
-      backgroundColor: 'white',
+      backgroundColor: 'var(--card-bg)',
       borderBottomLeftRadius: '32px',
       borderBottomRightRadius: '32px',
       padding: '30px',
@@ -330,11 +330,11 @@ const Modal = ({ title, children, onClose }: any) => (
       boxSizing: 'border-box',
       boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', position: 'sticky', top: 0, backgroundColor: 'white', paddingBottom: '15px', zIndex: 10, borderBottom: '1px solid #efeeeb' }}>
-        <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', color: '#0f5551', margin: 0 }}>{title}</h3>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}><span className="material-symbols-outlined">close</span></button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', position: 'sticky', top: 0, backgroundColor: 'var(--card-bg)', paddingBottom: '15px', zIndex: 10, borderBottom: '1px solid var(--border-color)' }}>
+        <h3 style={{ fontFamily: "'Cinzel', serif", fontSize: '20px', color: 'var(--primary-color)', margin: 0 }}>{title}</h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}><span className="material-symbols-outlined" style={{ color: 'var(--text-color)' }}>close</span></button>
       </div>
-      <div style={{ paddingBottom: '20px' }}>
+      <div style={{ paddingBottom: '20px', color: 'var(--text-color)' }}>
         {children}
       </div>
       <style>{`
@@ -346,8 +346,8 @@ const Modal = ({ title, children, onClose }: any) => (
 
 const Section = ({ title, children }: any) => (
   <div style={{ marginBottom: '30px' }}>
-    <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#785919', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '15px', marginLeft: '5px' }}>{title}</h3>
-    <div style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+    <h3 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '15px', marginLeft: '5px' }}>{title}</h3>
+    <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
       {children}
     </div>
   </div>
@@ -360,11 +360,11 @@ const MenuItem = ({ icon, label, desc, onClick }: any) => (
         <span className="material-symbols-outlined">{icon}</span>
       </div>
       <div style={{ textAlign: 'left' }}>
-        <span style={{ fontWeight: 700, fontSize: '15px', color: '#1B1C1A', display: 'block' }}>{label}</span>
-        {desc && <span style={{ fontSize: '12px', color: '#6f7978' }}>{desc}</span>}
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', display: 'block' }}>{label}</span>
+        {desc && <span style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{desc}</span>}
       </div>
     </div>
-    <span className="material-symbols-outlined" style={{ color: '#bfc8c7' }}>chevron_right</span>
+    <span className="material-symbols-outlined" style={{ color: 'var(--border-color)' }}>chevron_right</span>
   </div>
 )
 
@@ -375,14 +375,14 @@ const ToggleItem = ({ icon, label, desc, active, onToggle }: any) => (
         <span className="material-symbols-outlined">{icon}</span>
       </div>
       <div style={{ textAlign: 'left' }}>
-        <span style={{ fontWeight: 700, fontSize: '15px', color: '#1B1C1A', display: 'block' }}>{label}</span>
-        <span style={{ fontSize: '12px', color: '#6f7978' }}>{desc}</span>
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', display: 'block' }}>{label}</span>
+        <span style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{desc}</span>
       </div>
     </div>
     <div
       onClick={onToggle}
       style={{
-        width: '44px', height: '24px', backgroundColor: active ? '#2f6d69' : '#bfc8c7',
+        width: '44px', height: '24px', backgroundColor: active ? 'var(--primary-color)' : 'var(--border-color)',
         borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease'
       }}
     >
@@ -395,8 +395,8 @@ const ToggleItem = ({ icon, label, desc, active, onToggle }: any) => (
   </div>
 )
 
-const introTextStyle = { color: '#3f4947', fontSize: '14px', marginBottom: '30px', textAlign: 'center' as const, lineHeight: '1.5' }
-const menuItemStyle = { padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #efeeeb', cursor: 'pointer' }
-const iconBoxStyle = { width: '40px', height: '40px', borderRadius: '10px', backgroundColor: '#f5f3f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0f5551' }
-const inputStyle = { flex: 1, padding: '12px 15px', borderRadius: '12px', border: '1px solid #bfc8c7', backgroundColor: '#f5f3f0', fontSize: '14px', outline: 'none' }
-const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#0f5551', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }
+const introTextStyle = { color: 'var(--text-sub)', fontSize: '14px', marginBottom: '30px', textAlign: 'center' as const, lineHeight: '1.5' }
+const menuItemStyle = { padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', cursor: 'pointer' }
+const iconBoxStyle = { width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }
+const inputStyle = { flex: 1, padding: '12px 15px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', fontSize: '14px', outline: 'none' }
+const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }

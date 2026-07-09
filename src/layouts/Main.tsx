@@ -30,11 +30,13 @@ import {
   MdOutlineReceiptLong
 } from 'react-icons/md'
 import { useAuthStore } from '../store/useAuthStore'
+import { useUpdateStore } from '../store/useUpdateStore'
 
 export const Layout: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuthStore()
+  const isUpdateAvailable = useUpdateStore(state => state.isUpdateAvailable)
   const contentRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
@@ -157,6 +159,7 @@ export const Layout: React.FC = () => {
               icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
               active={location.pathname.startsWith('/profile')}
               onClick={() => navigate('/profile')}
+              badge={isUpdateAvailable}
             />
           </>
         ) : (user.role === 'admin' || user.role === 'superadmin') ? (
@@ -192,6 +195,7 @@ export const Layout: React.FC = () => {
               icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
               active={location.pathname.startsWith('/profile')}
               onClick={() => navigate('/profile')}
+              badge={isUpdateAvailable}
             />
           </>
         ) : (
@@ -219,7 +223,8 @@ export const Layout: React.FC = () => {
             <NavIcon
               icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
               active={location.pathname.startsWith('/profile')}
-              onClick={() => navigate('/profile')}
+                onClick={() => navigate('/profile')}
+                badge={isUpdateAvailable}
             />
           </>
         )}
@@ -229,7 +234,7 @@ export const Layout: React.FC = () => {
 }
 
 
-const NavIcon = ({ icon: Icon, active, onClick }: any) => (
+const NavIcon = ({ icon: Icon, active, onClick, badge }: any) => (
   <div
     onClick={onClick}
     style={{
@@ -254,5 +259,8 @@ const NavIcon = ({ icon: Icon, active, onClick }: any) => (
     }}>
       <Icon size={26} />
     </div>
+    {badge && (
+      <div style={{ position: 'absolute', right: '18%', top: '6px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }} />
+    )}
   </div>
 )

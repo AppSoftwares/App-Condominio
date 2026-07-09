@@ -40,12 +40,12 @@ export const Account: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: '#FAF8F5', color: '#1B1C1A', paddingBottom: '40px' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', paddingBottom: '40px' }}>
       <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
 
         {/* Update Email Section */}
-        <section style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <h3 style={{ fontSize: '18px', color: '#0f5551', marginBottom: '20px', fontWeight: 700 }}>Actualizar Correo</h3>
+        <section style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ fontSize: '18px', color: 'var(--primary-color)', marginBottom: '20px', fontWeight: 700 }}>Actualizar Correo</h3>
           <form onSubmit={handleUpdateEmail} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div>
               <label style={labelStyle}>Dirección de Correo</label>
@@ -53,7 +53,7 @@ export const Account: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={inputStyle}
+                style={{ ...inputStyle, backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
                 required
               />
             </div>
@@ -62,8 +62,8 @@ export const Account: React.FC = () => {
         </section>
 
         {/* Change Password Section */}
-        <section style={{ backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-          <h3 style={{ fontSize: '18px', color: '#0f5551', marginBottom: '20px', fontWeight: 700 }}>Cambiar Contraseña</h3>
+        <section style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+          <h3 style={{ fontSize: '18px', color: 'var(--primary-color)', marginBottom: '20px', fontWeight: 700 }}>Cambiar Contraseña</h3>
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ position: 'relative' }}>
               <label style={labelStyle}>Contraseña Actual</label>
@@ -71,7 +71,7 @@ export const Account: React.FC = () => {
                 type={showCurrent ? "text" : "password"}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                style={inputStyle}
+                style={{ ...inputStyle, backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
                 required
                 placeholder="••••••••"
               />
@@ -89,7 +89,7 @@ export const Account: React.FC = () => {
                 type={showNew ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                style={inputStyle}
+                style={{ ...inputStyle, backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
                 required
                 placeholder="Mín. 8 caracteres"
               />
@@ -107,7 +107,7 @@ export const Account: React.FC = () => {
                 type={showConfirm ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                style={inputStyle}
+                style={{ ...inputStyle, backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
                 required
                 placeholder="Repita la nueva contraseña"
               />
@@ -123,7 +123,7 @@ export const Account: React.FC = () => {
           </form>
         </section>
 
-        <p style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: '#6f7978', lineHeight: '1.5' }}>
+        <p style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: 'var(--text-sub)', lineHeight: '1.5' }}>
           Para proteger su privacidad, nunca comparta sus credenciales de acceso con terceros.
         </p>
       </main>
@@ -131,7 +131,7 @@ export const Account: React.FC = () => {
   )
 }
 
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, color: '#3d503e', marginBottom: '8px', textTransform: 'uppercase' as const }
-const inputStyle = { width: '100%', padding: '12px 15px', paddingRight: '45px', borderRadius: '10px', border: '1px solid #bfc8c7', fontSize: '15px', boxSizing: 'border-box' as const, outline: 'none' }
-const primaryBtnStyle = { width: '100%', padding: '14px', backgroundColor: '#2f6d69', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', marginTop: '5px' }
+const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-sub)', marginBottom: '8px', textTransform: 'uppercase' as const }
+const inputStyle = { width: '100%', padding: '12px 15px', paddingRight: '45px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '15px', boxSizing: 'border-box' as const, outline: 'none' }
+const primaryBtnStyle = { width: '100%', padding: '14px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer', fontSize: '14px', marginTop: '5px' }
 const eyeBtnStyle = { position: 'absolute' as const, right: '10px', bottom: '10px', background: 'none', border: 'none', cursor: 'pointer', color: '#6f7978', display: 'flex', alignItems: 'center', justifyContent: 'center' }

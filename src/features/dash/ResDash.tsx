@@ -11,7 +11,6 @@ import {
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
-import logoPremium from '../../assets/logo_premium.png'
 
 export const ResDash: React.FC = () => {
   const { user } = useAuthStore()
@@ -19,6 +18,8 @@ export const ResDash: React.FC = () => {
   const [announcements, setAnnouncements] = React.useState<any[]>([])
   const [totalDebt, setTotalDebt] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
+
+  const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
 
   React.useEffect(() => {
     const fetchData = async () => {
@@ -70,13 +71,13 @@ export const ResDash: React.FC = () => {
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
 
-      {/* AppBar Premium */}
+      {/* AppBar Premium - Solo Avatar */}
       <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', width: '100%' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '2px solid var(--accent-gold)', flexShrink: 0 }}>
-            {user?.first_name?.[0]}{user?.last_name?.[0]}
-          </div>
-          <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '20px', color: 'var(--primary-color)', fontWeight: 700, margin: 0 }}>Condominio</h1>
+        <div
+          onClick={() => navigate('/profile')}
+          style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--accent-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       </header>
 

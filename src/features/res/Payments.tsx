@@ -35,6 +35,15 @@ export const Payments: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
+  type DebtItem = {
+    id: string
+    monto_pendiente: number
+    concepto?: string
+    fecha_vencimiento?: string
+    tipo?: string
+    descripcion?: string
+  }
+
   const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
   const [fileAttached, setFileAttached] = useState<File | null>(null)
   const [senderName, setSenderName] = useState('')
@@ -43,14 +52,47 @@ export const Payments: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
   const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
+  const [debtItems, setDebtItems] = useState<DebtItem[]>([])
+  const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
   const [loadingDebts, setLoadingDebts] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const debtUSD = totalDebt
+
+  const selectedDebtTotal = debtItems.length > 0
+    ? selectedDebtIds.length > 0
+      ? debtItems.filter(debt => selectedDebtIds.includes(debt.id)).reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
+      : 0
+    : totalDebt
+
+  const allDebtSelected = debtItems.length > 0 && selectedDebtIds.length === debtItems.length
 
   useEffect(() => {
     if (user?.id) {
+      setSessionUserId(user.id)
       fetchDebts()
+    }
+    // sync session user id to avoid RLS mismatches
+    const sync = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const id = data?.session?.user?.id ?? user?.id ?? null
+        setSessionUserId(id)
+      } catch (err) {
+        console.error('Error obteniendo sesión Supabase:', err)
+        setSessionUserId(user?.id ?? null)
+      }
+    }
+
+    sync()
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const id = session?.user?.id ?? user?.id ?? null
+      setSessionUserId(id)
+    })
+
+    return () => {
+      try { sub?.subscription?.unsubscribe?.() } catch (e) {}
     }
   }, [user?.id])
 
@@ -74,6 +116,8 @@ export const Payments: React.FC = () => {
 
       if (debtData && debtData.length > 0) {
         const total = debtData.reduce((acc: number, d: any) => acc + Number(d.monto_pendiente), 0)
+        setDebtItems(debtData)
+        setSelectedDebtIds(debtData.map((debt: any) => debt.id))
         setTotalDebt(total || 20)
       } else if (settings) {
         const today = new Date()
@@ -112,7 +156,7 @@ export const Payments: React.FC = () => {
 
       if (fileAttached) {
         const fileExt = fileAttached.name.split('.').pop()
-        const fileName = `${user?.id}_${Date.now()}.${fileExt}`
+        const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`
         const filePath = `payments/${fileName}`
 
         const { error: uploadError } = await supabase.storage
@@ -128,33 +172,37 @@ export const Payments: React.FC = () => {
         screenshotUrl = publicUrl
       }
 
+      // Ensure session user id to satisfy RLS policies
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      const authId = sessionData?.session?.user?.id ?? user?.id ?? sessionUserId
+      if (!authId) throw new Error('No se detectó una sesión activa. Por favor inicie sesión nuevamente.')
+
       const cleanReference = sanitizeString(reference)
       const cleanBank = sanitizeString(originBank)
-      const cleanDescription = sanitizeString(description)
+      const selectedDescription = selectedDebtIds.length > 0
+        ? `Cuotas seleccionadas: ${selectedDebtIds.join(', ')}`
+        : ''
+      const cleanDescription = sanitizeString(`${description} ${selectedDescription}`.trim())
       const cleanSender = sanitizeString(senderName)
+      const amountUSD = selectedDebtIds.length > 0 ? selectedDebtTotal : totalDebt
 
-      const { error: dbError } = await supabase
-        .from('payments')
-        .insert([
-          {
-            profile_id: user?.id,
-            monto_bs: debtUSD * bcvRate,
-            monto_usd: debtUSD,
-            referencia: cleanReference,
-            banco_origen: cleanBank,
-            status: 'pendiente',
-            evidencia_url: screenshotUrl,
-            description: cleanDescription,
-            details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate } : { fecha: paymentDate }
-          }
-        ])
+      const { error: dbError } = await supabase.rpc('rpc_insert_payment', {
+        monto_bs: amountUSD * bcvRate,
+        monto_usd: amountUSD,
+        referencia: cleanReference,
+        banco_origen: cleanBank,
+        evidencia_url: screenshotUrl,
+        description: cleanDescription,
+        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds }
+      })
 
       if (dbError) throw dbError
 
       alert("¡Pago registrado con éxito! Su comprobante será validado por la administración en breve.")
       navigate('/dashboard')
     } catch (err: any) {
-      alert('Error al registrar pago: ' + err.message)
+      alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
     } finally {
       setLoading(false)
     }
@@ -167,13 +215,13 @@ export const Payments: React.FC = () => {
     return (
       <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
         <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
-          <h1 style={{ fontSize: '32px', color: '#0f5551', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
+          <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
           <div style={cardStyle}>
             <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#ffdea6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
-                {isPM ? <MdOutlineSmartphone size={32} color="#785919" /> : isZelle ? <MdOutlinePayments size={32} color="#785919" /> : <MdOutlineAccountBalance size={32} color="#785919" />}
+              <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(198,160,89,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
+                {isPM ? <MdOutlineSmartphone size={32} color="var(--accent-gold)" /> : isZelle ? <MdOutlinePayments size={32} color="var(--accent-gold)" /> : <MdOutlineAccountBalance size={32} color="var(--accent-gold)" />}
               </div>
-              <h2 style={{ fontSize: '20px', color: '#0f5551', margin: 0, fontWeight: 700 }}>Datos del Pago</h2>
+              <h2 style={{ fontSize: '20px', color: 'var(--primary-color)', margin: 0, fontWeight: 700 }}>Datos del Pago</h2>
             </div>
 
             <div style={infoGridStyle}>
@@ -199,11 +247,11 @@ export const Payments: React.FC = () => {
                   {!isPM && <InfoRow label="CUENTA" value="0191-0000-00-0000000000" />}
                   <InfoRow label="NOMBRE" value="Adm. Conj. Las Huertas" />
 
-                  <div style={{ marginTop: '20px', borderTop: '1px solid #efeeeb', paddingTop: '20px' }}>
+                  <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
                     <label style={labelStyle}>DATOS DE TU PAGO</label>
 
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>BANCO DE ORIGEN</label>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>BANCO DE ORIGEN</label>
                       <input
                         type="text"
                         placeholder="Ej: Banesco, Mercantil..."
@@ -214,7 +262,7 @@ export const Payments: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
                       <input
                         type="text"
                         placeholder="000000"
@@ -226,7 +274,7 @@ export const Payments: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>FECHA DEL PAGO</label>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>FECHA DEL PAGO</label>
                       <input
                         type="date"
                         value={paymentDate}
@@ -236,7 +284,7 @@ export const Payments: React.FC = () => {
                     </div>
 
                     <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: '#6f7978', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
                       <textarea
                         placeholder="Ej: Pago de condominio Octubre y cuota extra de bomba"
                         value={description}
@@ -248,20 +296,20 @@ export const Payments: React.FC = () => {
                 </>
               )}
 
-              <div style={{ ...infoRowStyle, border: 'none', backgroundColor: '#f5f3f0', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
+              <div style={{ ...infoRowStyle, border: 'none', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#3d503e' }}>MONTO A ENVIAR</span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>MONTO A ENVIAR</span>
                   {!isZelle && (
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#785919' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
                       (Tasa BCV: {bcvRate.toFixed(2)} Bs/$)
                     </span>
                   )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: '#0f5551' }}>{formatUSD(debtUSD)}</span>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(selectedDebtTotal)}</span>
                   {!isZelle && (
-                    <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f5551' }}>
-                      {formatBs(debtUSD, bcvRate)}
+                    <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-color)' }}>
+                      {formatBs(selectedDebtTotal, bcvRate)}
                     </span>
                   )}
                 </div>
@@ -273,8 +321,8 @@ export const Payments: React.FC = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 style={{
-                  width: '100%', padding: '15px', border: '2px dashed #bfc8c7', borderRadius: '12px',
-                  backgroundColor: fileAttached ? '#d3e8d0' : '#FAF8F5', color: '#3f4947',
+                  width: '100%', padding: '15px', border: '2px dashed var(--border-color)', borderRadius: '12px',
+                  backgroundColor: fileAttached ? 'rgba(198,160,89,0.15)' : 'var(--icon-bg)', color: 'var(--text-color)',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
                 }}
               >
@@ -284,12 +332,12 @@ export const Payments: React.FC = () => {
               <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
             </div>
 
-            <button
-              onClick={handleRegisterPayment}
-              disabled={loading}
-              style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: loading ? 0.7 : 1 }}
-            >
-              {loading ? 'Procesando...' : 'Registrar Pago'}
+                    <button
+                onClick={handleRegisterPayment}
+                disabled={loading || (debtItems.length > 0 && selectedDebtIds.length === 0)}
+                style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: (loading || (debtItems.length > 0 && selectedDebtIds.length === 0)) ? 0.7 : 1 }}
+              >
+              {loading ? 'Procesando...' : debtItems.length > 0 && selectedDebtIds.length === 0 ? 'Seleccione al menos una cuota' : 'Registrar Pago'}
             </button>
           </div>
         </main>
@@ -299,17 +347,84 @@ export const Payments: React.FC = () => {
 
   return (
     <div style={{ ...containerStyle, minHeight: 'auto' }}>
-      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
-        <h1 style={{ fontSize: '32px', color: '#0f5551', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>Pagos de Condominio</h1>
-        <div style={{ backgroundColor: '#2f6d69', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(47,109,105,0.2)' }}>
-           <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO PENDIENTE</p>
-           <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(debtUSD)}</h2>
-           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: '#ffdea6' }}>Equivalente a: {formatBs(debtUSD, bcvRate)}</p>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '520px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
+        <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '24px' }}>Pagos de Condominio</h1>
+
+        {loadingDebts ? (
+          <div style={{ padding: '24px', borderRadius: '24px', backgroundColor: 'var(--card-bg)', boxShadow: THEME.shadow, marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>Cargando deudas pendientes...</p>
+          </div>
+        ) : debtItems.length > 0 ? (
+          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: 'var(--text-sub)', letterSpacing: '1px' }}>DEUDAS PENDIENTES</p>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{debtItems.length} cuota{debtItems.length === 1 ? '' : 's'} encontradas</h2>
+              </div>
+              <button onClick={() => setSelectedDebtIds(allDebtSelected ? [] : debtItems.map(d => d.id))} style={{ padding: '12px 16px', borderRadius: '14px', border: `1px solid ${allDebtSelected ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: allDebtSelected ? 'var(--primary-color)' : 'var(--card-bg)', color: allDebtSelected ? 'white' : 'var(--text-sub)', cursor: 'pointer', fontWeight: 700 }}>
+                {allDebtSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
+              </button>
+            </div>
+            <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', boxShadow: THEME.shadow, overflow: 'hidden' }}>
+              {debtItems.map((debt) => {
+                const isSelected = selectedDebtIds.includes(debt.id)
+                const subtitle = debt.tipo || debt.concepto || 'Cuota pendiente'
+                const dueDate = debt.fecha_vencimiento ? new Date(debt.fecha_vencimiento).toLocaleDateString('es-VE') : null
+
+                return (
+                  <button
+                    key={debt.id}
+                    onClick={() => {
+                      setSelectedDebtIds(prev => prev.includes(debt.id) ? prev.filter(id => id !== debt.id) : [...prev, debt.id])
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '18px 20px',
+                      borderBottom: '1px solid var(--border-color)',
+                      backgroundColor: isSelected ? 'rgba(15,85,81,0.08)' : 'var(--card-bg)',
+                      cursor: 'pointer',
+                      color: 'var(--text-color)',
+                      textAlign: 'left',
+                      border: 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? '2px solid var(--primary-color)' : '2px solid var(--border-color)', backgroundColor: isSelected ? 'var(--primary-color)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 800 }}>✓</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 700 }}>{subtitle}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{dueDate ? `Vence ${dueDate}` : 'Sin fecha'}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(Number(debt.monto_pendiente))}</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{formatBs(Number(debt.monto_pendiente), bcvRate)}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', padding: '24px', boxShadow: THEME.shadow, marginBottom: '24px' }}>
+            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>No se encontraron deudas específicas.</p>
+            <p style={{ margin: '10px 0 0 0', color: 'var(--text-sub)' }}>Se mostrará el monto pendiente estándar para pago.</p>
+          </div>
+        )}
+
+        <div style={{ backgroundColor: 'var(--primary-color)', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}>
+           <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO SELECCIONADO</p>
+           <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(selectedDebtTotal)}</h2>
+           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: 'var(--accent-gold)' }}>Equivalente a: {formatBs(selectedDebtTotal, bcvRate)}</p>
            <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
            <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {bcvRate.toFixed(2)} Bs/$</p>
         </div>
 
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1B1C1A', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}>
            <PaymentOption
@@ -344,32 +459,32 @@ export const Payments: React.FC = () => {
 
 const InfoRow = ({ label, value }: any) => (
   <div style={infoRowStyle}>
-    <span style={{ fontSize: '11px', fontWeight: 800, color: '#6f7978' }}>{label}</span>
-    <span style={{ fontSize: '15px', fontWeight: 700, color: '#1B1C1A' }}>{value}</span>
+      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>{label}</span>
+      <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)' }}>{value}</span>
   </div>
 )
 
 const PaymentOption = ({ icon: Icon, label, sublabel, highlight, onClick }: any) => (
-  <div onClick={onClick} style={{ backgroundColor: highlight ? '#fdf8ef' : 'white', border: highlight ? '2px solid #C6A059' : '1px solid #bfc8c7', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', boxSizing: 'border-box' }}>
-     <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: highlight ? '#C6A059' : '#f5f3f0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: highlight ? 'white' : '#785919', flexShrink: 0 }}>
+  <div onClick={onClick} style={{ backgroundColor: highlight ? 'rgba(198,160,89,0.12)' : 'var(--card-bg)', border: highlight ? '2px solid var(--accent-gold)' : '1px solid var(--border-color)', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', boxSizing: 'border-box' }}>
+     <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: highlight ? 'var(--accent-gold)' : 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: highlight ? 'white' : 'var(--primary-color)', flexShrink: 0 }}>
         <Icon size={24} />
      </div>
      <div style={{ flex: 1 }}>
-        <span style={{ fontWeight: 700, fontSize: '15px', color: '#1B1C1A', display: 'block' }}>{label}</span>
-        {sublabel && <span style={{ fontSize: '11px', color: '#785919', fontWeight: 600 }}>{sublabel}</span>}
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', display: 'block' }}>{label}</span>
+        {sublabel && <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>{sublabel}</span>}
      </div>
-     <MdOutlineChevronRight size={24} style={{ color: highlight ? '#C6A059' : '#bfc8c7' }} />
+     <MdOutlineChevronRight size={24} style={{ color: highlight ? 'var(--accent-gold)' : 'var(--border-color)' }} />
   </div>
 )
 
-const containerStyle = { backgroundColor: THEME.colors.bg, fontFamily: "'Inter', sans-serif", color: THEME.colors.text, display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: THEME.colors.white, borderBottom: `1px solid ${THEME.colors.border}`, display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
-const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: THEME.colors.primary }
-const titleStyle = { fontSize: '18px', color: THEME.colors.primary, fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
+const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
+const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: 'var(--primary-color)' }
+const titleStyle = { fontSize: '18px', color: 'var(--primary-color)', fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
 const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px' }
-const cardStyle = { backgroundColor: THEME.colors.white, border: `1px solid ${THEME.colors.border}`, borderRadius: THEME.radius, padding: '30px', boxShadow: THEME.shadow }
+const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '30px', boxShadow: THEME.shadow }
 const infoGridStyle = { display: 'flex', flexDirection: 'column' as any, gap: '15px' }
-const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #efeeeb', paddingBottom: '12px' }
-const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 900, color: THEME.colors.textSub, marginBottom: '12px', letterSpacing: '1px' }
-const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: `1px solid ${THEME.colors.border}`, fontSize: '16px', boxSizing: 'border-box' as any, outline: 'none', backgroundColor: THEME.colors.bg }
-const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: THEME.colors.primary, color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }
+const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 900, color: 'var(--text-sub)', marginBottom: '12px', letterSpacing: '1px' }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as any, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
+const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }

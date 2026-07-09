@@ -2,6 +2,8 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import icono from '../../assets/icono.png'
 
+const APP_VERSION = '2.0.2'
+
 export const AuthSplash: React.FC = () => {
   const navigate = useNavigate()
 
@@ -28,6 +30,9 @@ export const AuthSplash: React.FC = () => {
         textAlign: 'center'
       }}>
         <img src={icono} alt="Logo" style={{ width: '140px', height: 'auto', marginBottom: '8px' }} />
+        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'rgba(15,85,81,0.72)', letterSpacing: '0.14em' }}>
+          versión {APP_VERSION}
+        </p>
 
         <div style={{ textAlign: 'center' }}>
           <h1 style={{
@@ -49,7 +54,7 @@ export const AuthSplash: React.FC = () => {
             onClick={() => navigate('/login')}
             style={{
               padding: '18px',
-              backgroundColor: 'var(--primary-color)',
+              backgroundImage: 'linear-gradient(135deg, #12b8a3 0%, #0f5551 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '16px',

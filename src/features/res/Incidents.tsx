@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MdArrowBack,
@@ -7,6 +7,7 @@ import {
   MdDeck,
   MdDirectionsCar
 } from 'react-icons/md'
+import { jsPDF } from 'jspdf'
 import { useAuthStore } from '../../store/useAuthStore'
 import { useCommunityStore, Incident } from '../../store/useCommunityStore'
 import { sanitizeString } from '../../utils/security'
@@ -22,6 +23,82 @@ export const Incidents: React.FC = () => {
   const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+
+  const handleDownloadManual = () => {
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' })
+    const title = 'Manual de Convivencia'
+    const rules = [
+      {
+        title: 'Ruidos Molestos',
+        text: 'Prohibido exceder 50dB entre las 10:00 PM y las 8:00 AM. Los eventos sociales en casas requieren aviso previo a la administración.'
+      },
+      {
+        title: 'Mascotas',
+        text: 'Uso obligatorio de correa en áreas comunes. Los dueños deben recoger los desechos de inmediato. Se prohíben mascotas en el área de piscina.'
+      },
+      {
+        title: 'Áreas Comunes',
+        text: 'Horario de piscina y canchas: 7:00 AM a 9:00 PM. No se permiten envases de vidrio ni consumo excesivo de alcohol en estas áreas.'
+      },
+      {
+        title: 'Estacionamiento',
+        text: 'Respetar los puestos asignados. Los visitantes solo pueden estacionar en las áreas marcadas para tal fin.'
+      }
+    ]
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.text(title, 40, 50)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'normal')
+
+    let currentY = 80
+    rules.forEach((rule) => {
+      doc.setFont('helvetica', 'bold')
+      doc.text(rule.title, 40, currentY)
+      currentY += 18
+      doc.setFont('helvetica', 'normal')
+      const split = doc.splitTextToSize(rule.text, 520)
+      doc.text(split, 40, currentY)
+      currentY += split.length * 14 + 18
+      if (currentY > 740) {
+        doc.addPage()
+        currentY = 40
+      }
+    })
+
+    try {
+      doc.save('Manual_de_Convivencia.pdf')
+    } catch (error) {
+      console.error('Error al guardar el PDF:', error)
+      alert('No se pudo descargar el PDF. Por favor intente de nuevo.')
+    }
+  }
+
+  useEffect(() => {
+    if (user?.id) {
+      setSessionUserId(user.id)
+    }
+
+    const sync = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        setSessionUserId(data?.session?.user?.id ?? user?.id ?? null)
+      } catch (err) {
+        console.error('Error sincronizando sesión:', err)
+        setSessionUserId(user?.id ?? null)
+      }
+    }
+
+    sync()
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionUserId(session?.user?.id ?? user?.id ?? null)
+    })
+
+    return () => { try { sub?.subscription?.unsubscribe?.() } catch (e) {} }
+  }, [user?.id])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,26 +106,36 @@ export const Incidents: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      const { error } = await supabase
-        .from('incidents')
-        .insert([{
-          profile_id: user?.id,
-          category,
-          location: sanitizeString(location),
-          description: sanitizeString(description),
-          status: 'Pendiente'
-        }])
+      // ensure authenticated session id for RLS
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError) throw sessionError
+      const authId = sessionData?.session?.user?.id ?? user?.id ?? sessionUserId
+      if (!authId) throw new Error('No se detectó una sesión activa. Por favor inicie sesión nuevamente.')
+
+      const { error } = await supabase.rpc('rpc_insert_incident', {
+        category: category,
+        location: sanitizeString(location),
+        description: sanitizeString(description)
+      })
 
       if (error) throw error
+
+      addIncident({
+        id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `inc-${Date.now()}`,
+        category,
+        location,
+        description,
+        date: new Date().toLocaleDateString('es-VE'),
+        status: 'Pendiente',
+        houseNumber: location
+      })
 
       alert('Reporte enviado con éxito. La administración revisará su caso.')
       setLocation('')
       setDescription('')
-
-      // Forzar recarga de incidentes si fuera necesario, o simplemente limpiar
       setActiveTab('report')
     } catch (err: any) {
-      alert('Error al enviar incidencia: ' + err.message)
+      alert('Error al enviar incidencia: ' + (err.message || 'Error desconocido'))
     } finally {
       setIsSubmitting(false)
     }
@@ -120,7 +207,7 @@ export const Incidents: React.FC = () => {
               />
             </div>
 
-            <button style={{ ...primaryBtnStyle, marginTop: '30px', backgroundColor: 'transparent', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }}>
+            <button onClick={handleDownloadManual} style={{ ...primaryBtnStyle, marginTop: '30px', backgroundColor: 'transparent', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }}>
               Descargar Manual PDF Completo
             </button>
           </section>
@@ -163,7 +250,7 @@ export const Incidents: React.FC = () => {
                 />
               </div>
 
-              <button type="submit" disabled={isSubmitting} style={primaryBtnStyle}>
+              <button type="submit" disabled={isSubmitting} style={{ ...primaryBtnStyle, opacity: (isSubmitting) ? 0.7 : 1 }}>
                 {isSubmitting ? 'Enviando...' : 'Enviar Reporte'}
               </button>
             </form>
@@ -213,4 +300,4 @@ const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color:
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '14px', outline: 'none' }
 const primaryBtnStyle = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }
 const incidentCardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '15px' }
-const incTagStyle = { backgroundColor: 'rgba(198, 160, 89, 0.1)', color: '#785919', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' as any }
+const incTagStyle = { backgroundColor: 'rgba(198, 160, 89, 0.1)', color: 'var(--accent-gold)', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' as any }

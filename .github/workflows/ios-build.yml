@@ -1,25 +1,25 @@
-name: iOS Build
+name: iOS Build IPA
 
 on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'ID de compilación'
+        description: 'Nombre del archivo IPA (ej. CaminosApp-v1)'
         required: true
-        default: 'manual-v1'
+        default: 'CaminosApp'
 
 jobs:
   build:
-    # CAMBIO CRITICO: macos-14 es mucho más rápido y tiene disponibilidad inmediata
     runs-on: macos-14
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node 24
+      - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Install pnpm
         run: npm install -g pnpm@latest
@@ -35,22 +35,21 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
-      - name: Build iOS App
+      - name: Build iOS App (Unsigned)
         run: |
           cd ios/App
-          # Capacitor 6 usa SPM por defecto
           xcodebuild -resolvePackageDependencies -project App.xcodeproj
           
           xcodebuild -project App.xcodeproj \
-                     -scheme App \
-                     -configuration Debug \
-                     -destination 'generic/platform=iOS' \
-                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     COMPILER_INDEX_STORE_ENABLE=NO \
-                     -quiet build
-          
-      - name: Create IPA
+                    -scheme App \
+                    -configuration Debug \
+                    -destination 'generic/platform=iOS' \
+                    -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
+                    CODE_SIGNING_ALLOWED=NO \
+                    COMPILER_INDEX_STORE_ENABLE=NO \
+                    -quiet build
+
+      - name: Create IPA for Sideloadly
         run: |
           APP_PATH=$(find "${GITHUB_WORKSPACE}/DerivedData/Build/Products/Debug-iphoneos" -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
@@ -60,10 +59,10 @@ jobs:
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -rq "${{ inputs.build_id }}.ipa" Payload
-          
-      - name: Upload Artifact
+
+      - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ios-ipa
+          name: ${{ inputs.build_id }}-Artifact
           path: "*.ipa"
           retention-days: 1

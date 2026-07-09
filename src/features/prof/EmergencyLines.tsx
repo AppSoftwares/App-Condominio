@@ -22,7 +22,7 @@ export const EmergencyLines: React.FC = () => {
     { label: 'Protección Civil', number: '0414-1479763', icon: 'medical_services' },
     { label: 'Dir. Gral. de Seguridad Ciudadana', number: '0414-1479755', icon: 'security' },
     { label: 'Centro de Op. de Emergencia (COE)', number: '0414-6290386', icon: 'hub' },
-    { label: 'Cuadrante Paz (109) La Lagunita', number: '911', icon: 'shield', subtitle: 'Pendiente confirmar número directo' },
+    { label: 'Cuadrante de Paz C-114 La Lagunita', number: '04220322187', icon: 'shield', type: 'whatsapp', subtitle: 'Llamar o enviar mensaje por WhatsApp' },
   ]
 
   return (
