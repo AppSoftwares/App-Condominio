@@ -1,8 +1,8 @@
 {
-  "versionCode": 4,
-  "versionName": "2.0.2",
+  "versionCode": 5,
+  "versionName": "2.0.3",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.2/App.Condominio-2.0.2.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.2/CaminosApp.ipa",
-  "releaseNotes": "• Se eliminó la restricción obligatoria de mayúsculas en el login.\n• Se activó el soporte para actualizaciones automáticas en iOS.\n• Corrección de error 'Load failed' en ciertos perfiles de usuario.\n• Optimización de iconos para iPhone 16 Pro Max."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.3/App.Condominio-2.0.3.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.3/CaminosApp.ipa",
+  "releaseNotes": "• Solución definitiva para el icono en iPhone 16 Pro Max.\n• Eliminación de bloqueo 'Load failed' en iOS.\n• Login 100% case-insensitive para mayor facilidad.\n• Sistema de actualizaciones por GitHub Release activo."
 }
