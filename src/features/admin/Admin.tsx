@@ -941,5 +941,5 @@ const actionBtnStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid v
 const cardStyle = { backgroundColor: 'var(--card-bg)', padding: '30px', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any, boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
 const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 24px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', width: 'fit-content' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', outline: 'none', fontSize: '16px' }
-const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as any, letterSpacing: '0.5px' }
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', letterSpacing: '0.5px' }
 const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, cursor: 'pointer', fontSize: '16px' }

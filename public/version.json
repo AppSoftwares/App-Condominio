@@ -1,6 +1,8 @@
 {
-  "versionCode": 3,
-  "versionName": "2.0.1",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/download/v1.0.0/App.Condominio-2.0.1.apk",
-  "releaseNotes": "• Parches de seguridad críticos para Supabase.\n• Integración inicial de Sentry para monitoreo de errores.\n• Reglas de corte por morosidad automatizadas.\n• Mejoras de estabilidad en la versión 2.0.1."
+  "versionCode": 4,
+  "versionName": "2.0.2",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.2/App.Condominio-2.0.2.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.2/CaminosApp.ipa",
+  "releaseNotes": "• Se eliminó la restricción obligatoria de mayúsculas en el login.\n• Se activó el soporte para actualizaciones automáticas en iOS.\n• Corrección de error 'Load failed' en ciertos perfiles de usuario.\n• Optimización de iconos para iPhone 16 Pro Max."
 }

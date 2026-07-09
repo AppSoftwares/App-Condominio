@@ -70,3 +70,19 @@ jobs:
           name: ${{ inputs.build_id }}-Artifact
           path: "*.ipa"
           retention-days: 1
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v2.0.2
+          name: Release v2.0.2
+          files: "*.ipa"
+          body: |
+            Actualización de iOS CaminosApp v2.0.2
+            - Soporte para iPhone 16 Pro Max.
+            - Mejoras en el sistema de actualización automática.
+            - Eliminación de restricción de mayúsculas.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

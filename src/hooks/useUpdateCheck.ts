@@ -165,10 +165,19 @@ export const useUpdateCheck = () => {
 
   const performUpdate = async () => {
     if (updateInfo) {
-      // Abrir el link directo del APK en GitHub
+      // Detectar plataforma para elegir el link correcto
+      const { platform } = await App.getInfo();
+      let downloadUrl = updateInfo.url;
+
+      if (platform === 'android' && (updateInfo as any).url_android) {
+        downloadUrl = (updateInfo as any).url_android;
+      } else if (platform === 'ios' && (updateInfo as any).url_ios) {
+        downloadUrl = (updateInfo as any).url_ios;
+      }
+
       await Browser.open({
-        url: updateInfo.url,
-        windowName: '_system' // Fuerza apertura en navegador del sistema
+        url: downloadUrl,
+        windowName: '_system'
       });
     }
   };

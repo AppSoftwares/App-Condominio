@@ -4,6 +4,11 @@ const config: CapacitorConfig = {
   appId: 'com.caminos.lagunita',
   appName: 'Condominio',
   webDir: 'dist',
+  server: {
+    iosScheme: 'https',
+    hostname: 'app-condominio.vercel.app',
+    allowNavigation: ["*"]
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 0,

@@ -95,7 +95,7 @@ export const ResDash: React.FC = () => {
           {/* Status Card */}
           <div style={{ ...cardStyle, textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>Estado de Cuenta</span>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', letterSpacing: '1px' }}>Estado de Cuenta</span>
               <span style={{ backgroundColor: totalDebt > 0 ? '#ba1a1a' : 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>
                 {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
               </span>

@@ -92,7 +92,13 @@ export const Login: React.FC = () => {
         else navigate('/dashboard')
       }
     } catch (error: any) {
-      alert(error.message || 'Error al iniciar sesión. Verifique sus credenciales.')
+      console.error('Login error:', error)
+      const msg = error.message || 'Error al iniciar sesión. Verifique sus credenciales.'
+      if (msg.includes('Load failed')) {
+        alert('Error de conexión (Load failed). Por favor, verifique su internet o intente nuevamente.')
+      } else {
+        alert(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -160,6 +166,7 @@ export const Login: React.FC = () => {
                     onChange={e => setEmail(e.target.value)}
                     required
                     placeholder="ejemplo@correo.com"
+                    autoCapitalize="none"
                     autoCorrect="off"
                     spellCheck="false"
                     style={inputStyle}
@@ -175,6 +182,7 @@ export const Login: React.FC = () => {
                       onChange={e => setPassword(e.target.value)}
                       required
                       placeholder="••••••••"
+                      autoCapitalize="none"
                       autoCorrect="off"
                       spellCheck="false"
                       style={{ ...inputStyle, paddingRight: '50px' }}
@@ -204,7 +212,7 @@ export const Login: React.FC = () => {
                </div>
 
                <button type="submit" disabled={loading} style={primaryBtnStyle}>
-                  {loading ? 'Validando...' : 'INICIAR SESIÓN'}
+                  {loading ? 'Validando...' : 'Iniciar Sesión'}
                </button>
 
                <button
@@ -239,6 +247,6 @@ export const Login: React.FC = () => {
   )
 }
 
-const labelStyle = { display: 'block' as const, fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as const }
+const labelStyle = { display: 'block' as const, fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.2)' }

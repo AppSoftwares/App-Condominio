@@ -75,7 +75,7 @@ export const Register: React.FC = () => {
     }
   }
 
-  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', letterSpacing: '0.5px' }
   const inputStyle: React.CSSProperties = { width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
   const containerStyle: React.CSSProperties = { height: '100%', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' }
 
@@ -107,6 +107,7 @@ export const Register: React.FC = () => {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="ejemplo@email.com"
+                autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck="false"
                 style={inputStyle}
@@ -120,6 +121,7 @@ export const Register: React.FC = () => {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoCapitalize="none"
                   style={{ ...inputStyle, paddingRight: '50px' }}
                 />
                 <button
