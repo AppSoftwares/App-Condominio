@@ -1,8 +1,8 @@
 {
-  "versionCode": 5,
-  "versionName": "2.0.3",
+  "versionCode": 6,
+  "versionName": "2.0.4",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.3/App.Condominio-2.0.3.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.3/CaminosApp.ipa",
-  "releaseNotes": "• Solución definitiva para el icono en iPhone 16 Pro Max.\n• Eliminación de bloqueo 'Load failed' en iOS.\n• Login 100% case-insensitive para mayor facilidad.\n• Sistema de actualizaciones por GitHub Release activo."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.4/App.Condominio-2.0.4.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.0.4/CaminosApp.ipa",
+  "releaseNotes": "• FIX CRÍTICO: Conexión con base de datos restablecida (Load failed).\n• SOPORTE PANTALLA COMPLETA: Ajustado para iPhone 16 Pro Max (Sin barras blancas).\n• ICONO CORREGIDO: El logo ahora se muestra correctamente en la pantalla de inicio.\n• VERSIÓN 2.0.4: Actualización de interfaz y login optimizado."
 }
