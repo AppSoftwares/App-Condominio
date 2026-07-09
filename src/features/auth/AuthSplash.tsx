@@ -2,7 +2,7 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import icono from '../../assets/icono.png'
 
-const APP_VERSION = '2.0.7'
+const APP_VERSION = '2.0.8'
 
 export const AuthSplash: React.FC = () => {
   const navigate = useNavigate()

@@ -10,7 +10,7 @@ const config: CapacitorConfig = {
     allowNavigation: ["*"]
   },
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     backgroundColor: '#FAF8F5'
   },
   plugins: {
