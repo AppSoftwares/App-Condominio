@@ -134,7 +134,7 @@ export const Login: React.FC = () => {
 
   return (
     <div style={{
-      minHeight: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', boxSizing: 'border-box', fontFamily: "'Inter', sans-serif"
+      minHeight: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'env(safe-area-inset-top) 24px env(safe-area-inset-bottom) 24px', boxSizing: 'border-box', fontFamily: "'Inter', sans-serif"
     }}>
        <header style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button

@@ -83,8 +83,7 @@ export const Layout: React.FC = () => {
           borderBottom: '1px solid var(--border-color)',
           zIndex: 1100,
           position: 'sticky',
-          top: 0,
-          marginTop: 'env(safe-area-inset-top)'
+          top: 0
         }}>
           <button
             onClick={() => navigate(-1)}
