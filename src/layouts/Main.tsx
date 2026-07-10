@@ -40,20 +40,9 @@ export const Layout: React.FC = () => {
   const contentRef = React.useRef<HTMLDivElement>(null)
 
   React.useEffect(() => {
-    const resetScroll = () => {
-      if (contentRef.current) {
-        contentRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
-      }
-      window.scrollTo(0, 0);
-    };
-
-    // Resetear inmediatamente
-    resetScroll();
-
-    // Resetear después de un breve delay por si el renderizado tarda
-    const timeout = setTimeout(resetScroll, 100);
-
-    return () => clearTimeout(timeout);
+    if (contentRef.current) {
+      contentRef.current.scrollTo(0, 0)
+    }
   }, [location.pathname, location.search])
 
   if (!user) return <Outlet />
@@ -62,30 +51,24 @@ export const Layout: React.FC = () => {
 
   return (
     <div style={{
-      flex: 1,
+      height: '100vh',
       width: '100%',
       display: 'flex',
       flexDirection: 'column',
-      position: 'relative',
       backgroundColor: 'var(--bg-color)',
-      margin: '0 auto'
+      overflow: 'hidden'
     }}>
       {/* Shared Header with Back Button */}
       {!isHome && (
         <header style={{
           width: '100%',
-          height: '60px',
+          height: 'calc(60px + env(safe-area-inset-top))',
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 20px',
+          alignItems: 'flex-end',
+          padding: '0 20px 15px',
           backgroundColor: 'var(--bg-color)',
           borderBottom: '1px solid var(--border-color)',
           zIndex: 1100,
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          paddingTop: 'env(safe-area-inset-top)',
-          height: 'calc(60px + env(safe-area-inset-top))',
           boxSizing: 'border-box'
         }}>
           <button
@@ -96,13 +79,11 @@ export const Layout: React.FC = () => {
               color: 'var(--primary-color)',
               display: 'flex',
               alignItems: 'center',
-              cursor: 'pointer',
-              padding: '10px 0',
-              marginTop: '5px'
+              cursor: 'pointer'
             }}
           >
-            <MdArrowBackIosNew size={20} />
-            <span style={{ marginLeft: '5px', fontWeight: 600 }}>Volver</span>
+            <MdArrowBackIosNew size={22} />
+            <span style={{ marginLeft: '8px', fontWeight: 700, fontSize: '16px' }}>Volver</span>
           </button>
         </header>
       )}
@@ -114,33 +95,28 @@ export const Layout: React.FC = () => {
           flex: 1,
           width: '100%',
           overflowY: 'auto',
-          overflowX: 'hidden',
           WebkitOverflowScrolling: 'touch',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: !isHome ? 'calc(60px + env(safe-area-inset-top))' : '0px',
-          paddingBottom: '20px'
+          paddingTop: isHome ? 'env(safe-area-inset-top)' : '0px'
         }}
       >
-        <div style={{ width: '100%', maxWidth: '1200px' }}>
+        <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto' }}>
             <Outlet />
         </div>
       </div>
 
-      {/* Bottom Navigation Bar */}
+      {/* Fixed Bottom Navigation Bar */}
       <nav style={{
         width: '100%',
-        height: '75px',
+        height: 'calc(65px + env(safe-area-inset-bottom))',
         backgroundColor: 'var(--card-bg)',
         borderTop: '1px solid var(--border-color)',
         display: 'flex',
         justifyContent: 'space-around',
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        paddingTop: '12px',
         zIndex: 1000,
-        boxShadow: '0 -2px 15px rgba(0,0,0,0.05)',
-        flexShrink: 0,
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        boxShadow: '0 -2px 20px rgba(0,0,0,0.08)',
+        boxSizing: 'border-box'
       }}>
         {user.role === 'guard' ? (
           <>
@@ -158,12 +134,6 @@ export const Layout: React.FC = () => {
               icon={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'history' ? MdHistory : MdOutlineHistory}
               active={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'history'}
               onClick={() => navigate('/guard?tab=history')}
-            />
-            <NavIcon
-              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
-              active={location.pathname.startsWith('/profile')}
-              onClick={() => navigate('/profile')}
-              badge={isUpdateAvailable}
             />
           </>
         ) : (user.role === 'admin' || user.role === 'superadmin') ? (
@@ -188,19 +158,6 @@ export const Layout: React.FC = () => {
               active={location.pathname === '/admin/payroll'}
               onClick={() => navigate('/admin/payroll')}
             />
-            {user.role === 'superadmin' && (
-              <NavIcon
-                icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security' ? MdBusiness : MdOutlineBusiness}
-                active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security'}
-                onClick={() => navigate('/admin?tab=security')}
-              />
-            )}
-            <NavIcon
-              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
-              active={location.pathname.startsWith('/profile')}
-              onClick={() => navigate('/profile')}
-              badge={isUpdateAvailable}
-            />
           </>
         ) : (
           <>
@@ -224,14 +181,14 @@ export const Layout: React.FC = () => {
               active={location.pathname === '/incidents'}
               onClick={() => navigate('/incidents')}
             />
-            <NavIcon
-              icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
-              active={location.pathname.startsWith('/profile')}
-                onClick={() => navigate('/profile')}
-                badge={isUpdateAvailable}
-            />
           </>
         )}
+        <NavIcon
+          icon={location.pathname.startsWith('/profile') ? MdPerson : MdOutlinePerson}
+          active={location.pathname.startsWith('/profile')}
+          onClick={() => navigate('/profile')}
+          badge={isUpdateAvailable}
+        />
       </nav>
     </div>
   )
@@ -248,15 +205,15 @@ const NavIcon = ({ icon: Icon, active, onClick, badge }: any) => (
       alignItems: 'center',
       justifyContent: 'center',
       color: active ? 'var(--primary-color)' : 'var(--text-sub)',
-      transition: 'all 0.3s ease',
+      transition: 'all 0.2s ease',
       flex: 1,
-      height: '100%'
+      position: 'relative'
     }}
   >
     <div style={{
-      backgroundColor: active ? 'rgba(137, 209, 202, 0.2)' : 'transparent',
+      backgroundColor: active ? 'rgba(15, 85, 81, 0.1)' : 'transparent',
       padding: '8px 16px',
-      borderRadius: '24px',
+      borderRadius: '20px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center'
@@ -264,7 +221,7 @@ const NavIcon = ({ icon: Icon, active, onClick, badge }: any) => (
       <Icon size={26} />
     </div>
     {badge && (
-      <div style={{ position: 'absolute', right: '18%', top: '6px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', boxShadow: '0 2px 6px rgba(0,0,0,0.2)' }} />
+      <div style={{ position: 'absolute', right: '25%', top: '2px', width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ef4444', border: '2px solid var(--card-bg)' }} />
     )}
   </div>
 )
