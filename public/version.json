@@ -1,8 +1,8 @@
 {
-  "versionCode": 12,
-  "versionName": "2.1.0",
+  "versionCode": 13,
+  "versionName": "2.1.1",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.0/App.Condominio-2.1.0.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.0/CaminosApp.ipa",
-  "releaseNotes": "• FIX ESTRUCTURAL: Pantalla completa nativa y barra de navegación fija (Sin barras blancas).\n• SUBIDA DE PAGOS: Corregido el error al adjuntar comprobantes (Requiere ejecutar script SQL).\n• ICONO: Re-sincronización total de recursos visuales para iPhone 16 Pro Max.\n• RENDIMIENTO: Eliminado el rebote de scroll y optimizada la carga de sesión."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.1/App.Condominio-2.1.1.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.1/CaminosApp.ipa",
+  "releaseNotes": "• FIX: Corregido error de compilación en useUpdateCheck.\n• ICONOS: Aplicado logo oficial en iOS.\n• CI: Corregido entorno de pruebas en GitHub Actions.\n• DB: Recordatorio de ejecutar rpc_functions.sql en Supabase."
 }

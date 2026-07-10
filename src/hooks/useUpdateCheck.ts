@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { useUpdateStore } from '../store/useUpdateStore'
 
 interface VersionInfo {
@@ -166,7 +167,7 @@ export const useUpdateCheck = () => {
   const performUpdate = async () => {
     if (updateInfo) {
       // Detectar plataforma para elegir el link correcto
-      const { platform } = await App.getInfo();
+      const platform = Capacitor.getPlatform();
       let downloadUrl = updateInfo.url;
 
       if (platform === 'android' && (updateInfo as any).url_android) {
