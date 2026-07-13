@@ -770,10 +770,22 @@ export const Admin: React.FC = () => {
                            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-sub)' }}>Casa {p.profiles?.house_number} • {new Date(p.created_at).toLocaleDateString()}</p>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                           <p style={{ margin: 0, fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(p.amount_usd || 0)}</p>
-                           <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', backgroundColor: p.status === 'pending' ? '#fff4e5' : p.status === 'approved' ? '#e6f4ea' : '#fce8e6', color: p.status === 'pending' ? '#b45d00' : p.status === 'approved' ? '#1e7e34' : '#c82333', fontWeight: 700 }}>
-                              {p.status?.toUpperCase()}
+                           <p style={{ margin: 0, fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(p.monto_usd || p.amount_usd || 0)}</p>
+                           {p.monto_bs > 0 && <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: 'var(--text-sub)' }}>{formatBs(p.monto_bs / (p.monto_usd || 1), p.monto_bs)}</p>}
+                           <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', backgroundColor: (p.status === 'pending' || p.status === 'pendiente') ? '#fff4e5' : p.status === 'approved' ? '#e6f4ea' : '#fce8e6', color: (p.status === 'pending' || p.status === 'pendiente') ? '#b45d00' : p.status === 'approved' ? '#1e7e34' : '#c82333', fontWeight: 700 }}>
+                              {(p.status === 'pendiente' ? 'PENDIENTE' : p.status?.toUpperCase())}
                            </span>
+                        </div>
+                     </div>
+
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px', backgroundColor: 'var(--icon-bg)', padding: '12px', borderRadius: '12px' }}>
+                        <div>
+                           <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: 'var(--accent-gold)' }}>REFERENCIA</p>
+                           <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{p.referencia || 'N/A'}</p>
+                        </div>
+                        <div>
+                           <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: 'var(--accent-gold)' }}>BANCO ORIGEN</p>
+                           <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{p.banco_origen || 'N/A'}</p>
                         </div>
                      </div>
 
@@ -783,12 +795,12 @@ export const Admin: React.FC = () => {
                         </div>
                      )}
 
-                     {p.screenshot_url && (
+                     {(p.screenshot_url || p.evidencia_url) && (
                         <div style={{ marginBottom: '15px' }}>
                            <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px' }}>COMPROBANTE:</p>
-                           {p.screenshot_url.toLowerCase().endsWith('.pdf') ? (
+                           {(p.screenshot_url || p.evidencia_url).toLowerCase().endsWith('.pdf') ? (
                               <div
-                                onClick={() => window.open(p.screenshot_url, '_blank')}
+                                onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
                                 style={{ padding: '20px', backgroundColor: '#fde8e8', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', border: '1px solid #f8b4b4' }}
                               >
                                 <span className="material-symbols-outlined" style={{ color: '#c82333', fontSize: '32px' }}>picture_as_pdf</span>
@@ -799,16 +811,16 @@ export const Admin: React.FC = () => {
                               </div>
                            ) : (
                               <img
-                                 src={p.screenshot_url}
+                                 src={p.screenshot_url || p.evidencia_url}
                                  alt="Comprobante"
                                  style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
-                                 onClick={() => window.open(p.screenshot_url, '_blank')}
+                                 onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
                               />
                            )}
                         </div>
                      )}
 
-                     {p.status === 'pending' && (
+                     {(p.status === 'pending' || p.status === 'pendiente') && (
                         <div style={{ display: 'flex', gap: '10px' }}>
                            <button onClick={() => validatePayment(p.id, 'approved')} style={{ ...primaryBtnStyle, padding: '12px', backgroundColor: '#1e7e34' }}>Aprobar Pago</button>
                            <button onClick={() => validatePayment(p.id, 'rejected')} style={{ ...primaryBtnStyle, padding: '12px', backgroundColor: '#c82333' }}>Rechazar</button>
