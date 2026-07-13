@@ -61,5 +61,11 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Se requiere acceso a la cámara para tomar fotos de los comprobantes de pago.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Se requiere acceso a la galería para seleccionar fotos de los comprobantes de pago.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Se requiere permiso para guardar comprobantes en su galería.</string>
 </dict>
 </plist>
