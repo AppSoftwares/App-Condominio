@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthState>()(
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log('Auth state change event:', event)
 
-          if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+          if (event === 'SIGNED_OUT') {
             set({ user: null, authReady: true })
           } else if (session?.user) {
             try {
