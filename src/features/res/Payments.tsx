@@ -52,6 +52,7 @@ export const Payments: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
+  const [compressing, setCompressing] = useState(false)
   const [sessionUserId, setSessionUserId] = useState<string | null>(null)
   const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
   const [debtItems, setDebtItems] = useState<DebtItem[]>([])
@@ -136,12 +137,76 @@ export const Payments: React.FC = () => {
     }
   }
 
-  const handleAttachCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAttachCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
+    if (!file) return
+
+    if (file.type === 'application/pdf') {
       setFileAttached(file)
-      alert(`Comprobante "${file.name}" cargado.`)
+      alert(`Archivo PDF "${file.name}" cargado.`)
+      return
     }
+
+    // Compresión para imágenes
+    setCompressing(true)
+    try {
+      const compressed = await compressImage(file)
+      setFileAttached(compressed)
+      alert(`Imagen optimizada y cargada con éxito.`)
+    } catch (err) {
+      console.error('Error al comprimir:', err)
+      setFileAttached(file) // Fallback al original
+    } finally {
+      setCompressing(false)
+    }
+  }
+
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_WIDTH = 1200
+          const MAX_HEIGHT = 1200
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              })
+              resolve(compressedFile)
+            } else {
+              reject(new Error('Canvas blob is null'))
+            }
+          }, 'image/jpeg', 0.7) // 70% calidad
+        }
+      }
+      reader.onerror = (error) => reject(error)
+    })
   }
 
   const handleRegisterPayment = async () => {
@@ -323,14 +388,18 @@ export const Payments: React.FC = () => {
               <label style={labelStyle}>ADJUNTAR COMPROBANTE</label>
               <button
                 onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
                 style={{
                   width: '100%', padding: '15px', border: '2px dashed var(--border-color)', borderRadius: '12px',
                   backgroundColor: fileAttached ? 'rgba(198,160,89,0.15)' : 'var(--icon-bg)', color: 'var(--text-color)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px'
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  opacity: compressing ? 0.6 : 1
                 }}
               >
-                {fileAttached ? <MdOutlineCheckCircle size={24} /> : <MdOutlineCloudUpload size={24} />}
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>{fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}</span>
+                {compressing ? <MdOutlineSync className="animate-spin" size={24} /> : fileAttached ? <MdOutlineCheckCircle size={24} /> : <MdOutlineCloudUpload size={24} />}
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>
+                  {compressing ? 'Optimizando imagen...' : fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}
+                </span>
               </button>
               <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
             </div>

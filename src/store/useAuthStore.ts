@@ -40,8 +40,10 @@ interface AuthState {
   setAuthReady: (ready: boolean) => void
   updateAvatar: (url: string) => Promise<void>
   signOut: () => Promise<void>
-  initialize: () => void
+  initialize: () => () => void
 }
+
+let authListenerSubscription: { unsubscribe: () => void } | null = null
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -78,27 +80,24 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null })
       },
       initialize: () => {
+        if (authListenerSubscription) {
+          console.log('Auth Store already initialized, skipping...')
+          return () => {}
+        }
+
         console.log('Initializing Auth Store...')
+
         const syncSession = async () => {
-          const storedUser = get().user
-          console.log('Stored user found in persist:', storedUser?.email)
-
-          if (!storedUser) {
-             set({ authReady: false })
-          } else {
-             // Si hay usuario guardado, lo damos por bueno inicialmente para rapidez
-             set({ authReady: true })
-          }
-
           try {
-            const { data, error } = await supabase.auth.getSession()
+            // First, try to get the current session
+            const { data: { session }, error } = await supabase.auth.getSession()
+
             if (error) {
-              console.error('Error cargando sesión de Supabase:', error)
-              set({ user: null, authReady: true })
+              console.error('Supabase session error:', error)
+              set({ authReady: true })
               return
             }
 
-            const session = data?.session
             if (session?.user) {
               const { data: profile, error: profileError } = await supabase
                 .from('profiles')
@@ -106,55 +105,52 @@ export const useAuthStore = create<AuthState>()(
                 .eq('id', session.user.id)
                 .single()
 
-              if (profileError) {
-                console.error('Error cargando perfil:', profileError)
-                set({ user: null, authReady: true })
-                return
-              }
-
-              if (profile) {
+              if (profile && !profileError) {
                 set({ user: profile as UserProfile, authReady: true })
-                return
+              } else {
+                set({ authReady: true })
               }
+            } else {
+              set({ authReady: true })
             }
           } catch (err) {
-            console.error('Error al sincronizar la sesión de Supabase:', err)
+            console.error('Critical error in syncSession:', err)
+            set({ authReady: true })
           }
-
-          set({ user: null, authReady: true })
         }
 
         syncSession()
 
-        supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
           console.log('Auth state change event:', event)
 
-          if (event === 'SIGNED_OUT') {
+          if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
             set({ user: null, authReady: true })
-            return
-          }
+          } else if (session?.user) {
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
+                .eq('id', session.user.id)
+                .single()
 
-          if (session?.user) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
-              .eq('id', session.user.id)
-              .single()
-
-            if (profileError) {
-              console.error('Error cargando perfil tras cambio de sesión:', profileError)
-              set({ user: null, authReady: true })
-              return
-            }
-
-            if (profile) {
-              set({ user: profile as UserProfile, authReady: true })
-              return
+              if (profile) {
+                set({ user: profile as UserProfile, authReady: true })
+              }
+            } catch (err) {
+              console.warn('Error refreshing profile on auth change:', err)
             }
           }
-
-          set({ user: null, authReady: true })
         })
+
+        authListenerSubscription = subscription
+
+        return () => {
+          if (authListenerSubscription) {
+            authListenerSubscription.unsubscribe()
+            authListenerSubscription = null
+          }
+        }
       }
     }),
     {

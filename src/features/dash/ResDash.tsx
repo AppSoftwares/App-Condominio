@@ -161,7 +161,7 @@ const NewsItem = ({ title, desc, tag, color, imageUrl }: any) => (
   <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', transition: 'all 0.3s ease' }}>
     <div style={{ height: '140px', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
       {imageUrl ? (
-        <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectCover: 'cover' } as any} />
+        <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       ) : (
         <MdOutlineImage size={40} style={{ color: 'var(--text-sub)', opacity: 0.2 }} />
       )}

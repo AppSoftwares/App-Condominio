@@ -88,10 +88,11 @@ function App() {
   }, [isUpdateAvailable])
 
   useEffect(() => {
-    initializeAuth()
+    const cleanup = initializeAuth()
     setTimeout(() => {
       SplashScreen.hide()
-    }, 500)
+    }, 1000)
+    return cleanup
   }, [initializeAuth])
 
   useEffect(() => {
