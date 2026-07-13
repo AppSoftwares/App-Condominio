@@ -82,15 +82,14 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.1.2
-          name: Release v2.1.2
+          tag_name: v2.1.3
+          name: Release v2.1.3
           files: "*.ipa"
           body: |
-            Actualización de iOS CaminosApp v2.1.2
-            - Solucionado error 'profile_id' en pagos.
-            - Persistencia de sesión mejorada con almacenamiento nativo.
-            - Generación automática de iconos desde icono.png.
-            - Optimización de espacio en pantalla (Safe Areas).
+            Actualización de iOS CaminosApp v2.1.3
+            - Mejoras críticas de seguridad en base de datos.
+            - Restricción de acceso a funciones sensibles.
+            - Optimización de políticas de almacenamiento.
           draft: false
           prerelease: false
         env:
