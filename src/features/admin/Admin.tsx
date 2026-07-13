@@ -65,6 +65,7 @@ export const Admin: React.FC = () => {
   const [pendingUsers, setPendingUsers] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [visibleProofs, setVisibleProofs] = useState<Record<string, boolean>>({})
 
   // Condo Settings State
   const [condoSettings, setCondoSettings] = useState({
@@ -797,25 +798,39 @@ export const Admin: React.FC = () => {
 
                      {(p.screenshot_url || p.evidencia_url) && (
                         <div style={{ marginBottom: '15px' }}>
-                           <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px' }}>COMPROBANTE:</p>
-                           {(p.screenshot_url || p.evidencia_url).toLowerCase().endsWith('.pdf') ? (
-                              <div
-                                onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
-                                style={{ padding: '20px', backgroundColor: '#fde8e8', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', border: '1px solid #f8b4b4' }}
+                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                              <p style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', margin: 0 }}>COMPROBANTE:</p>
+                              <button
+                                 onClick={() => setVisibleProofs(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+                                 style={{ background: 'none', border: 'none', color: 'var(--primary-color)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                               >
-                                <span className="material-symbols-outlined" style={{ color: '#c82333', fontSize: '32px' }}>picture_as_pdf</span>
-                                <div>
-                                  <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#c82333' }}>Ver Comprobante PDF</p>
-                                  <p style={{ margin: 0, fontSize: '11px', color: '#666' }}>Haga clic para abrir en nueva pestaña</p>
-                                </div>
+                                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{visibleProofs[p.id] ? 'visibility_off' : 'visibility'}</span>
+                                 <span style={{ fontSize: '11px', fontWeight: 700 }}>{visibleProofs[p.id] ? 'OCULTAR' : 'VER ADJUNTO'}</span>
+                              </button>
+                           </div>
+
+                           {visibleProofs[p.id] && (
+                              <div style={{ animation: 'fadeIn 0.3s ease' }}>
+                                 {(p.screenshot_url || p.evidencia_url).toLowerCase().endsWith('.pdf') ? (
+                                    <div
+                                       onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
+                                       style={{ padding: '20px', backgroundColor: '#fde8e8', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', border: '1px solid #f8b4b4' }}
+                                    >
+                                       <span className="material-symbols-outlined" style={{ color: '#c82333', fontSize: '32px' }}>picture_as_pdf</span>
+                                       <div>
+                                          <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', color: '#c82333' }}>Ver Comprobante PDF</p>
+                                          <p style={{ margin: 0, fontSize: '11px', color: '#666' }}>Haga clic para abrir en nueva pestaña</p>
+                                       </div>
+                                    </div>
+                                 ) : (
+                                    <img
+                                       src={p.screenshot_url || p.evidencia_url}
+                                       alt="Comprobante"
+                                       style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
+                                       onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
+                                    />
+                                 )}
                               </div>
-                           ) : (
-                              <img
-                                 src={p.screenshot_url || p.evidencia_url}
-                                 alt="Comprobante"
-                                 style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
-                                 onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
-                              />
                            )}
                         </div>
                      )}
