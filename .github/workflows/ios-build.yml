@@ -53,8 +53,11 @@ jobs:
                     -scheme App \
                     -configuration Debug \
                     -destination 'generic/platform=iOS' \
+                    -sdk iphoneos \
                     -derivedDataPath "${GITHUB_WORKSPACE}/DerivedData" \
                     CODE_SIGNING_ALLOWED=NO \
+                    CODE_SIGNING_REQUIRED=NO \
+                    CODE_SIGN_IDENTITY="" \
                     COMPILER_INDEX_STORE_ENABLE=NO \
                     build
 
