@@ -21,7 +21,7 @@
     "@capacitor/core": "^6.0.0",
     "@capacitor/device": "^6.0.3",
     "@capacitor/ios": "^6.0.0",
-    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/preferences": "^6.0.4",
     "@capacitor/push-notifications": "^6.0.5",
     "@capacitor/splash-screen": "^6.0.4",
     "@supabase/supabase-js": "^2.39.3",

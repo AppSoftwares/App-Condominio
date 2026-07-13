@@ -30,17 +30,14 @@ importers:
         specifier: ^6.0.0
         version: 6.2.1(@capacitor/core@6.2.1)
       '@capacitor/preferences':
-        specifier: ^8.0.1
-        version: 8.0.1(@capacitor/core@6.2.1)
+        specifier: ^6.0.4
+        version: 6.0.4(@capacitor/core@6.2.1)
       '@capacitor/push-notifications':
         specifier: ^6.0.5
         version: 6.0.5(@capacitor/core@6.2.1)
       '@capacitor/splash-screen':
         specifier: ^6.0.4
         version: 6.0.4(@capacitor/core@6.2.1)
-      '@capacitor/storage':
-        specifier: ^1.2.5
-        version: 1.2.5(@capacitor/core@6.2.1)
       '@supabase/supabase-js':
         specifier: ^2.39.3
         version: 2.108.2
@@ -263,10 +260,10 @@ packages:
     peerDependencies:
       '@capacitor/core': ^6.2.0
 
-  '@capacitor/preferences@8.0.1':
-    resolution: {integrity: sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==}
+  '@capacitor/preferences@6.0.4':
+    resolution: {integrity: sha512-ziauSI1pgdyl+gduvvf8lInvzF3Wdyu/ok+u7NlnhKp8XOj9plJgtnXZWFiR8CiCK5wMvo+gFaNh3zhMyEUwpA==}
     peerDependencies:
-      '@capacitor/core': '>=8.0.0'
+      '@capacitor/core': ^6.0.0
 
   '@capacitor/push-notifications@6.0.5':
     resolution: {integrity: sha512-CsRmb0cnZd9Uwx24ym4My5fNKrQvwI4D51aMEph5pUZy+LAjp6q0y4NJe8DEgwaVdAqVLbb4rqn75AZ4WSiFYg==}
@@ -277,12 +274,6 @@ packages:
     resolution: {integrity: sha512-uJXR+28cdaie7zIIUBvgkWgHim6Gr1itJym9voIMTmrjXkOaPtejwxYJsdQWPJz9zgGnSbXuC1mNNibLgv3OpQ==}
     peerDependencies:
       '@capacitor/core': ^6.0.0
-
-  '@capacitor/storage@1.2.5':
-    resolution: {integrity: sha512-pWhnw4U7wN/zFV4lA4BLMypSufTktCbk548Yk4whSb0KAq3R0mLfSubRIHkGdcPqQWCsM6g/zUuszurhz6ncWQ==}
-    deprecated: package has been renamed to @capacitor/preferences
-    peerDependencies:
-      '@capacitor/core': ^3.0.0
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -2949,7 +2940,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 6.2.1
 
-  '@capacitor/preferences@8.0.1(@capacitor/core@6.2.1)':
+  '@capacitor/preferences@6.0.4(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 
@@ -2958,10 +2949,6 @@ snapshots:
       '@capacitor/core': 6.2.1
 
   '@capacitor/splash-screen@6.0.4(@capacitor/core@6.2.1)':
-    dependencies:
-      '@capacitor/core': 6.2.1
-
-  '@capacitor/storage@1.2.5(@capacitor/core@6.2.1)':
     dependencies:
       '@capacitor/core': 6.2.1
 
