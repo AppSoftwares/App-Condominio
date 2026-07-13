@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION public.is_admin_user()
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   _role text;
@@ -16,6 +17,9 @@ EXCEPTION WHEN OTHERS THEN
   RETURN false;
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin_user FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin_user TO authenticated;
 
 -- 2) Replace the existing recursive policy with two safe policies
 -- Drop any old policies first so the script is idempotent

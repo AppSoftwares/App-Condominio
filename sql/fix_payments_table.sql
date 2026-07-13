@@ -1,4 +1,4 @@
--- SCRIPT DE REPARACIÓN INTEGRAL PARA TABLA DE PAGOS (CAMINOS APP)
+-- SCRIPT DE REPARACIÓN INTEGRAL PARA TABLA DE PAGOS (CAMINOS APP) - HARDENED VERSION
 
 DO $$
 BEGIN
@@ -66,7 +66,7 @@ BEGIN
 
 END $$;
 
--- 11. Re-crear la función RPC con la estructura exacta
+-- 11. Re-crear la función RPC con endurecimiento de seguridad (search_path fijo)
 CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   monto_bs numeric,
   monto_usd numeric,
@@ -76,8 +76,15 @@ CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   description text,
   details jsonb,
   p_profile_id uuid DEFAULT auth.uid()
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
+  -- Verificar que el usuario esté autenticado
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
   INSERT INTO public.payments(
     profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
   ) VALUES (
@@ -85,3 +92,7 @@ BEGIN
   );
 END;
 $$;
+
+-- Restringir ejecución solo a usuarios autenticados
+REVOKE EXECUTE ON FUNCTION public.rpc_insert_payment FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;

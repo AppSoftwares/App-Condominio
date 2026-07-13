@@ -84,7 +84,7 @@ CREATE POLICY "Announcements view" ON public.announcements FOR SELECT USING (tru
 -- Incidents: Propios o Admin
 CREATE POLICY "Incidents access" ON public.incidents FOR ALL USING (profile_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
 
--- 8. FUNCIÓN DE SEGURIDAD PARA ADMIN (Corregida)
+-- 8. FUNCIÓN DE SEGURIDAD PARA ADMIN (Corregida y Endurecida)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean
 LANGUAGE plpgsql
@@ -98,6 +98,9 @@ BEGIN
   );
 END;
 $$;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
 
 -- 9. INSERTAR USUARIOS INICIALES (Instrucciones)
 -- Nota: Los usuarios deben crearse primero en Supabase Auth y luego insertarse aquí.
