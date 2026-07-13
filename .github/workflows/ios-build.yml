@@ -39,7 +39,7 @@ jobs:
         run: pnpm run build:ci
 
       - name: Generate Assets
-        run: npx @capacitor/assets generate --ios --iconSource assets/icono.png --splashSource assets/splash.png
+        run: npx @capacitor/assets generate --ios
 
       - name: Capacitor Sync
         run: npx cap sync ios
