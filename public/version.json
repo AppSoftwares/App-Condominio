@@ -1,8 +1,8 @@
 {
-  "versionCode": 16,
-  "versionName": "2.1.4",
+  "versionCode": 17,
+  "versionName": "2.1.5",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.4/App.Condominio-2.1.4.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.4/CaminosApp.ipa",
-  "releaseNotes": "• ESTABILIDAD: Corregido cierre inesperado mediante optimización de inicialización y persistencia.\n• PAGOS: Motor de compresión de imágenes integrado para subidas instantáneas.\n• ADMIN: Botón de ojo para ver/ocultar comprobantes y mejorar claridad.\n• UI: Ajustes de Safe Area para iPhone 16 y optimización de renderizado."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.5/App.Condominio-2.1.5.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.5/CaminosApp.ipa",
+  "releaseNotes": "• UI: Corregida pantalla de actualización para que los botones sean accesibles en pantallas pequeñas.\n• DB: Script maestro optimizado para manejar dependencias y errores de funciones duplicadas.\n• SEGURIDAD: Reforzada la validación de roles en la base de datos."
 }
