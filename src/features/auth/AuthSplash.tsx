@@ -1,8 +1,9 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import icono from '../../assets/icono.png'
+import packageJson from '../../../package.json'
 
-const APP_VERSION = '2.1.0'
+const APP_VERSION = packageJson.version
 
 export const AuthSplash: React.FC = () => {
   const navigate = useNavigate()

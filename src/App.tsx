@@ -89,7 +89,9 @@ function App() {
 
   useEffect(() => {
     initializeAuth()
-    SplashScreen.hide()
+    setTimeout(() => {
+      SplashScreen.hide()
+    }, 500)
   }, [initializeAuth])
 
   useEffect(() => {

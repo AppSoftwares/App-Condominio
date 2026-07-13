@@ -8,13 +8,14 @@ CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   banco_origen text,
   evidencia_url text,
   description text,
-  details jsonb
+  details jsonb,
+  p_profile_id uuid DEFAULT auth.uid()
 ) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO public.payments(
     profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
   ) VALUES (
-    auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
+    COALESCE(p_profile_id, auth.uid()), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
   );
 END;
 $$;

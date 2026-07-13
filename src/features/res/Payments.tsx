@@ -194,7 +194,8 @@ export const Payments: React.FC = () => {
         banco_origen: cleanBank,
         evidencia_url: screenshotUrl,
         description: cleanDescription,
-        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds }
+        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
+        p_profile_id: authId
       })
 
       if (dbError) throw dbError
