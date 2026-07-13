@@ -10,25 +10,34 @@ export const AuthSplash: React.FC = () => {
 
   return (
     <div style={{
-      height: '100%',
+      height: '100vh',
       width: '100%',
       backgroundColor: 'var(--bg-color)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      padding: '24px',
+      justifyContent: 'space-between',
+      padding: 'calc(40px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom))',
       boxSizing: 'border-box',
-      fontFamily: "'Inter', sans-serif"
+      fontFamily: "'Inter', sans-serif",
+      position: 'relative',
+      overflow: 'hidden'
     }}>
+      {/* Background elements to fill space gracefully */}
+      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'rgba(18, 184, 163, 0.05)', zIndex: 0 }}></div>
+      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '250px', height: '250px', borderRadius: '50%', backgroundColor: 'rgba(120, 89, 25, 0.05)', zIndex: 0 }}></div>
+
       <main style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         width: '100%',
         maxWidth: '400px',
-        gap: '24px',
-        textAlign: 'center'
+        gap: '20px',
+        textAlign: 'center',
+        zIndex: 1,
+        flex: 1,
+        justifyContent: 'center'
       }}>
         <img src={icono} alt="Logo" style={{ width: '140px', height: 'auto', marginBottom: '8px' }} />
         <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'rgba(15,85,81,0.72)', letterSpacing: '0.14em' }}>

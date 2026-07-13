@@ -38,6 +38,9 @@ jobs:
       - name: Build Web Project
         run: pnpm run build:ci
 
+      - name: Generate Assets
+        run: npx @capacitor/assets generate --ios --iconSource assets/icono.png --splashSource assets/splash.png
+
       - name: Capacitor Sync
         run: npx cap sync ios
 
@@ -76,14 +79,15 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.1.1
-          name: Release v2.1.1
+          tag_name: v2.1.2
+          name: Release v2.1.2
           files: "*.ipa"
           body: |
-            Actualización de iOS CaminosApp v2.1.1
-            - Iconos oficiales aplicados correctamente.
-            - Corrección de error de tipos en verificación de actualizaciones.
-            - Optimizaciones de CI.
+            Actualización de iOS CaminosApp v2.1.2
+            - Solucionado error 'profile_id' en pagos.
+            - Persistencia de sesión mejorada con almacenamiento nativo.
+            - Generación automática de iconos desde icono.png.
+            - Optimización de espacio en pantalla (Safe Areas).
           draft: false
           prerelease: false
         env:

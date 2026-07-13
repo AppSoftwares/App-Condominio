@@ -1,6 +1,21 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
+import { Preferences } from '@capacitor/preferences'
+
+// Custom storage for Capacitor Preferences
+const capacitorStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    const { value } = await Preferences.get({ key: name })
+    return value
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    await Preferences.set({ key: name, value })
+  },
+  removeItem: async (name: string): Promise<void> => {
+    await Preferences.remove({ key: name })
+  },
+}
 
 export type UserRole = 'resident' | 'admin' | 'guard' | 'superadmin'
 
@@ -63,10 +78,16 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null })
       },
       initialize: () => {
+        console.log('Initializing Auth Store...')
         const syncSession = async () => {
-          // No bloqueamos el authReady mientras sincronizamos si ya tenemos un usuario local para evitar parpadeos
-          if (!get().user) {
+          const storedUser = get().user
+          console.log('Stored user found in persist:', storedUser?.email)
+
+          if (!storedUser) {
              set({ authReady: false })
+          } else {
+             // Si hay usuario guardado, lo damos por bueno inicialmente para rapidez
+             set({ authReady: true })
           }
 
           try {
@@ -138,6 +159,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage-v6',
+      storage: createJSONStorage(() => capacitorStorage),
       partialize: (state) => ({ user: state.user, whitelist: state.whitelist })
     }
   )

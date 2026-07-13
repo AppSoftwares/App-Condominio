@@ -1,8 +1,8 @@
 {
-  "versionCode": 13,
-  "versionName": "2.1.1",
+  "versionCode": 14,
+  "versionName": "2.1.2",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.1/App.Condominio-2.1.1.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.1/CaminosApp.ipa",
-  "releaseNotes": "• FIX: Corregido error de compilación en useUpdateCheck.\n• ICONOS: Aplicado logo oficial en iOS.\n• CI: Corregido entorno de pruebas en GitHub Actions.\n• DB: Recordatorio de ejecutar rpc_functions.sql en Supabase."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.2/App.Condominio-2.1.2.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.2/CaminosApp.ipa",
+  "releaseNotes": "• PERSISTENCIA: Corregido el cierre de sesión inesperado en iPhone usando almacenamiento nativo.\n• ICONOS: Generación automática de iconos desde assets/icono.png en el servidor de compilación.\n• PAGOS: Fix definitivo para el error de columna 'profile_id'.\n• LAYOUT: Eliminado espacio desperdiciado y optimizado para pantallas Edge-to-Edge."
 }

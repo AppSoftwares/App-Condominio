@@ -95,8 +95,7 @@ export const Layout: React.FC = () => {
           flex: 1,
           width: '100%',
           overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          paddingTop: isHome ? 'env(safe-area-inset-top)' : '0px'
+          WebkitOverflowScrolling: 'touch'
         }}
       >
         <div style={{ width: '100%', maxWidth: '100%', margin: '0 auto' }}>
