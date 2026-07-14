@@ -3,7 +3,6 @@ import React from 'react';
 interface UpdateModalProps {
   isOpen: boolean;
   versionName: string;
-  releaseNotes?: string;
   onUpdate: () => void;
   onClose: () => void;
 }
@@ -17,27 +16,27 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-      <div className="w-full max-w-[320px] bg-white rounded-lg shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-slate-900 mb-2">¡Actualización Disponible!</h3>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            ¡Buenas noticias! Hay disponible una nueva versión de la App ({versionName}).
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-sm p-6">
+      <div className="w-full max-w-[280px] bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="p-5 text-center">
+          <h3 className="text-lg font-bold text-slate-900 mb-1">¡Actualización!</h3>
+          <p className="text-sm text-slate-500">
+            Nueva versión disponible ({versionName})
           </p>
         </div>
 
-        <div className="flex justify-end gap-4 px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="text-sm font-bold text-teal-600 hover:text-teal-700 transition-colors uppercase tracking-wide"
-          >
-            CANCELAR
-          </button>
+        <div className="flex flex-col border-t border-slate-100">
           <button
             onClick={onUpdate}
-            className="text-sm font-bold text-teal-600 hover:text-teal-700 transition-colors uppercase tracking-wide"
+            className="w-full py-3.5 text-sm font-bold text-teal-600 active:bg-slate-50 transition-colors border-b border-slate-100"
           >
-            ACTUALIZAR
+            DESCARGAR E INSTALAR
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3.5 text-sm font-semibold text-slate-400 active:bg-slate-50 transition-colors"
+          >
+            MÁS TARDE
           </button>
         </div>
       </div>

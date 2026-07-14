@@ -1,8 +1,8 @@
 {
-  "versionCode": 22,
-  "versionName": "2.2.0",
+  "versionCode": 23,
+  "versionName": "2.2.1",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.0/App.Condominio-2.2.0.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.0/CaminosApp.ipa",
-  "releaseNotes": "• ACTUALIZACIÓN: Sistema de descarga directa automatizado para Android y iOS.\n• UI: Alerta nativa compacta y centrada.\n• FIX: Optimización de estabilidad y cierre de sesión."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.1/App.Condominio-2.2.1.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.1/CaminosApp.ipa",
+  "releaseNotes": "• UPDATE: Sistema de descarga directa forzada.\n• UI: Ventana de aviso ultra-compacta y limpia.\n• FIX: Eliminación de recortes en pantallas Android."
 }

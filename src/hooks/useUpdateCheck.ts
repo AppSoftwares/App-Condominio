@@ -151,18 +151,20 @@ export const useUpdateCheck = () => {
   const performUpdate = async () => {
     if (updateInfo) {
       const platform = Capacitor.getPlatform();
-      let downloadUrl = updateInfo.url;
 
-      // Priorizar enlaces directos según la plataforma
-      if (platform === 'android' && (updateInfo as any).url_android) {
-        downloadUrl = (updateInfo as any).url_android;
-      } else if (platform === 'ios' && (updateInfo as any).url_ios) {
-        downloadUrl = (updateInfo as any).url_ios;
+      // Construir enlace directo forzado para evitar la web de GitHub
+      let downloadUrl = '';
+
+      if (platform === 'android') {
+        downloadUrl = `https://github.com/AppSoftwares/App-Condominio/releases/download/v${updateInfo.versionName}/App.Condominio-${updateInfo.versionName}.apk`;
+      } else if (platform === 'ios') {
+        downloadUrl = `https://github.com/AppSoftwares/App-Condominio/releases/download/v${updateInfo.versionName}/CaminosApp.ipa`;
+      } else {
+        downloadUrl = updateInfo.url; // Fallback
       }
 
-      console.log('Iniciando descarga automática desde:', downloadUrl);
+      console.log('Descarga directa forzada:', downloadUrl);
 
-      // Usar Browser.open con _system para disparar la descarga nativa
       await Browser.open({
         url: downloadUrl,
         windowName: '_system'
