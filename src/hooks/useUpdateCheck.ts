@@ -150,16 +150,19 @@ export const useUpdateCheck = () => {
 
   const performUpdate = async () => {
     if (updateInfo) {
-      // Detectar plataforma para elegir el link correcto
       const platform = Capacitor.getPlatform();
       let downloadUrl = updateInfo.url;
 
+      // Priorizar enlaces directos según la plataforma
       if (platform === 'android' && (updateInfo as any).url_android) {
         downloadUrl = (updateInfo as any).url_android;
       } else if (platform === 'ios' && (updateInfo as any).url_ios) {
         downloadUrl = (updateInfo as any).url_ios;
       }
 
+      console.log('Iniciando descarga automática desde:', downloadUrl);
+
+      // Usar Browser.open con _system para disparar la descarga nativa
       await Browser.open({
         url: downloadUrl,
         windowName: '_system'
