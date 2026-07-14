@@ -1,8 +1,8 @@
 {
-  "versionCode": 18,
-  "versionName": "2.1.6",
+  "versionCode": 19,
+  "versionName": "2.1.7",
   "url": "https://github.com/AppSoftwares/App-Condominio/releases/latest",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.6/App.Condominio-2.1.6.apk",
-  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.6/CaminosApp.ipa",
-  "releaseNotes": "• UI: Rediseño compacto del aviso de actualización para evitar recortes en pantallas pequeñas.\n• UX: Botones de acción siempre visibles y área de novedades deslizable.\n• ESTABILIDAD: Ajustes finales en el layout para mejorar la visualización en iPhone 16."
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.7/App.Condominio-2.1.7.apk",
+  "url_ios": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.1.7/CaminosApp.ipa",
+  "releaseNotes": "• UI: Modal de actualización ultra-compacto para máxima compatibilidad en Android y iOS.\n• UX: Iconos y textos reducidos para asegurar que los botones sean siempre visibles.\n• ESTABILIDAD: Optimización final de layouts responsivos."
 }
