@@ -117,7 +117,6 @@ function App() {
           <UpdateModal
             isOpen={showUpdateModal}
             versionName={updateInfo.versionName}
-            releaseNotes={updateInfo.releaseNotes}
             onUpdate={performUpdate}
             onClose={() => setShowUpdateModal(false)}
           />
