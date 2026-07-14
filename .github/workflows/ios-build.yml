@@ -82,14 +82,14 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.1.7
-          name: Release v2.1.7
+          tag_name: v2.1.8
+          name: Release v2.1.8
           files: "*.ipa"
           body: |
-            Actualización de iOS CaminosApp v2.1.7
-            - UI ultra-compacta para evitar recortes.
-            - Garantía de visibilidad de botones en todos los dispositivos.
-            - Refinamiento de estilos.
+            Actualización de iOS CaminosApp v2.1.8
+            - Modal de actualización 50% más pequeño.
+            - Eliminado aviso duplicado (toast).
+            - Optimización de espacio en Android.
           draft: false
           prerelease: false
         env:

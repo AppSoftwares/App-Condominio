@@ -96,30 +96,14 @@ export const useUpdateCheck = () => {
       // ignore
     }
 
-    // 3) In-app toast fallback
+    // 3) In-app toast fallback (DISABLED if modal is used)
     try {
+      /*
       if (typeof document !== 'undefined') {
-        const id = 'app-update-toast'
-        if (!document.getElementById(id)) {
-          const el = document.createElement('div')
-          el.id = id
-          el.style.position = 'fixed'
-          el.style.left = '50%'
-          el.style.transform = 'translateX(-50%)'
-          el.style.bottom = '90px'
-          el.style.background = 'linear-gradient(90deg, rgba(18,184,163,0.95), rgba(15,85,81,0.95))'
-          el.style.color = 'white'
-          el.style.padding = '12px 18px'
-          el.style.borderRadius = '14px'
-          el.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)'
-          el.style.zIndex = '99999'
-          el.style.fontWeight = '700'
-          el.innerText = `Versión ${latest.versionName} disponible — toca para actualizar`
-          el.onclick = () => { performUpdate().catch(()=>{}); el.remove() }
-          document.body.appendChild(el)
-          setTimeout(() => { el.remove() }, 8000)
-        }
+        ...
       }
+      */
+      console.log('Update available:', latest.versionName)
     } catch (err) {
       // final fallback
       console.log('Update available:', latest.versionName)
