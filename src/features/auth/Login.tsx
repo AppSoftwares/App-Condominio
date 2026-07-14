@@ -73,9 +73,13 @@ export const Login: React.FC = () => {
           .from('profiles')
           .select('*')
           .eq('id', data.user.id)
-          .single()
+          .maybeSingle()
 
         if (profileError) throw profileError
+
+        if (!profile) {
+          throw new Error('No se encontró un perfil asociado a este usuario.')
+        }
 
         setUser({
           id: data.user.id,

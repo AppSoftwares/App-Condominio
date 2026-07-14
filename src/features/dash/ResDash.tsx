@@ -45,7 +45,7 @@ export const ResDash: React.FC = () => {
           .from('condo_settings')
           .select('*')
           .eq('id', 1)
-          .single()
+          .maybeSingle()
 
         if (debtData && debtData.length > 0) {
           const total = debtData.reduce((acc, d) => acc + Number(d.monto_pendiente), 0)

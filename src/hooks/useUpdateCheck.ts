@@ -8,6 +8,8 @@ interface VersionInfo {
   versionCode: number;
   versionName: string;
   url: string;
+  url_android?: string;
+  url_ios?: string;
   releaseNotes?: string;
 }
 
@@ -151,19 +153,20 @@ export const useUpdateCheck = () => {
   const performUpdate = async () => {
     if (updateInfo) {
       const platform = Capacitor.getPlatform();
-
-      // Construir enlace directo forzado para evitar la web de GitHub
       let downloadUrl = '';
 
       if (platform === 'android') {
-        downloadUrl = `https://github.com/AppSoftwares/App-Condominio/releases/download/v${updateInfo.versionName}/App.Condominio-${updateInfo.versionName}.apk`;
+        // Usar url_android del JSON si existe, de lo contrario construirla.
+        // Se asegura que sea el enlace directo al archivo .apk
+        downloadUrl = updateInfo.url_android || `https://github.com/AppSoftwares/App-Condominio/releases/download/v${updateInfo.versionName}/App.Condominio-${updateInfo.versionName}.apk`;
       } else if (platform === 'ios') {
-        downloadUrl = `https://github.com/AppSoftwares/App-Condominio/releases/download/v${updateInfo.versionName}/CaminosApp.ipa`;
+        // El usuario solicitó quitar el .ipa de iOS y usar Actions o la página de releases
+        downloadUrl = 'https://github.com/AppSoftwares/App-Condominio/actions';
       } else {
         downloadUrl = updateInfo.url; // Fallback
       }
 
-      console.log('Descarga directa forzada:', downloadUrl);
+      console.log('Descarga directa o redirección:', downloadUrl);
 
       await Browser.open({
         url: downloadUrl,

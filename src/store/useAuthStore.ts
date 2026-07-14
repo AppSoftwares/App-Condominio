@@ -103,7 +103,7 @@ export const useAuthStore = create<AuthState>()(
                 .from('profiles')
                 .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
                 .eq('id', session.user.id)
-                .single()
+                .maybeSingle()
 
               if (profile && !profileError) {
                 set({ user: profile as UserProfile, authReady: true })
@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
                 .from('profiles')
                 .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
                 .eq('id', session.user.id)
-                .single()
+                .maybeSingle()
 
               if (profile) {
                 set({ user: profile as UserProfile, authReady: true })

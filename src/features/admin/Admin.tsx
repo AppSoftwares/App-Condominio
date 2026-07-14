@@ -135,7 +135,7 @@ export const Admin: React.FC = () => {
         .from('condo_settings')
         .select('*')
         .eq('id', 1)
-        .single()
+        .maybeSingle()
 
       if (settingsData) {
         setCondoSettings({
