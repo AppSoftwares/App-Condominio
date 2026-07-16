@@ -9,6 +9,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import logoPremium from '../../assets/logo_premium.png'
+import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
 
 const TabItem = ({ active, label, icon, onClick }: any) => (
   <button
@@ -42,6 +43,7 @@ export const Admin: React.FC = () => {
   const bcvRate = useCurrencyStore(state => state.bcvRate)
   const { addPoll } = useCommunityStore()
 
+  const [selectedCluster, setSelectedCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
   const initialTab = (searchParams.get('tab') as any) || 'finance'
   const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security'>(initialTab)
 
@@ -432,6 +434,8 @@ export const Admin: React.FC = () => {
           email: (row['CORREO'] || '').toLowerCase().trim(),
           role: row['USUARIO'] === 'ADMINISTRADOR' ? 'Administrador' : 'Residente',
           house_number: row['CASA N°'],
+          residential_cluster: row['CONJUNTO'] || selectedCluster,
+          etapa: getEtapaForCluster(row['CONJUNTO'] || selectedCluster),
           status: "Activo",
           phone: "",
           debt: 0,
@@ -507,7 +511,9 @@ export const Admin: React.FC = () => {
   const addUser = () => {
     const name = prompt("Nombre completo:");
     const email = prompt("Correo:");
-    const role = prompt("Rol (Residente, Tesorero, Administrador, Vigilante):");
+    const role = prompt("Rol (Residente, Tesorero, Administrador, Vigilante):", "Residente");
+    const cluster = prompt("Conjunto residencial (Copiar exacto o dejar vacío para usar el seleccionado):", selectedCluster);
+
     if (name && email && role) {
       setUsers([...users, {
         id: Date.now(),
@@ -517,6 +523,8 @@ export const Admin: React.FC = () => {
         status: "Activo",
         phone: "",
         house_number: "",
+        residential_cluster: cluster || selectedCluster,
+        etapa: getEtapaForCluster(cluster || selectedCluster),
         debt: 0
       }]);
     }
@@ -679,7 +687,25 @@ export const Admin: React.FC = () => {
           <section style={{ width: '100%' }}>
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Gestión de Usuarios</h3>
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+
+                <div style={{ marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
+                  <label style={labelStyle}>CONJUNTO SELECCIONADO PARA ACCIONES</label>
+                  <select
+                    value={selectedCluster}
+                    onChange={e => setSelectedCluster(e.target.value)}
+                    style={{ ...inputStyle, padding: '12px' }}
+                  >
+                    {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
+                      <optgroup key={etapa} label={etapa}>
+                        {conjuntos.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button onClick={addUser} style={primaryBtnStyleSmall}>
                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person_add</span>
                      <span>Añadir</span>
@@ -923,7 +949,24 @@ export const Admin: React.FC = () => {
 
              <div style={cardStyle}>
                 <p style={labelStyle}>CREAR NUEVO CONJUNTO / RESIDENCIA</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Adjunte el archivo Excel con la base de datos de propietarios para inicializar un nuevo conjunto residencial.</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Seleccione el conjunto y luego adjunte el archivo Excel con la base de datos de propietarios para inicializarlo.</p>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={labelStyle}>CONJUNTO A INICIALIZAR</label>
+                  <select
+                    value={selectedCluster}
+                    onChange={e => setSelectedCluster(e.target.value)}
+                    style={{ ...inputStyle, padding: '12px' }}
+                  >
+                    {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
+                      <optgroup key={etapa} label={etapa}>
+                        {conjuntos.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
 
                 <input type="file" id="super-import" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportResidents} />
                 <button

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
 
 export const Register: React.FC = () => {
   const navigate = useNavigate()
@@ -13,7 +14,7 @@ export const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
-  const [cluster, setCluster] = useState('Punta de Piedra')
+  const [cluster, setCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
   const [house, setHouse] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -58,6 +59,7 @@ export const Register: React.FC = () => {
               last_name: lastName,
               role: 'resident',
               residential_cluster: cluster,
+              etapa: getEtapaForCluster(cluster),
               house_number: house,
               status: 'pending' // El admin deberá aprobarlo
             }
@@ -203,9 +205,13 @@ export const Register: React.FC = () => {
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Conjunto / Etapa</label>
             <select value={cluster} onChange={e => setCluster(e.target.value)} style={inputStyle}>
-              <option>Punta de Piedra</option>
-              <option>Las Huertas</option>
-              <option>El Manantial</option>
+              {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
+                <optgroup key={etapa} label={etapa}>
+                  {conjuntos.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
           <div style={{ marginBottom: '30px' }}>
