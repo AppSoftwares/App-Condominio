@@ -19,75 +19,45 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     <div
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 999999,
-        padding: '20px',
-        boxSizing: 'border-box'
+        padding: '20px'
       }}
     >
       <div
         style={{
           backgroundColor: '#ffffff',
-          borderRadius: '4px',
+          borderRadius: '2px',
           width: '100%',
-          maxWidth: '320px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          boxSizing: 'border-box',
-          margin: 'auto'
+          maxWidth: '300px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          padding: '24px 24px 12px 24px',
+          boxSizing: 'border-box'
         }}
       >
-        <div style={{ padding: '24px 24px 12px 24px' }}>
-          <h2 style={{
-            margin: '0 0 16px 0',
-            fontSize: '20px',
-            fontWeight: 600,
-            color: '#212121',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-          }}>
-            ¡Actualización Disponible!
-          </h2>
-          <p style={{
-            margin: 0,
-            fontSize: '15px',
-            color: '#616161',
-            lineHeight: '1.5',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-          }}>
-            ¡Buenas noticias! Hay disponible una nueva versión <span style={{ fontWeight: 700, color: '#000' }}>v{versionName}</span> de la App.
-          </p>
-        </div>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 500, color: '#000' }}>
+          ¡Actualización Disponible!
+        </h3>
+        <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#444', lineHeight: '1.4' }}>
+          ¡Buenas noticias! Hay disponible una nueva versión <span style={{fontWeight:600}}>v{versionName}</span> de la App.
+        </p>
 
-        <div style={{
-          padding: '8px 16px 16px 16px',
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '8px'
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '20px' }}>
           <button
             onClick={onClose}
             style={{
-              padding: '10px 16px',
-              fontSize: '14px',
+              padding: '8px 4px',
+              fontSize: '13px',
               fontWeight: 700,
-              color: '#00796B',
+              color: '#00897B',
               backgroundColor: 'transparent',
               border: 'none',
-              borderRadius: '4px',
               cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              outline: 'none'
+              textTransform: 'uppercase'
             }}
           >
             MÁS TARDE
@@ -95,17 +65,14 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           <button
             onClick={onUpdate}
             style={{
-              padding: '10px 16px',
-              fontSize: '14px',
+              padding: '8px 4px',
+              fontSize: '13px',
               fontWeight: 700,
-              color: '#00796B',
+              color: '#00897B',
               backgroundColor: 'transparent',
               border: 'none',
-              borderRadius: '4px',
               cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              outline: 'none'
+              textTransform: 'uppercase'
             }}
           >
             ACTUALIZAR
