@@ -21,8 +21,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         position: 'fixed',
         top: 0,
         left: 0,
-        width: '100vw',
-        height: '100vh',
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         display: 'flex',
         alignItems: 'center',
@@ -38,11 +40,11 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           borderRadius: '4px',
           width: '100%',
           maxWidth: '320px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-          overflow: 'hidden',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
           display: 'flex',
           flexDirection: 'column',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          margin: 'auto'
         }}
       >
         <div style={{ padding: '24px 24px 12px 24px' }}>
@@ -51,7 +53,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             fontSize: '20px',
             fontWeight: 600,
             color: '#212121',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
           }}>
             ¡Actualización Disponible!
           </h2>
@@ -60,7 +62,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
             fontSize: '15px',
             color: '#616161',
             lineHeight: '1.5',
-            fontFamily: 'system-ui, -apple-system, sans-serif'
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
           }}>
             ¡Buenas noticias! Hay disponible una nueva versión <span style={{ fontWeight: 700, color: '#000' }}>v{versionName}</span> de la App.
           </p>
@@ -75,7 +77,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           <button
             onClick={onClose}
             style={{
-              padding: '10px 12px',
+              padding: '10px 16px',
               fontSize: '14px',
               fontWeight: 700,
               color: '#00796B',
@@ -84,7 +86,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               borderRadius: '4px',
               cursor: 'pointer',
               textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.5px',
+              outline: 'none'
             }}
           >
             MÁS TARDE
@@ -101,7 +104,8 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               borderRadius: '4px',
               cursor: 'pointer',
               textTransform: 'uppercase',
-              letterSpacing: '0.5px'
+              letterSpacing: '0.5px',
+              outline: 'none'
             }}
           >
             ACTUALIZAR
