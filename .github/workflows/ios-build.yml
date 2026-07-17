@@ -45,7 +45,9 @@ jobs:
         run: pnpm run build:ci
 
       - name: Generate Assets
-        run: npx @capacitor/assets generate
+        run: |
+          npx @capacitor/assets generate
+          find android/app/src/main/res -name "*.webp" -delete || true
 
       - name: Capacitor Sync
         run: npx cap sync
