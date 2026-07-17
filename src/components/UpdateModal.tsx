@@ -19,57 +19,63 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
     <div
       style={{
         position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 99999,
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        padding: '24px'
+        zIndex: 999999,
+        padding: '20px',
+        boxSizing: 'border-box'
       }}
     >
       <div
         style={{
           backgroundColor: '#ffffff',
-          width: '100%',
-          maxWidth: '310px',
           borderRadius: '4px',
-          boxShadow: '0 11px 15px -7px rgba(0,0,0,0.2), 0 24px 38px 3px rgba(0,0,0,0.14), 0 9px 46px 8px rgba(0,0,0,0.12)',
+          width: '100%',
+          maxWidth: '320px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          boxSizing: 'border-box'
         }}
       >
-        <div style={{ padding: '24px 24px 10px' }}>
-          <h3 style={{
-            margin: '0 0 12px',
+        <div style={{ padding: '24px 24px 12px 24px' }}>
+          <h2 style={{
+            margin: '0 0 16px 0',
             fontSize: '20px',
-            fontWeight: 500,
+            fontWeight: 600,
             color: '#212121',
-            fontFamily: 'Roboto, sans-serif'
+            fontFamily: 'system-ui, -apple-system, sans-serif'
           }}>
             ¡Actualización Disponible!
-          </h3>
+          </h2>
           <p style={{
             margin: 0,
-            fontSize: '16px',
-            color: '#757575',
-            lineHeight: '1.4',
-            fontFamily: 'Roboto, sans-serif'
+            fontSize: '15px',
+            color: '#616161',
+            lineHeight: '1.5',
+            fontFamily: 'system-ui, -apple-system, sans-serif'
           }}>
-            ¡Buenas noticias! Hay disponible una nueva versión <span style={{ fontWeight: 'bold' }}>v{versionName}</span> de la App.
+            ¡Buenas noticias! Hay disponible una nueva versión <span style={{ fontWeight: 700, color: '#000' }}>v{versionName}</span> de la App.
           </p>
         </div>
 
         <div style={{
-          padding: '8px 8px 8px 24px',
+          padding: '8px 16px 16px 16px',
           display: 'flex',
           justifyContent: 'flex-end',
-          gap: '4px'
+          gap: '8px'
         }}>
           <button
             onClick={onClose}
             style={{
-              padding: '10px 12px',
+              padding: '10px 16px',
               fontSize: '14px',
               fontWeight: 700,
               color: '#00796B',
@@ -81,12 +87,12 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               letterSpacing: '0.5px'
             }}
           >
-            MÁS TARDE
+            CANCELAR
           </button>
           <button
             onClick={onUpdate}
             style={{
-              padding: '10px 12px',
+              padding: '10px 16px',
               fontSize: '14px',
               fontWeight: 700,
               color: '#00796B',
