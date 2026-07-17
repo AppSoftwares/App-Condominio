@@ -75,7 +75,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           <button
             onClick={onClose}
             style={{
-              padding: '10px 16px',
+              padding: '10px 12px',
               fontSize: '14px',
               fontWeight: 700,
               color: '#00796B',
@@ -87,7 +87,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
               letterSpacing: '0.5px'
             }}
           >
-            CANCELAR
+            MÁS TARDE
           </button>
           <button
             onClick={onUpdate}
