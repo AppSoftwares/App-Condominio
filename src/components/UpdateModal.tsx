@@ -25,35 +25,36 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 999999,
-        padding: '20px'
+        padding: '24px',
+        backdropFilter: 'blur(2px)'
       }}
     >
       <div
         style={{
           backgroundColor: '#ffffff',
-          borderRadius: '2px',
+          borderRadius: '4px',
           width: '100%',
           maxWidth: '300px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-          padding: '24px 24px 12px 24px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+          padding: '24px',
           boxSizing: 'border-box'
         }}
       >
-        <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 500, color: '#000' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '19px', fontWeight: 600, color: '#212121', fontFamily: 'sans-serif' }}>
           ¡Actualización Disponible!
         </h3>
-        <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#444', lineHeight: '1.4' }}>
-          ¡Buenas noticias! Hay disponible una nueva versión <span style={{fontWeight:600}}>v{versionName}</span> de la App.
+        <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#616161', lineHeight: '1.5', fontFamily: 'sans-serif' }}>
+          ¡Buenas noticias! Hay disponible una nueva versión <span style={{fontWeight:700, color:'#000'}}>v{versionName}</span> de la App.
         </p>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <button
             onClick={onClose}
             style={{
-              padding: '8px 4px',
-              fontSize: '13px',
+              padding: '10px 12px',
+              fontSize: '14px',
               fontWeight: 700,
-              color: '#00897B',
+              color: '#00796B',
               backgroundColor: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -65,10 +66,10 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({
           <button
             onClick={onUpdate}
             style={{
-              padding: '8px 4px',
-              fontSize: '13px',
+              padding: '10px 12px',
+              fontSize: '14px',
               fontWeight: 700,
-              color: '#00897B',
+              color: '#00796B',
               backgroundColor: 'transparent',
               border: 'none',
               cursor: 'pointer',
