@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_id:
-        description: 'Nombre del archivo IPA (ej. CaminosApp-v1)'
+        description: 'Nombre del archivo base'
         required: true
         default: 'CaminosApp'
 
@@ -23,6 +23,12 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
       - name: Install pnpm
         run: npm install -g pnpm@9.15.4
 
@@ -39,10 +45,20 @@ jobs:
         run: pnpm run build:ci
 
       - name: Generate Assets
-        run: npx @capacitor/assets generate --ios
+        run: npx @capacitor/assets generate
 
       - name: Capacitor Sync
-        run: npx cap sync ios
+        run: npx cap sync
+
+      - name: Build Android App (Release)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+
+      - name: Prepare Android Artifact
+        run: |
+          mv android/app/build/outputs/apk/release/CaminosApp-v2.2.5.apk "CaminosApp v2.2.5.apk"
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -70,26 +86,21 @@ jobs:
           fi
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
-          zip -rq "${{ inputs.build_id }}.ipa" Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.build_id }}-Artifact
-          path: "*.ipa"
-          retention-days: 1
+          zip -rq "CaminosApp v2.2.5.ipa" Payload
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.2.1
-          name: Release v2.2.1
-          files: "*.ipa"
+          tag_name: v2.2.5
+          name: "CaminosApp v2.2.5"
+          files: |
+            *.ipa
+            *.apk
           body: |
-            Actualización de iOS CaminosApp v2.2.1
-            - Ventana de actualización ultra-pequeña.
-            - Descarga directa forzada (sin pasar por GitHub web).
-            - Corrección visual en Android.
+            Actualización CaminosApp v2.2.5
+            - Estabilidad mejorada al iniciar sesión.
+            - Corrección de pantalla en blanco al reanudar la app en iOS.
+            - Carga de perfil optimizada y persistencia local.
           draft: false
           prerelease: false
         env:

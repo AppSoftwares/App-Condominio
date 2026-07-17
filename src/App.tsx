@@ -54,6 +54,7 @@ function App() {
   const user = useAuthStore(state => state.user)
   const authReady = useAuthStore(state => state.authReady)
   const initializeAuth = useAuthStore(state => state.initialize)
+  const syncAuth = useAuthStore(state => state.sync)
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
 
@@ -64,7 +65,7 @@ function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false)
 
   useEffect(() => {
-    // Manejar botón de atrás en Android
+    // Manejar eventos de la app
     const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
       const path = window.location.pathname;
       if (path === '/dashboard' || path === '/admin' || path === '/guard' || path === '/login' || path === '/') {
@@ -76,10 +77,18 @@ function App() {
       }
     });
 
+    const appStateListener = CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        // Re-sincronizar sesión al volver a la app
+        syncAuth().catch(() => {});
+      }
+    });
+
     return () => {
       backButtonListener.then(l => l.remove());
+      appStateListener.then(l => l.remove());
     };
-  }, []);
+  }, [syncAuth]);
 
   useEffect(() => {
     if (isUpdateAvailable) {
@@ -88,12 +97,25 @@ function App() {
   }, [isUpdateAvailable])
 
   useEffect(() => {
-    const cleanup = initializeAuth()
-    setTimeout(() => {
-      SplashScreen.hide()
-    }, 1000)
-    return cleanup
+    return initializeAuth()
   }, [initializeAuth])
+
+  useEffect(() => {
+    const hideSplash = async () => {
+      try {
+        await SplashScreen.hide()
+      } catch (e) {
+        // Ignorar si falla
+      }
+    }
+
+    if (authReady) {
+      hideSplash()
+    } else {
+      const timer = setTimeout(hideSplash, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [authReady])
 
   useEffect(() => {
     fetchRate()
@@ -122,9 +144,9 @@ function App() {
           />
         )}
         <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
-          {!authReady ? (
+          {!authReady && !user ? (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p>Cargando sesión...</p>
+              <p>Iniciando sesión...</p>
             </div>
           ) : (
             <Routes>
