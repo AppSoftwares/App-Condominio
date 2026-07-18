@@ -140,7 +140,10 @@ export const Reservations: React.FC = () => {
             {loading ? (
               <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--text-sub)' }}>Cargando mural...</p>
             ) : reservations.length === 0 ? (
-              <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--text-sub)' }}>No hay reservas próximas.</p>
+              <div style={{ textAlign: 'center', padding: '30px', backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px dashed var(--border-color)' }}>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', fontWeight: 600 }}>No hay reservas activas en la comunidad.</p>
+                <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: 'var(--text-sub)', opacity: 0.7 }}>¡Sé el primero en reservar un área!</p>
+              </div>
             ) : (
               reservations.map(r => (
                 <div key={r.id} style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

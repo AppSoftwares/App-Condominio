@@ -64,15 +64,17 @@ BEGIN
 END;
 $$;
 
--- Función: rpc_insert_payment
+-- Función: rpc_insert_payment (CORREGIDA CON IDEMPOTENCIA)
 CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   monto_bs numeric, monto_usd numeric, referencia text, banco_origen text,
-  evidencia_url text, description text, details jsonb, p_profile_id uuid DEFAULT auth.uid()
+  evidencia_url text, description text, details jsonb,
+  idempotency_key text DEFAULT NULL
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
-  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at)
-  VALUES (COALESCE(p_profile_id, auth.uid()), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now());
+  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at, idempotency_key)
+  VALUES (auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now(), idempotency_key)
+  ON CONFLICT (idempotency_key) DO NOTHING;
 END;
 $$;
 
@@ -97,9 +99,28 @@ BEGIN
     DROP POLICY IF EXISTS "admin_update" ON public.profiles;
     CREATE POLICY "admin_update" ON public.profiles FOR UPDATE USING (public.is_admin());
 
-    -- Payments access
+    -- Profiles Owner access (CORREGIDA)
+    DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+    DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+    DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+    CREATE POLICY "owner_update_no_privesc" ON public.profiles
+      FOR ALL TO authenticated
+      USING (auth.uid() = id)
+      WITH CHECK (
+        auth.uid() = id
+        AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+      );
+
+    -- Payments access (CORREGIDA - Solo Admin escribe, residentes via RPC)
     DROP POLICY IF EXISTS "Payments access" ON public.payments;
-    CREATE POLICY "Payments access" ON public.payments FOR ALL USING (profile_id = auth.uid() OR public.is_admin());
+    CREATE POLICY "payments_select_own_or_admin" ON public.payments
+      FOR SELECT TO authenticated
+      USING (profile_id = auth.uid() OR public.is_admin());
+
+    CREATE POLICY "payments_admin_write" ON public.payments
+      FOR UPDATE TO authenticated
+      USING (public.is_admin())
+      WITH CHECK (public.is_admin());
 END $$;
 
 -- 5. PERMISOS

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select, func
-from typing import List
+from typing import List, Optional
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 from app.core.database import get_session
 from app.core.security import get_current_user, get_current_admin
+from app.core.limiter import limiter
 from app.models.entities import Voting, VoteRecord, Resident
 from pydantic import BaseModel
 
@@ -28,22 +30,21 @@ def list_votings(session: Session = Depends(get_session)):
     return session.exec(select(Voting).where(Voting.activa == True)).all()
 
 @router.post("/{voting_id}/vote")
-def cast_vote(voting_id: int, opcion: str, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
+@limiter.limit("10/minute")
+def cast_vote(request: Request, voting_id: int, opcion: str, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
     if opcion not in ["favor", "contra"]:
-        raise HTTPException(status_code=400, detail="Opción de voto inválida")
+        raise HTTPException(status_code=400, detail="Opcion de voto invalida")
 
     voting = session.get(Voting, voting_id)
     if not voting or not voting.activa:
-        raise HTTPException(status_code=404, detail="Votación no encontrada o cerrada")
-
-    # Verificar si ya votó
-    statement = select(VoteRecord).where(VoteRecord.voting_id == voting_id, VoteRecord.residente_id == current_user.id)
-    existing_vote = session.exec(statement).first()
-    if existing_vote:
-        raise HTTPException(status_code=400, detail="Ya has emitido tu voto para esta propuesta")
+        raise HTTPException(status_code=404, detail="Votacion no encontrada o cerrada")
 
     new_vote = VoteRecord(voting_id=voting_id, residente_id=current_user.id, opcion=opcion)
     session.add(new_vote)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=400, detail="Ya has emitido tu voto para esta propuesta")
 
     return {"message": "Voto registrado correctamente"}

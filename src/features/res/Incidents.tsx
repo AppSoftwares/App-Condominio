@@ -252,7 +252,17 @@ export const Incidents: React.FC = () => {
                   inputMode="tel"
                   placeholder="Ej: 14-73"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => {
+                    let val = e.target.value.replace(/[^0-9-]/g, '');
+                    // Si el usuario escribe los 2 primeros dígitos, agregar el guion
+                    if (val.length === 2 && !val.includes('-')) {
+                      val = val + '-';
+                    }
+                    // Limitar longitud a 5 caracteres (XX-XX)
+                    if (val.length <= 5) {
+                      setLocation(val);
+                    }
+                  }}
                   style={inputStyle}
                 />
               </div>
@@ -277,7 +287,12 @@ export const Incidents: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {incidents.map(inc => (
+              {incidents.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px', backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px dashed var(--border-color)' }}>
+                   <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', fontWeight: 600 }}>No hay alertas recientes reportadas.</p>
+                   <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: 'var(--text-sub)', opacity: 0.7 }}>Mantén informada a la comunidad reportando incidencias.</p>
+                </div>
+              ) : incidents.map(inc => (
                 <div key={inc.id} style={incidentCardStyle}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={incTagStyle}>{inc.category}</span>

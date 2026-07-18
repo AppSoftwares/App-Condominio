@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore, UserRole } from '../../store/useAuthStore'
 import { sanitizeString, isValidEmail } from '../../utils/security'
 import icono from '../../assets/icono.png'
@@ -9,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 
 export const Login: React.FC = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { setUser, whitelist } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -156,7 +158,7 @@ export const Login: React.FC = () => {
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <img src={icono} alt="Logo" style={{ width: '100px', height: 'auto', marginBottom: '16px' }} />
             <h1 style={{ fontSize: '28px', color: 'var(--primary-color)', margin: '0 0 8px 0', fontFamily: "'EB Garamond', serif", fontWeight: 700 }}>
-              {isForgot ? 'Recuperar' : 'Bienvenido'}
+              {isForgot ? 'Recuperar' : t('auth.login')}
             </h1>
             <p style={{ color: 'var(--text-sub)', fontSize: '15px', margin: 0 }}>
               {isForgot ? 'Ingresa tu correo' : 'Ingresa tus credenciales'}
@@ -166,7 +168,7 @@ export const Login: React.FC = () => {
           {!isForgot ? (
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                <div style={{ textAlign: 'left' }}>
-                  <label style={labelStyle}>Correo Electrónico</label>
+                  <label style={labelStyle}>{t('auth.email')}</label>
                   <input
                     type="email"
                     value={email}
@@ -181,7 +183,7 @@ export const Login: React.FC = () => {
                </div>
 
                <div style={{ textAlign: 'left' }}>
-                  <label style={labelStyle}>Contraseña</label>
+                  <label style={labelStyle}>{t('auth.password')}</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? "text" : "password"}
@@ -219,7 +221,7 @@ export const Login: React.FC = () => {
                </div>
 
                <button type="submit" disabled={loading} style={primaryBtnStyle}>
-                  {loading ? 'Validando...' : 'Iniciar Sesión'}
+                  {loading ? t('common.loading') : t('auth.login')}
                </button>
 
                <button

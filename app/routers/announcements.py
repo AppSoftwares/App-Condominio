@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlmodel import Session, select
 from typing import Optional, List
 from app.core.database import get_session
 from app.models.entities import Announcement
 from app.services.notification_service import send_push_to_section
+from app.core.limiter import limiter
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/v1/announcements", tags=["Announcements"])
@@ -15,7 +16,8 @@ class AnnouncementCreate(BaseModel):
     seccion_id: Optional[int] = None
 
 @router.post("/")
-def create_announcement(data: AnnouncementCreate, session: Session = Depends(get_session)):
+@limiter.limit("5/minute")
+def create_announcement(request: Request, data: AnnouncementCreate, session: Session = Depends(get_session)):
     new_announcement = Announcement.model_validate(data)
     session.add(new_announcement)
     session.commit()

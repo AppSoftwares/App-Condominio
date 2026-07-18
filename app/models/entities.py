@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship, JSON
+from sqlalchemy import UniqueConstraint
 
 class ExpenseCategory(str, Enum):
     MANTENIMIENTO = "mantenimiento"
@@ -149,6 +150,7 @@ class Voting(SQLModel, table=True):
     votes: List["VoteRecord"] = Relationship(back_populates="voting")
 
 class VoteRecord(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("voting_id", "residente_id", name="uq_vote_per_resident"),)
     id: Optional[int] = Field(default=None, primary_key=True)
     voting_id: int = Field(foreign_key="voting.id")
     residente_id: int = Field(foreign_key="resident.id")

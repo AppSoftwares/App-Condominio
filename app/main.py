@@ -1,12 +1,33 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlmodel import Session
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from app.core.database import get_session, init_db, engine
+from app.core.limiter import limiter
 from app.core.security import create_tokens, verify_api_key, hash_password
 from app.core.sentry_integration import init_sentry, wrap_app_with_sentry
 from app.routers import buildings, announcements, accounting, reports, reservations, guests, votings, security_admin, auth
 
 app = FastAPI(title="Caminos de la Lagunita API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    # Registrar el error completo en Sentry si está disponible
+    try:
+        import sentry_sdk
+        sentry_sdk.capture_exception(exc)
+    except ImportError:
+        pass
+
+    # Devolver un mensaje genérico al cliente
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Ocurrio un error inesperado. Intenta de nuevo."}
+    )
 
 # Inicializar Sentry si está configurado
 try:

@@ -30,11 +30,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- 5. Crear las dos únicas políticas necesarias
--- Política 1: El usuario puede ver y editar su propio perfil
-CREATE POLICY "allow_owner_all" ON public.profiles
+-- Política 1: El usuario puede ver y editar su propio perfil (Sin escalacion)
+DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+CREATE POLICY "owner_update_no_privesc" ON public.profiles
   FOR ALL TO authenticated
   USING (auth.uid() = id)
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (
+    auth.uid() = id
+    AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+  );
 
 -- Política 2: Los administradores pueden ver todos los perfiles
 -- Usamos la función is_admin() que al ser SECURITY DEFINER no dispara de nuevo el RLS

@@ -1,7 +1,12 @@
 node_modules
 dist
 src/config/access_keys/
+# Secretos y llaves
 .env
+android/key.properties
+*.jks
+
+# IDEs
 .idea
 *.png
 *.jpg

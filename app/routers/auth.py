@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from app.core.database import get_session
 from app.core.security import create_tokens, verify_password
+from app.core.limiter import limiter
 from app.models.entities import Resident
 from pydantic import BaseModel
 
@@ -12,7 +13,8 @@ class LoginRequest(BaseModel):
     password: str # En producción usaríamos hashing (bcrypt)
 
 @router.post("/login")
-def login(data: LoginRequest, session: Session = Depends(get_session)):
+@limiter.limit("5/minute")
+def login(request: Request, data: LoginRequest, session: Session = Depends(get_session)):
     statement = select(Resident).where(Resident.email == data.email)
     user = session.exec(statement).first()
 

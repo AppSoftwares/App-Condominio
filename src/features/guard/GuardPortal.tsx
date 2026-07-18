@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { MdCheckCircle, MdCancel, MdInfo, MdInventory, MdQrCodeScanner } from 'react-icons/md'
+import { Network } from '@capacitor/network'
+import { enqueueAction } from '../../lib/offlineQueue'
 
 export const GuardPortal: React.FC = () => {
   const navigate = useNavigate()
@@ -80,14 +82,33 @@ export const GuardPortal: React.FC = () => {
       return
     }
     setLoading(true)
-    const { error } = await supabase
-      .from('casillero_virtual')
-      .insert([{
+
+    const payload = {
         resident_id: residentId,
         courier_name: courier,
         package_details: details,
         status: 'en_custodia'
-      }])
+    }
+    const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pkg-${Date.now()}`
+
+    const netStatus = await Network.getStatus();
+    if (!netStatus.connected) {
+        await enqueueAction({
+            tipo: 'visit', // Usamos visit genéricamente para cola offline
+            payload,
+            idempotencyKey
+        })
+        alert("✅ Registro guardado offline. Se sincronizará pronto.")
+        setCourier('')
+        setDetails('')
+        setResidentId('')
+        setLoading(false)
+        return
+    }
+
+    const { error } = await supabase
+      .from('casillero_virtual')
+      .insert([payload])
 
     if (error) alert("Error al registrar: " + error.message)
     else {
@@ -178,7 +199,18 @@ export const GuardPortal: React.FC = () => {
               <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Registro Manual</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                  <Field label="Nombre Visitante" placeholder="Nombre completo" />
-                 <Field label="Destino" placeholder="Casa / Apto" />
+                 <div style={{ textAlign: 'left' }}>
+                    <label style={labelStyle}>Destino (Casa)</label>
+                    <input
+                        placeholder="Ej: 14-73"
+                        style={inputStyle}
+                        onChange={(e: any) => {
+                            let val = e.target.value.replace(/[^0-9-]/g, '');
+                            if (val.length === 2 && !val.includes('-')) val += '-';
+                            if (val.length <= 5) e.target.value = val;
+                        }}
+                    />
+                 </div>
                  <button style={primaryBtnStyle}>Registrar Ingreso</button>
               </div>
            </div>

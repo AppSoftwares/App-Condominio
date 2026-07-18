@@ -108,3 +108,50 @@ def generate_individual_debt_pdf(session: Session, resident_id: int):
     pdf.cell(0, 10, f"TOTAL PENDIENTE DE PAGO: ${total_pendiente}", ln=True)
 
     return pdf.output(dest='S').encode('latin-1')
+
+def get_transparency_summary(session: Session, mes: int, anio: int):
+    """Calcula el resumen financiero para el dashboard de transparencia"""
+    from sqlalchemy import func, extract
+    from app.models.entities import Expense
+
+    # 1. Ingresos y Fondo Reserva del mes
+    statement_payments = select(
+        func.sum(Payment.monto_pagado).label("total_ingresos"),
+        func.sum(Payment.monto_fondo_reserva).label("total_reserva")
+    ).where(
+        extract('month', Payment.fecha_pago) == mes,
+        extract('year', Payment.fecha_pago) == anio
+    )
+    payments_res = session.exec(statement_payments).first()
+
+    total_ingresos = payments_res.total_ingresos or 0
+    total_reserva_mes = payments_res.total_reserva or 0
+
+    # 2. Gastos del mes
+    statement_expenses = select(func.sum(Expense.monto)).where(
+        extract('month', Expense.fecha) == mes,
+        extract('year', Expense.fecha) == anio
+    )
+    total_gastos = session.exec(statement_expenses).first() or 0
+
+    # 3. Estado de residentes
+    total_residentes = session.exec(select(func.count(Resident.id))).one()
+    residentes_con_deuda = session.exec(
+        select(func.count(func.distinct(Debt.residente_id)))
+        .where(Debt.pagada == False)
+    ).one()
+
+    porcentaje_al_dia = 0
+    if total_residentes > 0:
+        porcentaje_al_dia = ((total_residentes - residentes_con_deuda) / total_residentes) * 100
+
+    return {
+        "mes": mes,
+        "anio": anio,
+        "total_ingresos": float(total_ingresos),
+        "total_reserva_mes": float(total_reserva_mes),
+        "total_gastos": float(total_gastos),
+        "balance_neto": float(total_ingresos - total_gastos),
+        "porcentaje_al_dia": round(porcentaje_al_dia, 2),
+        "total_residentes": total_residentes
+    }

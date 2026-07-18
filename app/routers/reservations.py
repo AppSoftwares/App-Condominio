@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
 from typing import List
 from datetime import datetime
 from app.core.database import get_session
 from app.core.security import get_current_user
+from app.core.limiter import limiter
 from app.models.entities import Reservation, Amenity, Resident, Announcement
 from pydantic import BaseModel
 
@@ -15,7 +16,8 @@ class ReservationCreate(BaseModel):
     duracion_horas: int = 2
 
 @router.post("/")
-def create_reservation(data: ReservationCreate, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
+@limiter.limit("5/minute")
+def create_reservation(request: Request, data: ReservationCreate, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
     amenity = session.get(Amenity, data.amenity_id)
     if not amenity:
         raise HTTPException(status_code=404, detail="Area común no encontrada")

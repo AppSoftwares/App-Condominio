@@ -27,10 +27,17 @@ DROP POLICY IF EXISTS "Profiles access" ON public.profiles;
 DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
 DROP POLICY IF EXISTS "Profiles admin access" ON public.profiles;
 
--- Allow owners to access their own profile (safe, no subselect)
-CREATE POLICY "Profiles owner access" ON public.profiles
-  FOR ALL
-  USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+
+CREATE POLICY "owner_update_no_privesc" ON public.profiles
+  FOR ALL TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id
+    AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+  );
 
 -- Allow admin users (evaluated via SECURITY DEFINER function) to access profiles
 CREATE POLICY "Profiles admin access" ON public.profiles

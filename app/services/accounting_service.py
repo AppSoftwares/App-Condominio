@@ -30,6 +30,9 @@ def process_payment(session: Session, residente_id: int, deuda_id: int, monto_en
     if not deuda or deuda.pagada:
         return None
 
+    if monto_entregado <= 0:
+        raise ValueError("El monto entregado debe ser positivo")
+
     # Lógica de descuento del 25% si es antes del día 5 (solo para cuotas mensuales específicas)
     # Aquí asumimos que el descuento se aplica si el pago ocurre en los primeros 5 días del mes
     hoy = datetime.utcnow()

@@ -14,7 +14,9 @@ from starlette.status import HTTP_401_UNAUTHORIZED
 from app.core.database import get_session
 from app.models.entities import ApiKey, Resident
 
-SECRET_KEY = os.getenv("SECRET_KEY", "cambiame_por_una_llave_segura_en_produccion")
+SECRET_KEY = os.environ["SECRET_KEY"]
+if len(SECRET_KEY) < 32:
+    raise RuntimeError("SECRET_KEY debe tener al menos 32 caracteres de entropia")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 90

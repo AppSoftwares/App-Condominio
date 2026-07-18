@@ -248,7 +248,10 @@ export const Guests: React.FC = () => {
         <h3 style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', marginBottom: '15px', textTransform: 'uppercase', letterSpacing: '1px' }}>Invitados Recientes</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
            {recentGuests.length === 0 ? (
-             <p style={{ fontSize: '13px', color: 'var(--text-sub)', textAlign: 'center' }}>No hay pases generados recientemente.</p>
+             <div style={{ textAlign: 'center', padding: '32px', backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px dashed var(--border-color)' }}>
+                <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', fontWeight: 600 }}>No has generado pases recientemente.</p>
+                <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: 'var(--text-sub)', opacity: 0.7 }}>Autoriza a tus visitas desde el formulario superior.</p>
+             </div>
            ) : recentGuests.map(g => (
              <GuestCard key={g.id} name={g.guest_name} status={g.status === 'active' ? 'Activo' : g.status} date={new Date(g.created_at).toLocaleDateString()} />
            ))}

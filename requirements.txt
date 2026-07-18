@@ -7,3 +7,4 @@ sqlalchemy
 alembic
 sentry-sdk
 pytest
+slowapi

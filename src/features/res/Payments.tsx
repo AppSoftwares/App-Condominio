@@ -15,6 +15,8 @@ import { useCurrencyStore } from '../../store/useCurrencyStore'
 import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
 import { sanitizeString } from '../../utils/security'
+import { Network } from '@capacitor/network'
+import { enqueueAction } from '../../lib/offlineQueue'
 
 const THEME = {
   colors: {
@@ -256,16 +258,33 @@ export const Payments: React.FC = () => {
       const cleanDescription = sanitizeString(`${description} ${selectedDescription}`.trim())
       const cleanSender = sanitizeString(senderName)
       const amountUSD = selectedDebtIds.length > 0 ? selectedDebtTotal : totalDebt
+      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
 
-      const { error: dbError } = await supabase.rpc('rpc_insert_payment', {
+      const payload = {
         monto_bs: amountUSD * bcvRate,
         monto_usd: amountUSD,
         referencia: cleanReference,
         banco_origen: cleanBank,
         evidencia_url: screenshotUrl,
         description: cleanDescription,
-        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
-        p_profile_id: authId
+        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds }
+      }
+
+      const netStatus = await Network.getStatus();
+      if (!netStatus.connected) {
+          await enqueueAction({
+              tipo: 'payment',
+              payload,
+              idempotencyKey
+          });
+          alert("¡Pago guardado offline! Se enviará automáticamente cuando recuperes la conexión.");
+          navigate('/dashboard');
+          return;
+      }
+
+      const { error: dbError } = await supabase.rpc('rpc_insert_payment', {
+        ...payload,
+        idempotency_key: idempotencyKey
       })
 
       if (dbError) throw dbError

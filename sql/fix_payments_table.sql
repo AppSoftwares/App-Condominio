@@ -66,7 +66,7 @@ BEGIN
 
 END $$;
 
--- 11. Re-crear la función RPC con endurecimiento de seguridad (search_path fijo)
+-- 11. Re-crear la función RPC con endurecimiento de seguridad (Sin p_profile_id)
 CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   monto_bs numeric,
   monto_usd numeric,
@@ -74,8 +74,7 @@ CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
   banco_origen text,
   evidencia_url text,
   description text,
-  details jsonb,
-  p_profile_id uuid DEFAULT auth.uid()
+  details jsonb
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public
 AS $$
@@ -88,7 +87,7 @@ BEGIN
   INSERT INTO public.payments(
     profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
   ) VALUES (
-    COALESCE(p_profile_id, auth.uid()), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
+    auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
   );
 END;
 $$;

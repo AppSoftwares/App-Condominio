@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel import Session, select
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import secrets
 from app.core.database import get_session
 from app.core.security import get_current_user
+from app.core.limiter import limiter
 from app.models.entities import GuestAccess, Resident
 from pydantic import BaseModel
 
@@ -16,7 +17,8 @@ class GuestCreate(BaseModel):
     fecha_visita: datetime
 
 @router.post("/")
-def create_guest_access(data: GuestCreate, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
+@limiter.limit("10/minute")
+def create_guest_access(request: Request, data: GuestCreate, current_user: Resident = Depends(get_current_user), session: Session = Depends(get_session)):
     # Generar un token único para el QR
     token = secrets.token_urlsafe(16)
 

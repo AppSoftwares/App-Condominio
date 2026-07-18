@@ -1,0 +1,40 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "back": "Volver"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "invalid_credentials": "Credenciales inválidas"
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "pending_debts": "Deudas Pendientes",
+    "all_clear": "¡Estás al día con tus pagos!",
+    "transparency": "Transparencia Financiera"
+  },
+  "payments": {
+    "title": "Pagos de Condominio",
+    "register": "Registrar Pago",
+    "success": "¡Pago registrado con éxito!",
+    "offline": "¡Pago guardado offline! Se enviará cuando recuperes conexión."
+  },
+  "transparency": {
+    "title": "Transparencia Financiera",
+    "income": "Ingresos del Mes",
+    "expenses": "Gastos del Mes",
+    "reserve": "Fondo de Reserva",
+    "residents_up_to_date": "Residentes al Día",
+    "balance": "Balance Operativo",
+    "footer_note": "* Datos actualizados al cierre del día anterior. La transparencia genera confianza."
+  },
+  "offline": {
+    "saved": "Registro guardado offline. Se sincronizará pronto.",
+    "syncing": "Sincronizando acciones pendientes..."
+  }
+}

@@ -9,10 +9,12 @@ import {
   MdOutlineInventory2,
   MdOutlineImage
 } from 'react-icons/md'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
 
 export const ResDash: React.FC = () => {
+  const { t } = useTranslation()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const [announcements, setAnnouncements] = React.useState<any[]>([])
@@ -95,7 +97,7 @@ export const ResDash: React.FC = () => {
           {/* Status Card */}
           <div style={{ ...cardStyle, textAlign: 'center' }}>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', letterSpacing: '1px' }}>Estado de Cuenta</span>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', letterSpacing: '1px' }}>{t('dashboard.pending_debts')}</span>
               <span style={{ backgroundColor: totalDebt > 0 ? '#ba1a1a' : 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>
                 {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
               </span>
@@ -104,7 +106,9 @@ export const ResDash: React.FC = () => {
               <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>
                 ${totalDebt.toFixed(2)}
               </h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-sub)', fontWeight: 600 }}>Saldo actual a pagar</p>
+              <p style={{ fontSize: '13px', color: totalDebt > 0 ? 'var(--text-sub)' : 'var(--success-color)', fontWeight: 600 }}>
+                {totalDebt > 0 ? 'Saldo actual a pagar' : '¡Excelente! No tienes deudas pendientes.'}
+              </p>
             </div>
             <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>
               {totalDebt > 0 ? 'Pagar Ahora' : 'Ver Detalles'}

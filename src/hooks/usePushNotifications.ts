@@ -36,6 +36,16 @@ export const usePushNotifications = (userId: string | undefined) => {
       await PushNotifications.addListener('registrationError', (err) => {
         console.error('Error en registro Push:', err.error);
       });
+
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('Push recibida:', notification);
+        // Podríamos disparar una notificación local o actualizar un estado global
+      });
+
+      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('Push acción realizada:', notification.actionId);
+        // Redirigir según el tipo de notificación
+      });
     } catch (error) {
       console.warn('Capacitor Push Notifications no disponibles en este entorno');
     }

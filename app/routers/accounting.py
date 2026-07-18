@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Response, File, UploadFile, Request
 from sqlmodel import Session, select
 from app.core.database import get_session
 from app.core.security import get_current_admin, get_current_user
 from app.services.accounting_service import create_massive_debt, process_payment, migrate_historical_debt
 from app.services.notification_service import send_push_to_section
 from app.services.report_service import generate_individual_debt_pdf
+from app.core.limiter import limiter
 from app.models.entities import Debt, Resident
 from pydantic import BaseModel
 from typing import List
@@ -37,7 +38,8 @@ def generate_massive_debt(
     return {"message": f"Deuda generada y notificada a {count} residentes."}
 
 @router.post("/pay")
-def pay_debt(data: PaymentRequest, session: Session = Depends(get_session)):
+@limiter.limit("10/minute")
+def pay_debt(request: Request, data: PaymentRequest, session: Session = Depends(get_session)):
     payment = process_payment(session, data.residente_id, data.deuda_id, data.monto_entregado)
     if not payment:
         raise HTTPException(status_code=400, detail="Error procesando el pago o deuda ya pagada.")
