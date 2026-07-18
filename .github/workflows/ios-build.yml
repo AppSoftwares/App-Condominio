@@ -60,7 +60,7 @@ jobs:
 
       - name: Prepare Android Artifact
         run: |
-          mv android/app/build/outputs/apk/release/CaminosApp-v2.2.5.apk "CaminosApp v2.2.5.apk"
+          mv android/app/build/outputs/apk/release/CaminosApp-v2.2.6.apk "CaminosApp v2.2.6.apk"
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -88,21 +88,25 @@ jobs:
           fi
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
-          zip -rq "CaminosApp v2.2.5.ipa" Payload
+          zip -rq "CaminosApp v2.2.6.ipa" Payload
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.2.5
-          name: "CaminosApp v2.2.5"
+          tag_name: v2.2.6
+          name: "CaminosApp v2.2.6"
           files: |
             *.ipa
             *.apk
           body: |
-            Actualización CaminosApp v2.2.5
-            - Estabilidad mejorada al iniciar sesión.
-            - Corrección de pantalla en blanco al reanudar la app en iOS.
-            - Carga de perfil optimizada y persistencia local.
+            Actualización CaminosApp v2.2.6
+            - Cierre de Sesión: Mayor fiabilidad con limpieza forzada de estado local.
+            - Soporte: Nueva dirección de correo desarollodeappcondominio@gmail.com.
+            - Quejas: Generación automática de comprobante en PDF al enviar una incidencia.
+            - UX: Campo de número de casa optimizado con teclado numérico/tel (soporta guiones).
+            - Admin: Restricción de gestión de conjuntos solo para Super Admin.
+            - Visualización: Apertura corregida de comprobantes PDF en panel admin.
+            - Diseño: Pantalla de inicio adaptable a todos los tamaños de pantalla Android.
           draft: false
           prerelease: false
         env:

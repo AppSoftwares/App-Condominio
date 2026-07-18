@@ -1,7 +1,7 @@
 {
-  "versionCode": 25,
-  "versionName": "2.2.5",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.5",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.5/CaminosApp%20v2.2.5.apk",
-  "releaseNotes": "Actualización v2.2.5"
+  "versionCode": 26,
+  "versionName": "2.2.6",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.6",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.6/CaminosApp%20v2.2.6.apk",
+  "releaseNotes": "v2.2.6: Mejoras en cierre de sesión, reportes PDF de quejas, teclado optimizado y restricciones de seguridad para Super Admin."
 }
