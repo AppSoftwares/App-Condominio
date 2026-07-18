@@ -77,8 +77,13 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       signOut: async () => {
-        await supabase.auth.signOut()
-        set({ user: null })
+        try {
+          await supabase.auth.signOut()
+        } catch (err) {
+          console.error('Error during Supabase signOut:', err)
+        } finally {
+          set({ user: null })
+        }
       },
       sync: async () => {
         const timeoutId = setTimeout(() => {

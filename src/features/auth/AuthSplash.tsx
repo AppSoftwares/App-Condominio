@@ -11,18 +11,18 @@ export const AuthSplash: React.FC = () => {
 
   return (
     <div style={{
-      height: '100vh',
+      minHeight: '100vh',
       width: '100%',
       backgroundColor: 'var(--bg-color)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 'calc(40px + env(safe-area-inset-top)) 24px calc(40px + env(safe-area-inset-bottom))',
+      justifyContent: 'center',
+      padding: 'calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))',
       boxSizing: 'border-box',
       fontFamily: "'Inter', sans-serif",
       position: 'relative',
-      overflow: 'hidden'
+      overflowY: 'auto'
     }}>
       {/* Background elements to fill space gracefully */}
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'rgba(18, 184, 163, 0.05)', zIndex: 0 }}></div>

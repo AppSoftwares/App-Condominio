@@ -20,8 +20,11 @@ export const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleLogout = async () => {
-    await signOut()
-    navigate('/')
+    try {
+      await signOut()
+    } finally {
+      navigate('/', { replace: true })
+    }
   }
 
   const handleEditAvatar = () => {

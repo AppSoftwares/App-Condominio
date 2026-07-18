@@ -218,6 +218,7 @@ export const Register: React.FC = () => {
             <label style={labelStyle}>Número de Casa</label>
             <input
               type="text"
+              inputMode="tel"
               value={house}
               onChange={e => setHouse(e.target.value)}
               placeholder="Ej: 14-02"

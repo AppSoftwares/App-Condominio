@@ -78,7 +78,7 @@ export const Login: React.FC = () => {
         if (profileError) throw profileError
 
         if (!profile) {
-          throw new Error('No se encontró un perfil asociado a este usuario.')
+          throw new Error('Su usuario de autenticación es válido, pero no tiene un perfil de residente creado. Por favor, regístrese nuevamente o contacte a soporte.')
         }
 
         setUser({

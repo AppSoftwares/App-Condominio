@@ -108,7 +108,10 @@ export const Admin: React.FC = () => {
 
   useEffect(() => {
     fetchData()
-  }, [])
+    if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
+      setSelectedCluster(user.residential_cluster)
+    }
+  }, [user])
 
   const fetchData = async () => {
     setLoading(true)
@@ -688,22 +691,24 @@ export const Admin: React.FC = () => {
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Gestión de Usuarios</h3>
 
-                <div style={{ marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
-                  <label style={labelStyle}>CONJUNTO SELECCIONADO PARA ACCIONES</label>
-                  <select
-                    value={selectedCluster}
-                    onChange={e => setSelectedCluster(e.target.value)}
-                    style={{ ...inputStyle, padding: '12px' }}
-                  >
-                    {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
-                      <optgroup key={etapa} label={etapa}>
-                        {conjuntos.map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
+                {user?.email?.toLowerCase().trim() === 'admin@caminos.com' && (
+                  <div style={{ marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
+                    <label style={labelStyle}>CONJUNTO SELECCIONADO PARA ACCIONES (SUPERADMIN)</label>
+                    <select
+                      value={selectedCluster}
+                      onChange={e => setSelectedCluster(e.target.value)}
+                      style={{ ...inputStyle, padding: '12px' }}
+                    >
+                      {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
+                        <optgroup key={etapa} label={etapa}>
+                          {conjuntos.map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                   <button onClick={addUser} style={primaryBtnStyleSmall}>
@@ -839,7 +844,14 @@ export const Admin: React.FC = () => {
                               <div style={{ animation: 'fadeIn 0.3s ease' }}>
                                  {(p.screenshot_url || p.evidencia_url).toLowerCase().endsWith('.pdf') ? (
                                     <div
-                                       onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
+                                       onClick={() => {
+                                          const url = p.screenshot_url || p.evidencia_url;
+                                          const link = document.createElement('a');
+                                          link.href = url;
+                                          link.target = '_blank';
+                                          link.rel = 'noopener noreferrer';
+                                          link.click();
+                                       }}
                                        style={{ padding: '20px', backgroundColor: '#fde8e8', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer', border: '1px solid #f8b4b4' }}
                                     >
                                        <span className="material-symbols-outlined" style={{ color: '#c82333', fontSize: '32px' }}>picture_as_pdf</span>
@@ -853,7 +865,14 @@ export const Admin: React.FC = () => {
                                        src={p.screenshot_url || p.evidencia_url}
                                        alt="Comprobante"
                                        style={{ width: '100%', borderRadius: '12px', cursor: 'pointer', border: '1px solid var(--border-color)' }}
-                                       onClick={() => window.open(p.screenshot_url || p.evidencia_url, '_blank')}
+                                       onClick={() => {
+                                          const url = p.screenshot_url || p.evidencia_url;
+                                          const link = document.createElement('a');
+                                          link.href = url;
+                                          link.target = '_blank';
+                                          link.rel = 'noopener noreferrer';
+                                          link.click();
+                                       }}
                                     />
                                  )}
                               </div>

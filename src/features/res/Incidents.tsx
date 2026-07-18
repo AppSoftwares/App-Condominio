@@ -112,6 +112,21 @@ export const Incidents: React.FC = () => {
       const authId = sessionData?.session?.user?.id ?? user?.id ?? sessionUserId
       if (!authId) throw new Error('No se detectó una sesión activa. Por favor inicie sesión nuevamente.')
 
+      // Generate a PDF of the complaint before sending (or after success)
+      const generateComplaintReceipt = () => {
+        const doc = new jsPDF()
+        doc.setFontSize(20)
+        doc.text("Reporte de Incidencia / Queja", 105, 20, { align: 'center' })
+        doc.setFontSize(12)
+        doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 40)
+        doc.text(`Categoría: ${category}`, 20, 60)
+        doc.text(`Ubicación (Casa): ${location}`, 20, 80)
+        doc.text("Descripción:", 20, 100)
+        const splitText = doc.splitTextToSize(description, 170)
+        doc.text(splitText, 20, 110)
+        doc.save(`Reporte_Queja_${Date.now()}.pdf`)
+      }
+
       const { error } = await supabase.rpc('rpc_insert_incident', {
         category: category,
         location: sanitizeString(location),
@@ -131,6 +146,7 @@ export const Incidents: React.FC = () => {
       })
 
       alert('Reporte enviado con éxito. La administración revisará su caso.')
+      try { generateComplaintReceipt() } catch(e) { console.error('Error generating PDF:', e) }
       setLocation('')
       setDescription('')
       setActiveTab('report')
@@ -233,6 +249,7 @@ export const Incidents: React.FC = () => {
                 <label style={labelStyle}>Número de Casa</label>
                 <input
                   type="text"
+                  inputMode="tel"
                   placeholder="Ej: 14-73"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}

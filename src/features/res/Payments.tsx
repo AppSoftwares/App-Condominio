@@ -224,11 +224,16 @@ export const Payments: React.FC = () => {
         const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`
         const filePath = `payments/${fileName}`
 
+        console.log('Iniciando subida de comprobante...')
         const { error: uploadError } = await supabase.storage
           .from('payment-captures')
           .upload(filePath, fileAttached)
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error('Error subiendo comprobante:', uploadError)
+          throw uploadError
+        }
+        console.log('Comprobante subido con éxito.')
 
         const { data: { publicUrl } } = supabase.storage
           .from('payment-captures')

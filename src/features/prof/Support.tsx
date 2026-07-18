@@ -12,7 +12,7 @@ export const Support: React.FC = () => {
     setLoading(true)
 
     const subject = type === 'feedback' ? 'Comentario de la App' : 'Reclamo de la App';
-    const mailtoUrl = `mailto:Jess.pirela@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    const mailtoUrl = `mailto:desarollodeappcondominio@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
 
     window.location.href = mailtoUrl;
 
