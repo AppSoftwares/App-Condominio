@@ -1,11 +1,11 @@
-# Task List - Combined Stability and Layout Fixes
+# Task List - UI Refinement and Crash Fix
 
-- `[/]` Auth and Stability Fixes
-    - `[ ]` Update `useAuthStore.ts` (AuthReady guarantee)
-    - `[ ]` Update `Login.tsx` (Sign out on error, better messages)
-    - `[ ]` Update `Admin.tsx` (Convert Excel IDs to strings)
-- `[ ]` iOS Layout and Navigation
-    - `[ ]` Update `Layout.tsx` (Add Votos to bottom bar, safe area adjustments)
-    - `[ ]` Update `Admin.tsx` (Safe area top padding)
-    - `[ ]` Update `Payroll.tsx` (Safe area top padding)
-- `[ ]` Final Build and Sync
+- `[ ]` Admin UI Cleanup
+    - `[ ]` Remove contextual tabs in `Admin.tsx`
+    - `[ ]` Fix declaration order in `Admin.tsx`
+- `[ ]` Android Crash Prevention
+    - `[ ]` Update `Login.tsx` profile check logic
+- `[ ]` Layout Stability
+    - `[ ]` Adjust container styles in `Admin.tsx`
+    - `[ ]` Adjust container styles in `Payroll.tsx`
+- `[ ]` Build and Sync

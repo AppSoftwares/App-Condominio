@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { formatBs, formatUSD } from '../../utils/currency'
@@ -106,7 +106,7 @@ export const Admin: React.FC = () => {
   const [isGastoModalOpen, setIsGastoModalOpen] = useState(false)
   const [newGasto, setNewGasto] = useState({ concepto: '', monto_bs: '', type: 'ordinario' as 'ordinario' | 'sobrevenido' })
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       // Fetch Users
@@ -148,14 +148,14 @@ export const Admin: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchData()
     if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
       setSelectedCluster(user.residential_cluster)
     }
-  }, [user])
+  }, [user, fetchData])
 
   const approveUser = async (userId: string) => {
     try {
@@ -542,17 +542,9 @@ export const Admin: React.FC = () => {
       alignItems: 'center',
       paddingBottom: '40px',
       paddingTop: 'calc(20px + env(safe-area-inset-top))',
-      minHeight: '100vh',
+      width: '100%',
       boxSizing: 'border-box'
     }}>
-
-      {/* Tabs Selector Contextual */}
-      {(activeTab === 'finance' || activeTab === 'polls') && (
-        <div style={{ display: 'flex', width: '100%', gap: '10px', padding: '0 20px 25px', marginBottom: '10px', justifyContent: 'center', position: 'sticky', top: 'env(safe-area-inset-top)', zIndex: 50 }}>
-          <TabItem active={activeTab === 'finance'} label="Finanzas" icon="finance" onClick={() => handleTabChange('finance')} />
-          <TabItem active={activeTab === 'polls'} label="Votos" icon="how_to_vote" onClick={() => handleTabChange('polls')} />
-        </div>
-      )}
 
       <main style={mainContentStyle}>
 

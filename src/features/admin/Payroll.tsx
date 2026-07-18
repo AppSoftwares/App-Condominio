@@ -228,7 +228,6 @@ export const Payroll: React.FC = () => {
       transition: 'all 0.3s ease',
       paddingBottom: '40px',
       paddingTop: 'calc(20px + env(safe-area-inset-top))',
-      minHeight: '100vh',
       width: '100%',
       boxSizing: 'border-box'
     }}>

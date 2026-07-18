@@ -79,7 +79,9 @@ export const Login: React.FC = () => {
 
         if (!profile) {
           await supabase.auth.signOut()
-          throw new Error(`Cuenta sin perfil: El usuario (${data.user.email}) existe pero no tiene un perfil vinculado. Por favor, regístrese nuevamente o contacte a soporte.`)
+          alert(`Cuenta sin perfil: El usuario (${data.user.email}) existe pero no tiene un perfil vinculado. Por favor, regístrese nuevamente o contacte a soporte.`)
+          setLoading(false)
+          return
         }
 
         setUser({
