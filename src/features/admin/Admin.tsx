@@ -106,13 +106,6 @@ export const Admin: React.FC = () => {
   const [isGastoModalOpen, setIsGastoModalOpen] = useState(false)
   const [newGasto, setNewGasto] = useState({ concepto: '', monto_bs: '', type: 'ordinario' as 'ordinario' | 'sobrevenido' })
 
-  useEffect(() => {
-    fetchData()
-    if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
-      setSelectedCluster(user.residential_cluster)
-    }
-  }, [user, fetchData])
-
   const fetchData = async () => {
     setLoading(true)
     try {
@@ -156,6 +149,13 @@ export const Admin: React.FC = () => {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchData()
+    if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
+      setSelectedCluster(user.residential_cluster)
+    }
+  }, [user])
 
   const approveUser = async (userId: string) => {
     try {
