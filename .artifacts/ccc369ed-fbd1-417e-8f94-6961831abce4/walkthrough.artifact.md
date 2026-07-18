@@ -1,35 +1,29 @@
-# Walkthrough - Bug Fixes and Improvements
+# Walkthrough - Stability and iOS Layout Fixes
 
-I have completed all the requested fixes and improvements. Below is a summary of the changes:
+I have implemented a series of stability and layout fixes to address Android crashes and iOS display issues.
 
 ## Changes Made
 
-### 🔐 Authentication & Session
-- **Logout Fix**: Improved `signOut` in [useAuthStore.ts](file:///C:/Users/admin/Documents/CaminosApp/src/store/useAuthStore.ts) and [Profile.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/prof/Profile.tsx) to ensure users are always redirected to the start screen, even if the network call fails.
-- **Login Guidance**: Updated the error message in [Login.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/Login.tsx) when a profile is missing, guiding users to re-register or contact support.
+### 🛡️ Stability & Auth (Android Fixes)
+- **State Guarantee**: Updated [useAuthStore.ts](file:///C:/Users/admin/Documents/CaminosApp/src/store/useAuthStore.ts) to ensure the `authReady` state is always set to `true`, even if a profile is missing or an error occurs. This prevents the app from hanging on the splash screen.
+- **Login Safety**: Updated [Login.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/Login.tsx) to automatically sign out if a profile is not found. This clears the "broken" session and prevents background sync errors that were causing crashes.
+- **Data Integrity**: Modified [Admin.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/admin/Admin.tsx) to ensure user IDs are always strings when importing from Excel, avoiding potential type-related crashes in native plugins.
 
-### 📧 Support & Reports
-- **Support Email**: Changed the recipient address to `desarollodeappcondominio@gmail.com` in [Support.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/prof/Support.tsx).
-- **Complaint PDF**: Added automatic PDF receipt generation in [Incidents.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/res/Incidents.tsx) when a complaint is submitted.
+### 📱 iOS Layout & Safe Areas
+- **Safe Area Support**: Added `env(safe-area-inset-top)` to the top padding of Admin and Payroll screens. This ensures titles like "Relación Mensual" are properly visible below the iPhone notch and status bar.
+- **Sticky Tabs**: Improved the sub-tab bar visibility in [Admin.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/admin/Admin.tsx) by making it sticky and respecting the safe area.
+- **Scroll Fix**: Updated layout containers to use `minHeight: 100vh` instead of fixed `height`, which resolves the "jumping" or "circular" movement issue on mobile browsers.
 
-### ⌨️ UI & UX Improvements
-- **House Number Input**: Updated the keyboard to `inputMode="tel"` in [Incidents.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/res/Incidents.tsx) and [Register.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/Register.tsx). This allows typing numbers and hyphens (like "14-28") more easily on mobile devices.
-- **Responsive Splash**: Adjusted the splash screen in [AuthSplash.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/AuthSplash.tsx) to be scrollable and use `min-height`, ensuring it looks correct on all Android screen sizes.
-
-### 💳 Payments
-- **Processing Feedback**: Added detailed logging to the payment registration process in [Payments.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/res/Payments.tsx) to help identify issues if it gets stuck.
-
-### 🛠️ Admin Tools
-- **Cluster Restriction**: The residential cluster dropdown in [Admin.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/admin/Admin.tsx) is now restricted to the **Super Admin** (`admin@caminos.com`). Regular admins are locked to their assigned cluster.
-- **PDF Viewer**: Fixed the "does nothing" issue when opening PDFs as an admin by using a more robust link-based opening method.
+### 🗳️ Navigation Enhancement
+- **Direct Votos Access**: Added a dedicated **"Votos"** icon to the bottom navigation bar for Admins in [Layout.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/layouts/Main.tsx). This provides a clear, reachable path to the voting section without relying on the small sub-tabs at the top.
 
 ## Verification
-- Code review performed on all modified files.
-- Verified that `inputMode="tel"` is the standard approach for numeric + hyphen inputs on mobile.
-- Verified that `try-finally` blocks in Auth store ensure state consistency.
+- Verified code logic for safe area detection.
+- Verified that all auth paths lead to `authReady: true`.
+- Verified that sign-out is triggered correctly on missing profiles.
 
 > [!TIP]
-> If users still have trouble logging in, please verify they have a record in the `profiles` table in Supabase.
+> The new "Votos" icon in the bottom bar will only appear for users with the `admin` or `superadmin` role.
 
-> [!IMPORTANT]
-> The PDF generation for complaints requires the `jspdf` library, which was already being used in the project.
+> [!NOTE]
+> For the changes to take effect on physical devices, you must run the build and sync commands.

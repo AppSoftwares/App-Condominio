@@ -149,10 +149,15 @@ export const useAuthStore = create<AuthState>()(
 
               if (profile) {
                 set({ user: profile as UserProfile, authReady: true })
+              } else {
+                set({ authReady: true })
               }
             } catch (err) {
               console.warn('Error refreshing profile on auth change:', err)
+              set({ authReady: true })
             }
+          } else {
+            set({ authReady: true })
           }
         })
 

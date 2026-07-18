@@ -78,7 +78,8 @@ export const Login: React.FC = () => {
         if (profileError) throw profileError
 
         if (!profile) {
-          throw new Error('Su usuario de autenticación es válido, pero no tiene un perfil de residente creado. Por favor, regístrese nuevamente o contacte a soporte.')
+          await supabase.auth.signOut()
+          throw new Error(`Cuenta sin perfil: El usuario (${data.user.email}) existe pero no tiene un perfil vinculado. Por favor, regístrese nuevamente o contacte a soporte.`)
         }
 
         setUser({

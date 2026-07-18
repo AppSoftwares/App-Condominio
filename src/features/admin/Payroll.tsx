@@ -219,7 +219,19 @@ export const Payroll: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', paddingBottom: '40px', height: '100%', width: '100%' }}>
+    <div style={{
+      backgroundColor: 'var(--bg-color)',
+      color: 'var(--text-color)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      transition: 'all 0.3s ease',
+      paddingBottom: '40px',
+      paddingTop: 'calc(20px + env(safe-area-inset-top))',
+      minHeight: '100vh',
+      width: '100%',
+      boxSizing: 'border-box'
+    }}>
 
       <header style={{ width: '100%', padding: '20px 0', borderBottom: '1px solid var(--border-color)', marginBottom: '30px', display: 'flex', justifyContent: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

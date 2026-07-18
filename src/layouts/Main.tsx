@@ -153,6 +153,11 @@ export const Layout: React.FC = () => {
               onClick={() => navigate('/admin?tab=payments')}
             />
             <NavIcon
+              icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'polls' ? MdHowToVote : MdOutlineHowToVote}
+              active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'polls'}
+              onClick={() => navigate('/admin?tab=polls')}
+            />
+            <NavIcon
               icon={location.pathname === '/admin/payroll' ? MdPayments : MdOutlinePayments}
               active={location.pathname === '/admin/payroll'}
               onClick={() => navigate('/admin/payroll')}

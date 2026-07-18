@@ -111,7 +111,7 @@ export const Admin: React.FC = () => {
     if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
       setSelectedCluster(user.residential_cluster)
     }
-  }, [user])
+  }, [user, fetchData])
 
   const fetchData = async () => {
     setLoading(true)
@@ -432,7 +432,7 @@ export const Admin: React.FC = () => {
         const rawData: any[] = XLSX.utils.sheet_to_json(ws, { range: 3 });
 
         const mappedUsers = rawData.map((row: any, index: number) => ({
-          id: Date.now() + index,
+          id: (Date.now() + index).toString(),
           name: `${row['NOMBRE'] || ''} ${row['APELLIDO'] || ''}`.trim(),
           email: (row['CORREO'] || '').toLowerCase().trim(),
           role: row['USUARIO'] === 'ADMINISTRADOR' ? 'Administrador' : 'Residente',
@@ -534,11 +534,21 @@ export const Admin: React.FC = () => {
   }
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '40px', paddingTop: '20px' }}>
+    <div style={{
+      backgroundColor: 'var(--bg-color)',
+      color: 'var(--text-color)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      paddingBottom: '40px',
+      paddingTop: 'calc(20px + env(safe-area-inset-top))',
+      minHeight: '100vh',
+      boxSizing: 'border-box'
+    }}>
 
       {/* Tabs Selector Contextual */}
       {(activeTab === 'finance' || activeTab === 'polls') && (
-        <div style={{ display: 'flex', width: '100%', gap: '10px', padding: '0 20px 25px', marginBottom: '10px', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', width: '100%', gap: '10px', padding: '0 20px 25px', marginBottom: '10px', justifyContent: 'center', position: 'sticky', top: 'env(safe-area-inset-top)', zIndex: 50 }}>
           <TabItem active={activeTab === 'finance'} label="Finanzas" icon="finance" onClick={() => handleTabChange('finance')} />
           <TabItem active={activeTab === 'polls'} label="Votos" icon="how_to_vote" onClick={() => handleTabChange('polls')} />
         </div>
