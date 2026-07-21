@@ -29,6 +29,9 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
+      - name: Check Java Version
+        run: java -version
+
       - name: Install dependencies
         run: npm install --include=optional
 
@@ -58,7 +61,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace --info
 
       - name: Prepare Android Artifact
         run: |
