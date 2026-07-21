@@ -52,7 +52,6 @@ jobs:
           npx @capacitor/assets generate --iconBackgroundColor '#0f5551' --iconBackgroundColorDark '#0f5551'
           find android/app/src/main/res -name "*.webp" -delete || true
           rm -rf ios/App/CapApp-SPM
-          grep -v "CapApp-SPM" ios/App/App.xcodeproj/project.pbxproj > temp && mv temp ios/App/App.xcodeproj/project.pbxproj
 
       - name: Capacitor Sync
         run: npx cap sync ios
