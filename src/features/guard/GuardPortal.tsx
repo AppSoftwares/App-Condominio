@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { MdCheckCircle, MdCancel, MdInfo, MdInventory, MdQrCodeScanner } from 'react-icons/md'
 import { Network } from '@capacitor/network'
 import { enqueueAction } from '../../lib/offlineQueue'
+import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning'
 
 export const GuardPortal: React.FC = () => {
   const navigate = useNavigate()
@@ -34,6 +35,32 @@ export const GuardPortal: React.FC = () => {
       .eq('role', 'resident')
     if (data) setResidents(data)
   }
+
+  const startRealScan = async () => {
+    try {
+        const { camera } = await BarcodeScanner.requestPermissions()
+        if (camera !== 'granted') {
+            alert('Se necesita permiso de cámara para escanear')
+            setIsScanning(false)
+            return
+        }
+        const { barcodes } = await BarcodeScanner.scan()
+        if (barcodes.length > 0 && barcodes[0].rawValue) {
+            handleScan(barcodes[0].rawValue)
+        } else {
+            setIsScanning(false)
+        }
+    } catch (err) {
+        console.error('Error scanning:', err)
+        setIsScanning(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isScanning) {
+        startRealScan()
+    }
+  }, [isScanning])
 
   const handleScan = async (qrContent: string) => {
     setLoading(true)
@@ -131,13 +158,16 @@ export const GuardPortal: React.FC = () => {
             <p style={{ color: 'white', fontWeight: 'bold', fontSize: '18px', marginBottom: '40px', textAlign: 'center' }}>
               {scanType === 'access' ? 'APUNTE AL QR DE ACCESO' : 'APUNTE AL QR DEL RESIDENTE'}
             </p>
-            <input
-              type="text"
-              placeholder="Ingresar ID QR (Simulación)"
-              style={{ ...inputStyle, marginBottom: '20px', textAlign: 'center' }}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleScan(e.currentTarget.value) }}
-            />
-            <button onClick={() => setIsScanning(false)} style={{ color: 'white', opacity: 0.7 }}>Cancelar</button>
+            <div style={{ width: '100%', maxWidth: '300px' }}>
+                <label style={{ color: 'white', fontSize: '11px', fontWeight: 800, marginBottom: '10px', display: 'block' }}>INGRESAR ID MANUALMENTE (RESPALDO)</label>
+                <input
+                    type="text"
+                    placeholder="Escribir código..."
+                    style={{ ...inputStyle, marginBottom: '20px', textAlign: 'center', backgroundColor: '#222', color: 'white', border: '1px solid #444' }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleScan(e.currentTarget.value) }}
+                />
+            </div>
+            <button onClick={() => setIsScanning(false)} style={{ color: 'white', opacity: 0.7, padding: '10px' }}>Cancelar Escaneo</button>
           </>
         ) : (
           <div style={{ backgroundColor: 'white', borderRadius: '28px', padding: '32px', width: '100%', maxWidth: '350px', textAlign: 'center' }}>

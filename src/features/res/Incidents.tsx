@@ -9,14 +9,12 @@ import {
 } from 'react-icons/md'
 import { jsPDF } from 'jspdf'
 import { useAuthStore } from '../../store/useAuthStore'
-import { useCommunityStore, Incident } from '../../store/useCommunityStore'
 import { sanitizeString } from '../../utils/security'
 import { supabase } from '../../lib/supabase'
 
 export const Incidents: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { incidents, addIncident } = useCommunityStore()
 
   const [activeTab, setActiveTab] = useState<'rules' | 'report'>('rules')
   const [category, setCategory] = useState('Ruidos / Música')
@@ -24,6 +22,21 @@ export const Incidents: React.FC = () => {
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+  const [myIncidents, setMyIncidents] = useState<any[]>([])
+
+  useEffect(() => {
+    fetchMyIncidents()
+  }, [user?.id])
+
+  const fetchMyIncidents = async () => {
+    if (!user?.id) return
+    const { data } = await supabase
+        .from('incidents')
+        .select('*')
+        .eq('profile_id', user.id)
+        .order('created_at', { ascending: false })
+    if (data) setMyIncidents(data)
+  }
 
   const handleDownloadManual = () => {
     const doc = new jsPDF({ unit: 'pt', format: 'a4' })
@@ -135,20 +148,11 @@ export const Incidents: React.FC = () => {
 
       if (error) throw error
 
-      addIncident({
-        id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `inc-${Date.now()}`,
-        category,
-        location,
-        description,
-        date: new Date().toLocaleDateString('es-VE'),
-        status: 'Pendiente',
-        houseNumber: location
-      })
-
       alert('Reporte enviado con éxito. La administración revisará su caso.')
       try { generateComplaintReceipt() } catch(e) { console.error('Error generating PDF:', e) }
       setLocation('')
       setDescription('')
+      fetchMyIncidents()
       setActiveTab('report')
     } catch (err: any) {
       alert('Error al enviar incidencia: ' + (err.message || 'Error desconocido'))
@@ -287,19 +291,20 @@ export const Incidents: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {incidents.length === 0 ? (
+              {myIncidents.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px dashed var(--border-color)' }}>
-                   <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', fontWeight: 600 }}>No hay alertas recientes reportadas.</p>
-                   <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: 'var(--text-sub)', opacity: 0.7 }}>Mantén informada a la comunidad reportando incidencias.</p>
+                   <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-sub)', fontWeight: 600 }}>No has reportado incidentes aún.</p>
+                   <p style={{ margin: '5px 0 0 0', fontSize: '12px', color: 'var(--text-sub)', opacity: 0.7 }}>Usa el formulario para enviar una queja o reporte.</p>
                 </div>
-              ) : incidents.map(inc => (
+              ) : myIncidents.map(inc => (
                 <div key={inc.id} style={incidentCardStyle}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={incTagStyle}>{inc.category}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{inc.date}</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(inc.created_at).toLocaleDateString()}</span>
                   </div>
                   <h4 style={{ margin: '0 0 5px 0', fontSize: '15px', fontWeight: 700 }}>{inc.location}</h4>
                   <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-sub)', fontStyle: 'italic' }}>"{inc.description}"</p>
+                  <p style={{ margin: '5px 0 0 0', fontSize: '11px', fontWeight: 800, color: 'var(--primary-color)' }}>ESTADO: {inc.status}</p>
                 </div>
               ))}
             </div>

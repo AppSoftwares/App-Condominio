@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md'
+import { supabase } from '../../lib/supabase'
 
 export const Account: React.FC = () => {
   const navigate = useNavigate()
@@ -17,26 +18,53 @@ export const Account: React.FC = () => {
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const handleUpdateEmail = (e: React.FormEvent) => {
+  const handleUpdateEmail = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (email === user?.email) return alert("Ingresa un correo distinto al actual")
+
     setLoading(true)
-    setTimeout(() => {
-      alert("Correo actualizado con éxito (Simulación)")
+    try {
+      const { error } = await supabase.auth.updateUser({ email })
+      if (error) throw error
+      alert("Se ha enviado un enlace de confirmación a tu nuevo correo. Revisa tu bandeja de entrada.")
+    } catch (err: any) {
+      alert("Error al actualizar correo: " + (err.message || "Error desconocido"))
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (newPassword.length < 8) return alert("La nueva contraseña debe tener al menos 8 caracteres")
     if (newPassword !== confirmPassword) return alert("Las contraseñas no coinciden")
+
     setLoading(true)
-    setTimeout(() => {
-      alert("Contraseña cambiada con éxito (Simulación)")
+    try {
+      // Reautenticar con la contraseña actual antes de permitir el cambio
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      })
+
+      if (reauthError) {
+        alert("La contraseña actual es incorrecta")
+        setLoading(false)
+        return
+      }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+
+      alert("Contraseña actualizada con éxito")
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+    } catch (err: any) {
+      alert("Error al actualizar contraseña: " + (err.message || "Error desconocido"))
+    } finally {
       setLoading(false)
-    }, 1000)
+    }
   }
 
   return (

@@ -1,6 +1,16 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
+import api from '../../lib/api'
+import { Device } from '@capacitor/device'
+import {
+  isBiometricEnabled,
+  isBiometricAvailable,
+  enableBiometric,
+  disableBiometric
+} from '../../lib/biometrics'
+import { TwoFactorSetup } from './TwoFactorSetup'
 
 export const Privacy: React.FC = () => {
   const navigate = useNavigate()
@@ -13,22 +23,13 @@ export const Privacy: React.FC = () => {
   const [platesVisible, setPlatesVisible] = useState(false)
   const [biometrics, setBiometrics] = useState(false)
   const [twoFactor, setTwoFactor] = useState(false)
-
-  // Permissions State
-  const [permissions, setPermissions] = useState({ camera: true, notifications: true, gps: true })
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false)
-
-  // Auto-delete State
-  const [autoDeleteDays, setAutoDeleteDays] = useState(30)
-  const [showAutoDeleteModal, setShowAutoDeleteModal] = useState(false)
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false)
 
   // Devices State
   const [showDevicesModal, setShowDevicesModal] = useState(false)
-  const [devices, setDevices] = useState([
-    { id: 1, name: 'iPhone 15 Pro (Este dispositivo)', location: 'Caracas, VZ', date: 'Activo ahora', current: true },
-    { id: 2, name: 'Samsung Galaxy S23', location: 'Miranda, VZ', date: 'Hace 2 días', current: false },
-    { id: 3, name: 'MacBook Air 13"', location: 'Caracas, VZ', date: 'Hace 5 horas', current: false }
-  ])
+  const [devices, setDevices] = useState<any[]>([])
+  const [currentDeviceId, setCurrentDeviceId] = useState<string>('')
+  const [loadingDevices, setLoadingDevices] = useState(false)
 
   // Admin State
   const [directoryDefault, setProfileDefault] = useState(false)
@@ -36,22 +37,113 @@ export const Privacy: React.FC = () => {
   const [mfaMandatory, setMfaMandatory] = useState(true)
 
   // API Key State
-  const [apiKeys, setApiKeys] = useState<{id: number, name: string, date: string}[]>([])
+  const [apiKeys, setApiKeys] = useState<{id: string, name: string, date: string}[]>([])
   const [newKeyName, setNewKeyName] = useState('')
   const [showKeyModal, setShowKeyModal] = useState(false)
   const [currentKey, setCurrentKey] = useState<string | null>(null)
 
-  const handleGenerateKey = () => {
-    if (!newKeyName) return alert('Ingresa un nombre para la llave')
-    const fakeKey = 'condo_' + Math.random().toString(36).substring(2, 15)
-    setCurrentKey(fakeKey)
-    setApiKeys([{ id: Date.now(), name: newKeyName, date: new Date().toLocaleDateString() }, ...apiKeys])
-    setNewKeyName('')
-    setShowKeyModal(true)
+  useEffect(() => {
+    // Cargar preferencias reales
+    isBiometricEnabled().then(setBiometrics)
+
+    // Verificar MFA
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      const verified = data?.all?.some(f => f.status === 'verified')
+      setTwoFactor(!!verified)
+    })
+
+    // ID del dispositivo actual
+    Device.getId().then(id => setCurrentDeviceId(id.identifier))
+
+    if (isAdmin) {
+      fetchApiKeys()
+    }
+  }, [isAdmin])
+
+  const fetchApiKeys = async () => {
+    try {
+      // Usamos el endpoint real del backend FastAPI
+      const res = await api.get('/api/v1/admin/security/keys')
+      setApiKeys(res.data.map((k: any) => ({
+        id: k.id,
+        name: k.nombre_cliente,
+        date: new Date(k.fecha_creacion).toLocaleDateString()
+      })))
+    } catch (err) {
+      console.error('Error cargando llaves:', err)
+    }
   }
 
-  const handleDisconnect = (id: number) => {
-    setDevices(devices.filter(d => d.id !== id))
+  const fetchSessions = async () => {
+    setLoadingDevices(true)
+    try {
+      const { data, error } = await supabase.rpc('get_my_sessions')
+      if (error) throw error
+      setDevices(data || [])
+    } catch (err) {
+      console.error("Error cargando sesiones:", err)
+    } finally {
+      setLoadingDevices(false)
+    }
+  }
+
+  const handleGenerateKey = async () => {
+    if (!newKeyName) return alert('Ingresa un nombre para la llave')
+    try {
+      const res = await api.post('/api/v1/admin/security/keys', {
+        nombre_cliente: newKeyName,
+        permisos: ["read", "write"]
+      })
+      setCurrentKey(res.data.api_key_viva)
+      setNewKeyName('')
+      setShowKeyModal(true)
+      fetchApiKeys()
+    } catch (err: any) {
+      alert('No se pudo generar la llave: ' + (err.response?.data?.detail || 'Error desconocido'))
+    }
+  }
+
+  const handleRevokeKey = async (id: string) => {
+    if (!confirm('¿Seguro que deseas revocar esta llave?')) return
+    try {
+      await api.delete(`/api/v1/admin/security/keys/${id}`)
+      setApiKeys(apiKeys.filter(k => k.id !== id))
+    } catch (err) {
+      alert('No se pudo revocar la llave')
+    }
+  }
+
+  const handleToggleBiometric = async () => {
+    if (biometrics) {
+      await disableBiometric()
+      setBiometrics(false)
+      return
+    }
+    const available = await isBiometricAvailable()
+    if (!available) return alert('Este dispositivo no tiene biometría configurada')
+    const ok = await enableBiometric()
+    if (ok) setBiometrics(true)
+  }
+
+  const handleDisableTwoFactor = async () => {
+    const { data } = await supabase.auth.mfa.listFactors()
+    const factor = data?.all?.find(f => f.status === 'verified')
+    if (!factor) return
+    if (!confirm('¿Seguro que deseas desactivar la verificación en 2 pasos?')) return
+
+    const { error } = await supabase.auth.mfa.unenroll({ factorId: factor.id })
+    if (error) alert("Error: " + error.message)
+    else {
+      setTwoFactor(false)
+      alert("2FA desactivado")
+    }
+  }
+
+  const handleDisconnectSession = async (id: string) => {
+    if (!confirm('¿Cerrar sesión en este dispositivo remotamente?')) return
+    const { error } = await supabase.rpc('revoke_session', { p_session_id: id })
+    if (error) alert("Error: " + error.message)
+    else fetchSessions()
   }
 
   return (
@@ -80,34 +172,6 @@ export const Privacy: React.FC = () => {
             <Section title="Control de Staff">
               <MenuItem icon="badge" label="Gestión de Roles" desc="Permisos de vigilantes y personal" />
               <MenuItem icon="history_edu" label="Registro de Actividad" desc="Historial de cambios (Audit Log)" />
-            </Section>
-
-            <Section title="Políticas de Comunidad">
-              <ToggleItem
-                icon="visibility"
-                label="Directorio Público"
-                desc="Nuevos residentes visibles por defecto"
-                active={directoryDefault}
-                onToggle={() => setProfileDefault(!directoryDefault)}
-              />
-              <ToggleItem
-                icon="file_download_off"
-                label="Restringir Exportación"
-                desc="Bloquear descarga masiva de datos"
-                active={restrictExport}
-                onToggle={() => setRestrictExport(!restrictExport)}
-              />
-            </Section>
-
-            <Section title="Sistema y Respaldos">
-              <ToggleItem
-                icon="enhanced_encryption"
-                label="MFA Obligatorio"
-                desc="Exigir 2FA a todo el staff"
-                active={mfaMandatory}
-                onToggle={() => setMfaMandatory(!mfaMandatory)}
-              />
-              <MenuItem icon="cloud_sync" label="Copias de Seguridad" desc="Último respaldo: Hace 2 horas" />
             </Section>
 
             <Section title="Integraciones y API Keys">
@@ -141,7 +205,7 @@ export const Privacy: React.FC = () => {
                         </div>
                       </div>
                       <button
-                        onClick={() => setApiKeys(apiKeys.filter(k => k.id !== key.id))}
+                        onClick={() => handleRevokeKey(key.id)}
                         style={{ background: 'none', border: 'none', color: '#ba1a1a', cursor: 'pointer' }}
                       >
                         <span className="material-symbols-outlined">delete</span>
@@ -151,75 +215,33 @@ export const Privacy: React.FC = () => {
                 </div>
               )}
             </Section>
-
-            <Section title="Legal">
-              <MenuItem icon="gavel" label="Consentimiento Digital" desc="Gestionar avisos de privacidad" />
-            </Section>
           </>
         ) : (
           /* RESIDENT VIEW */
           <>
             <p style={introTextStyle}>Controla qué información compartes y cómo proteges tu cuenta.</p>
 
-            <Section title="Privacidad (¿Qué ven mis vecinos?)">
-              <ToggleItem
-                icon="person_search"
-                label="Visibilidad del Perfil"
-                desc="Aparecer en el directorio de vecinos"
-                active={profileVisible}
-                onToggle={() => setProfileVisible(!profileVisible)}
-              />
-              <ToggleItem
-                icon="contact_phone"
-                label="Ocultar Contacto"
-                desc="Teléfono y correo privados"
-                active={contactVisible}
-                onToggle={() => setContactVisible(!contactVisible)}
-              />
-              <ToggleItem
-                icon="directions_car"
-                label="Privacidad de Vehículos"
-                desc="Ocultar mis placas en el sistema"
-                active={platesVisible}
-                onToggle={() => setPlatesVisible(!platesVisible)}
-              />
-            </Section>
-
             <Section title="Seguridad de la Cuenta">
-              <MenuItem onClick={() => navigate('/profile/account')} icon="password" label="Cambiar Contraseña" desc="Actualizada hace 3 meses" />
+              <MenuItem onClick={() => navigate('/profile/account')} icon="password" label="Cambiar Contraseña" desc="Mantén tu cuenta segura" />
               <ToggleItem
                 icon="fingerprint"
                 label="Biometría"
                 desc="Acceder con FaceID / Huella"
                 active={biometrics}
-                onToggle={() => setBiometrics(!biometrics)}
+                onToggle={handleToggleBiometric}
               />
-              <ToggleItem
+              <MenuItem
+                onClick={() => twoFactor ? handleDisableTwoFactor() : setShowTwoFactorModal(true)}
                 icon="verified_user"
                 label="Verificación en 2 pasos"
-                desc="Código vía SMS o Correo"
-                active={twoFactor}
-                onToggle={() => setTwoFactor(!twoFactor)}
+                desc={twoFactor ? "Activada (Máxima seguridad)" : "Toca para activar con Authenticator"}
               />
-              <MenuItem onClick={() => setShowDevicesModal(true)} icon="devices" label="Dispositivos Activos" desc={`${devices.length} sesiones abiertas`} />
-            </Section>
-
-            <Section title="Gestión de Datos">
-              <MenuItem onClick={() => setShowPermissionsModal(true)} icon="settings_remote" label="Permisos de la App" desc="Cámara, Notificaciones, GPS" />
-              <MenuItem onClick={() => setShowAutoDeleteModal(true)} icon="auto_delete" label="Auto-borrado de Visitas" desc={autoDeleteDays === 0 ? "No eliminar nunca" : `Limpiar historial cada ${autoDeleteDays} días`} />
+              <MenuItem onClick={() => { setShowDevicesModal(true); fetchSessions(); }} icon="devices" label="Dispositivos Activos" desc="Gestiona tus sesiones abiertas" />
             </Section>
 
             <Section title="Legal">
               <MenuItem onClick={() => navigate('/profile/legal?type=privacy')} icon="description" label="Política de Privacidad" />
               <MenuItem onClick={() => navigate('/profile/legal?type=terms')} icon="assignment" label="Términos y Condiciones" />
-              <button style={{ ...menuItemStyle, border: 'none', color: '#ba1a1a', marginTop: '10px', width: '100%', backgroundColor: 'transparent' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                  <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)' }}>
-                    <span className="material-symbols-outlined">delete_forever</span>
-                  </div>
-                  <span style={{ fontWeight: 700 }}>Eliminar mi cuenta</span>
-                </div>
-              </button>
             </Section>
           </>
         )}
@@ -230,71 +252,41 @@ export const Privacy: React.FC = () => {
         <Modal title="Dispositivos Activos" onClose={() => setShowDevicesModal(false)}>
           <p style={{ fontSize: '13px', color: '#6f7978', marginBottom: '20px' }}>Estas son las sesiones activas en tu cuenta. Puedes cerrar sesiones remotas si no las reconoces.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            {devices.map(dev => (
-              <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: '#f5f3f0', borderRadius: '16px' }}>
-                <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                  <span className="material-symbols-outlined" style={{ color: '#0f5551' }}>{dev.name.includes('iPhone') ? 'smartphone' : 'laptop'}</span>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{dev.name}</p>
-                    <p style={{ margin: 0, fontSize: '12px', color: '#6f7978' }}>{dev.location} • {dev.date}</p>
+            {loadingDevices ? <p style={{textAlign:'center'}}>Cargando sesiones...</p> : devices.length === 0 ? <p style={{textAlign:'center'}}>No hay otras sesiones.</p> : devices.map(dev => {
+              const isCurrent = dev.device_id === currentDeviceId;
+              return (
+                <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: '#f5f3f0', borderRadius: '16px' }}>
+                  <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <span className="material-symbols-outlined" style={{ color: '#0f5551' }}>{dev.platform === 'web' ? 'laptop' : 'smartphone'}</span>
+                    <div style={{ textAlign: 'left' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {dev.device_name} {isCurrent && '(Este equipo)'}
+                      </p>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#6f7978' }}>Visto: {new Date(dev.last_seen).toLocaleString()}</p>
+                    </div>
                   </div>
+                  {!isCurrent && (
+                    <button onClick={() => handleDisconnectSession(dev.id)} style={{ border: '1px solid #ba1a1a', color: '#ba1a1a', background: 'none', padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Cerrar</button>
+                  )}
                 </div>
-                {!dev.current && (
-                  <button onClick={() => handleDisconnect(dev.id)} style={{ border: '1px solid #ba1a1a', color: '#ba1a1a', background: 'none', padding: '5px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}>Desconectar</button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Modal>
       )}
 
-      {/* MODAL: PERMISOS APP */}
-      {showPermissionsModal && (
-        <Modal title="Permisos de la App" onClose={() => setShowPermissionsModal(false)}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-            <ToggleItem
-              icon="photo_camera" label="Cámara" desc="Para escanear pases QR"
-              active={permissions.camera} onToggle={() => setPermissions({...permissions, camera: !permissions.camera})}
+      {/* MODAL: ACTIVAR 2FA */}
+      {showTwoFactorModal && (
+        <Modal title="Verificación en 2 pasos" onClose={() => setShowTwoFactorModal(false)}>
+            <TwoFactorSetup
+                onClose={() => setShowTwoFactorModal(false)}
+                onEnabled={() => setTwoFactor(true)}
             />
-            <ToggleItem
-              icon="notifications" label="Notificaciones" desc="Avisos de llegada y pagos"
-              active={permissions.notifications} onToggle={() => setPermissions({...permissions, notifications: !permissions.notifications})}
-            />
-            <ToggleItem
-              icon="location_on" label="GPS / Ubicación" desc="Validar entrada en garita"
-              active={permissions.gps} onToggle={() => setPermissions({...permissions, gps: !permissions.gps})}
-            />
-          </div>
         </Modal>
       )}
 
-      {/* MODAL: AUTO-BORRADO */}
-      {showAutoDeleteModal && (
-        <Modal title="Auto-borrado de Visitas" onClose={() => setShowAutoDeleteModal(false)}>
-          <p style={{ fontSize: '13px', color: '#6f7978', marginBottom: '20px' }}>Selecciona cada cuánto tiempo deseas que se limpie tu historial de invitados automáticamente.</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[7, 15, 30, 0].map(days => (
-              <div
-                key={days}
-                onClick={() => setAutoDeleteDays(days)}
-                style={{
-                  display: 'flex', justifyContent: 'space-between', padding: '15px 20px', borderRadius: '12px',
-                  border: `2px solid ${autoDeleteDays === days ? '#0f5551' : '#efeeeb'}`,
-                  backgroundColor: autoDeleteDays === days ? 'rgba(15,85,81,0.05)' : 'transparent',
-                  cursor: 'pointer'
-                }}
-              >
-                <span style={{ fontWeight: 700 }}>{days === 0 ? "No quitar" : `Cada ${days} días`}</span>
-                {autoDeleteDays === days && <span className="material-symbols-outlined" style={{ color: '#0f5551' }}>check_circle</span>}
-              </div>
-            ))}
-          </div>
-          <button onClick={() => setShowAutoDeleteModal(false)} style={{ ...primaryBtnStyleSmall, width: '100%', marginTop: '30px', padding: '15px', justifyContent: 'center' }}>Confirmar Plan</button>
-        </Modal>
-      )}
-
-      {/* MODAL: API KEY (RE-RENDERED IF ADMIN) */}
-      {showKeyModal && (
+      {/* MODAL: LLAVE GENERADA */}
+      {showKeyModal && currentKey && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
           <div style={{ backgroundColor: 'white', borderRadius: '28px', padding: '30px', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
             <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: 'rgba(198, 160, 89, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>

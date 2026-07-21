@@ -71,38 +71,68 @@ def on_startup():
             session.add(Amenity(nombre="Salón de Fiestas", capacidad=50))
             session.add(Amenity(nombre="Cancha de Tenis", capacidad=4))
 
-        # 3. Crear Usuarios Iniciales (Producción - Contraseñas desde Variables de Entorno)
-        initial_users = [
-            {"nombre": "JESÚS ADMIN", "email": "admin@caminos.com", "password": os.getenv("INITIAL_ADMIN_PASSWORD", "ADMIN_PWD_TODO"), "rol": "admin", "unit": None},
-            {"nombre": "CARLOS PIRELA", "email": "ofi.pirela@gmail.com", "password": os.getenv("INITIAL_CARLOS_PASSWORD", "CARLOS_PWD_TODO"), "rol": "propietario", "unit": "14-28"},
-            {"nombre": "JESÚS PIRELA", "email": "jess.pirela@gmail.com", "password": os.getenv("INITIAL_JESUS_PASSWORD", "JESUS_PWD_TODO"), "rol": "propietario", "unit": "14-28"},
-            {"nombre": "JESÚS VIGILANTE", "email": "vigilante@caminos.com", "password": os.getenv("INITIAL_VIGILANTE_PASSWORD", "VIGILANTE_PWD_TODO"), "rol": "vigilante", "unit": None},
-        ]
+        # 3. Crear Usuarios Iniciales (Solo si SEED_INITIAL_USERS=true)
+        if os.getenv("SEED_INITIAL_USERS", "false").lower() == "true":
+            def _get_required_env(key: str) -> str:
+                val = os.getenv(key)
+                if not val:
+                    raise RuntimeError(f"Falta variable de entorno requerida para seeding: {key}")
+                return val
 
-        for u_data in initial_users:
-            user_exists = session.exec(select(Resident).where(Resident.email == u_data["email"])).first()
-            if not user_exists:
-                target_unit_id = None
-                if u_data["unit"]:
-                    u_unit = session.exec(select(Unit).where(Unit.identificador == u_data["unit"])).first()
-                    if not u_unit:
-                        u_unit = Unit(seccion_id=section.id, identificador=u_data["unit"], tipo="casa")
-                        session.add(u_unit)
-                        session.commit()
-                        session.refresh(u_unit)
-                    target_unit_id = u_unit.id
+            initial_users = [
+                {
+                    "nombre": _get_required_env("SEED_ADMIN_NAME"),
+                    "email": _get_required_env("SEED_ADMIN_EMAIL"),
+                    "password": _get_required_env("SEED_ADMIN_PASSWORD"),
+                    "rol": "admin",
+                    "unit": None
+                },
+                {
+                    "nombre": _get_required_env("SEED_CARLOS_NAME"),
+                    "email": _get_required_env("SEED_CARLOS_EMAIL"),
+                    "password": _get_required_env("SEED_CARLOS_PASSWORD"),
+                    "rol": "propietario",
+                    "unit": "14-28"
+                },
+                {
+                    "nombre": _get_required_env("SEED_JESUS_NAME"),
+                    "email": _get_required_env("SEED_JESUS_EMAIL"),
+                    "password": _get_required_env("SEED_JESUS_PASSWORD"),
+                    "rol": "propietario",
+                    "unit": "14-28"
+                },
+                {
+                    "nombre": _get_required_env("SEED_GUARD_NAME"),
+                    "email": _get_required_env("SEED_GUARD_EMAIL"),
+                    "password": _get_required_env("SEED_GUARD_PASSWORD"),
+                    "rol": "vigilante",
+                    "unit": None
+                },
+            ]
 
-                new_user = Resident(
-                    nombre=u_data["nombre"],
-                    email=u_data["email"],
-                    password_hash=hash_password(u_data["password"]),
-                    telefono="",
-                    unidad_id=target_unit_id or unit.id,
-                    rol=u_data["rol"]
-                )
-                session.add(new_user)
+            for u_data in initial_users:
+                user_exists = session.exec(select(Resident).where(Resident.email == u_data["email"])).first()
+                if not user_exists:
+                    target_unit_id = None
+                    if u_data["unit"]:
+                        u_unit = session.exec(select(Unit).where(Unit.identificador == u_data["unit"])).first()
+                        if not u_unit:
+                            u_unit = Unit(seccion_id=section.id, identificador=u_data["unit"], tipo="casa")
+                            session.add(u_unit)
+                            session.commit()
+                            session.refresh(u_unit)
+                        target_unit_id = u_unit.id
 
-        session.commit()
+                    new_user = Resident(
+                        nombre=u_data["nombre"],
+                        email=u_data["email"],
+                        password_hash=hash_password(u_data["password"]),
+                        telefono="",
+                        unidad_id=target_unit_id or unit.id,
+                        rol=u_data["rol"]
+                    )
+                    session.add(new_user)
+            session.commit()
 
         # 4. Crear Votación de Prueba
         if not session.exec(select(Voting)).first():

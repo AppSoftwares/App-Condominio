@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MdOutlinePerson,
@@ -9,20 +9,44 @@ import {
   MdOutlineDownload
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
-import { useCommunityStore } from '../../store/useCommunityStore'
+import { listVotings, castVote, getVotingResults, VotingDTO, VotingResults } from '../../lib/votingsApi'
+import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
 
 export const Requests: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { polls, announcements, voteInPoll } = useCommunityStore()
 
-  const handleVote = (pollId: string, idx: number) => {
-    const houseNumber = user?.house_number || 'UNKNOWN'
-    const success = voteInPoll(pollId, idx, houseNumber)
-    if (success) {
-      alert('¡Voto registrado con éxito! Solo se permite un voto por casa.')
-    } else {
-      alert('Esta casa ya ha emitido su voto en esta encuesta.')
+  const [votings, setVotings] = useState<VotingDTO[]>([])
+  const [announcements, setAnnouncements] = useState<AnnouncementDTO[]>([])
+  const [votedIds, setVotedIds] = useState<number[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vData, aData] = await Promise.all([
+          listVotings(),
+          listAnnouncements()
+        ])
+        setVotings(vData)
+        setAnnouncements(aData)
+      } catch (err) {
+        console.error('Error cargando comunidad:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const handleVote = async (votingId: number, opcion: 'favor' | 'contra') => {
+    try {
+      await castVote(votingId, opcion)
+      setVotedIds([...votedIds, votingId])
+      alert('¡Voto registrado con éxito!')
+      // Opcionalmente recargar resultados si el componente los muestra
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'No se pudo registrar el voto.')
     }
   }
 
@@ -39,12 +63,16 @@ export const Requests: React.FC = () => {
            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Votaciones Activas</h3>
         </div>
 
-        {polls.map(poll => (
-          <PollCard
-            key={poll.id}
-            poll={poll}
-            hasVoted={poll.votedHouses.includes(user?.house_number || 'UNKNOWN')}
-            onVote={(idx) => handleVote(poll.id, idx)}
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Cargando...</p>
+        ) : votings.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay votaciones activas en este momento.</p>
+        ) : votings.map(voting => (
+          <VotingCard
+            key={voting.id}
+            voting={voting}
+            hasVoted={votedIds.includes(voting.id)}
+            onVote={(opcion) => handleVote(voting.id, opcion)}
           />
         ))}
 
@@ -59,14 +87,16 @@ export const Requests: React.FC = () => {
         <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Comunicados</h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-           {announcements.map(ann => (
+           {announcements.length === 0 ? (
+             <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay comunicados oficiales publicados.</p>
+           ) : announcements.map(ann => (
              <div key={ann.id} style={annCardStyle}>
                 <div style={annIconStyle}>
-                   {ann.type === 'PDF' ? <MdOutlinePictureAsPdf size={24} /> : <MdOutlineEventNote size={24} />}
+                   <MdOutlineEventNote size={24} />
                 </div>
                 <div style={{ flex: 1 }}>
-                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.title}</p>
-                   <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{ann.date}</p>
+                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.titulo}</p>
+                   <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(ann.fecha_creacion).toLocaleDateString()}</p>
                 </div>
                 <MdOutlineDownload size={20} style={{ color: 'var(--text-sub)' }} />
              </div>
@@ -77,70 +107,65 @@ export const Requests: React.FC = () => {
   )
 }
 
-const PollCard = ({ poll, onVote, hasVoted }: { poll: any, onVote: (idx: number) => void, hasVoted: boolean }) => {
-  const [selected, setSelected] = useState<number | null>(null)
+const VotingCard = ({ voting, onVote, hasVoted }: { voting: VotingDTO, onVote: (opcion: 'favor' | 'contra') => void, hasVoted: boolean }) => {
+  const [results, setResults] = useState<VotingResults | null>(null)
+  const [showResults, setShowResults] = useState(hasVoted)
+
+  useEffect(() => {
+    if (hasVoted) {
+      getVotingResults(voting.id).then(setResults).catch(console.error)
+    }
+  }, [hasVoted, voting.id])
+
+  const total = results ? (results.favor + results.contra) : 0
+  const pctFavor = total > 0 ? Math.round((results!.favor / total) * 100) : 0
+  const pctContra = total > 0 ? Math.round((results!.contra / total) * 100) : 0
+
   return (
     <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '25px', width: '100%', boxSizing: 'border-box' }}>
-       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{poll.title}</h3>
-       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{poll.description}</p>
+       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{voting.titulo}</h3>
+       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.descripcion}</p>
 
-       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
-          {poll.options.map((opt: any, idx: number) => {
-            const pct = poll.totalVotes > 0 ? Math.round((opt.votes / poll.totalVotes) * 100) : 0
-            const isSelected = selected === idx
-            return (
-              <div
-                key={idx}
-                onClick={() => !hasVoted && setSelected(idx)}
-                style={{
-                  cursor: hasVoted ? 'default' : 'pointer',
-                  padding: '10px',
-                  borderRadius: '12px',
-                  backgroundColor: isSelected ? 'rgba(15, 85, 81, 0.05)' : 'transparent',
-                  border: isSelected ? '1px solid var(--primary-color)' : '1px solid transparent',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {!hasVoted && (
-                        <div style={{
-                          width: '16px',
-                          height: '16px',
-                          borderRadius: '50%',
-                          border: '2px solid var(--primary-color)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          {isSelected && <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-color)' }}></div>}
-                        </div>
-                      )}
-                      <span>{opt.text}</span>
-                    </div>
-                    {hasVoted && <span>{pct}%</span>}
-                 </div>
-                 <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${pct}%`, height: '100%', backgroundColor: idx === 0 ? 'var(--primary-color)' : '#C6A059', transition: 'width 0.8s ease' }}></div>
-                 </div>
-              </div>
-            )
-          })}
-       </div>
-       {hasVoted ? (
-         <div style={{ textAlign: 'center', color: 'var(--primary-color)', fontWeight: 700, fontSize: '14px' }}>✓ Tu casa ya participó</div>
+       {showResults && results ? (
+         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '10px' }}>
+            <div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
+                  <span>A FAVOR</span>
+                  <span>{pctFavor}%</span>
+               </div>
+               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${pctFavor}%`, height: '100%', backgroundColor: 'var(--primary-color)', transition: 'width 0.8s ease' }}></div>
+               </div>
+            </div>
+            <div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
+                  <span>EN CONTRA</span>
+                  <span>{pctContra}%</span>
+               </div>
+               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${pctContra}%`, height: '100%', backgroundColor: '#ba1a1a', transition: 'width 0.8s ease' }}></div>
+               </div>
+            </div>
+            <p style={{ textAlign: 'center', color: 'var(--text-sub)', fontSize: '11px', marginTop: '10px' }}>{total} votos registrados en total</p>
+         </div>
        ) : (
-         <button
-          onClick={() => selected !== null && onVote(selected)}
-          disabled={selected === null}
-          style={{
-            ...primaryBtnStyle,
-            opacity: selected === null ? 0.5 : 1,
-            cursor: selected === null ? 'not-allowed' : 'pointer'
-          }}
-         >
-          Votar
-         </button>
+         <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => onVote('favor')}
+              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: 'var(--primary-color)' }}
+            >
+              A Favor
+            </button>
+            <button
+              onClick={() => onVote('contra')}
+              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: '#ba1a1a' }}
+            >
+              En Contra
+            </button>
+         </div>
+       )}
+       {hasVoted && (
+         <div style={{ textAlign: 'center', color: 'var(--primary-color)', fontWeight: 700, fontSize: '14px', marginTop: '15px' }}>✓ Tu voto ha sido registrado</div>
        )}
     </div>
   )

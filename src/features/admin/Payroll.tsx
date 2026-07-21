@@ -27,6 +27,7 @@ export const Payroll: React.FC = () => {
   const bcvRate = useCurrencyStore(state => state.bcvRate)
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -38,6 +39,7 @@ export const Payroll: React.FC = () => {
 
   const fetchEmployees = async () => {
     setLoading(true)
+    setLoadError(null)
     try {
       const { data, error } = await supabase
         .from('employees')
@@ -48,11 +50,8 @@ export const Payroll: React.FC = () => {
       setEmployees(data || [])
     } catch (err: any) {
       console.error('Error fetching employees:', err.message)
-      // Fallback a mock si la tabla no existe para que no se rompa la demo de los amigos
-      setEmployees([
-        { id: '1', nombre: 'Carlos Ruiz', cedula: 'V-12.345.678', cargo: 'Vigilante', fecha_ingreso: '2022-01-15', sueldo_usd: 250, bono_alimentacion_usd: 40, bono_transporte_usd: 20, prestamos_bs: 0, dias_descontados: 0, status: 'Activo' },
-        { id: '2', nombre: 'Maria Perez', cedula: 'V-15.987.654', cargo: 'Jardinero', fecha_ingreso: '2023-03-10', sueldo_usd: 220, bono_alimentacion_usd: 40, bono_transporte_usd: 15, prestamos_bs: 500, dias_descontados: 1, status: 'Activo' },
-      ])
+      setEmployees([])
+      setLoadError('No se pudo cargar la nómina. Verifica tu conexión o contacta soporte.')
     } finally {
       setLoading(false)
     }
@@ -266,6 +265,7 @@ export const Payroll: React.FC = () => {
 
         {/* Employee Table */}
         <div style={cardStyle}>
+          {loadError && <p style={{ color: '#ba1a1a', textAlign: 'center', padding: '20px', fontWeight: 700 }}>{loadError}</p>}
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>

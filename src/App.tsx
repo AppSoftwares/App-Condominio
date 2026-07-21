@@ -19,6 +19,7 @@ const HelpCenter = lazy(() => import('./features/prof/HelpCenter').then(m => ({ 
 const LegalDocument = lazy(() => import('./features/prof/LegalDocument').then(m => ({ default: m.LegalDocument })))
 const EmergencyLines = lazy(() => import('./features/prof/EmergencyLines').then(m => ({ default: m.EmergencyLines })))
 const Admin = lazy(() => import('./features/admin/Admin').then(m => ({ default: m.Admin })))
+const IncidentsAdmin = lazy(() => import('./features/admin/IncidentsAdmin').then(m => ({ default: m.IncidentsAdmin })))
 const Payroll = lazy(() => import('./features/admin/Payroll').then(m => ({ default: m.Payroll })))
 const GuardPortal = lazy(() => import('./features/guard/GuardPortal').then(m => ({ default: m.GuardPortal })))
 const Payments = lazy(() => import('./features/res/Payments').then(m => ({ default: m.Payments })))
@@ -36,6 +37,7 @@ import { useUpdateCheck } from './hooks/useUpdateCheck'
 import { UpdateModal } from './components/UpdateModal'
 import { App as CapApp } from '@capacitor/app'
 import { SplashScreen } from '@capacitor/splash-screen'
+import { isBiometricEnabled, verifyBiometric } from './lib/biometrics'
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -58,11 +60,27 @@ function App() {
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
 
+  const [isLocked, setIsLocked] = useState(false)
+
   // Inicializar Notificaciones Push
   usePushNotifications(user?.id)
 
   const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
   const [showUpdateModal, setShowUpdateModal] = useState(false)
+
+  useEffect(() => {
+    const checkLock = async () => {
+      if (user) {
+        const enabled = await isBiometricEnabled()
+        if (enabled) {
+          setIsLocked(true)
+          const success = await verifyBiometric()
+          if (success) setIsLocked(false)
+        }
+      }
+    }
+    checkLock()
+  }, [user])
 
   useEffect(() => {
     // Manejar eventos de la app
@@ -144,7 +162,22 @@ function App() {
           />
         )}
         <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
-          {!authReady && !user ? (
+          {isLocked ? (
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', padding: '20px', textAlign: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '64px', color: 'var(--primary-color)', marginBottom: '20px' }}>lock</span>
+                <h2 style={{ fontFamily: "'Cinzel', serif", marginBottom: '10px' }}>App Bloqueada</h2>
+                <p style={{ color: 'var(--text-sub)', marginBottom: '30px' }}>Usa tu huella o Face ID para continuar</p>
+                <button
+                    onClick={async () => {
+                        const success = await verifyBiometric()
+                        if (success) setIsLocked(false)
+                    }}
+                    style={{ padding: '15px 30px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                    Desbloquear
+                </button>
+            </div>
+          ) : !authReady && !user ? (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <p>Iniciando sesión...</p>
             </div>
@@ -176,6 +209,7 @@ function App() {
                 <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
 
                 <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Admin /></ProtectedRoute>} />
+                <Route path="/admin/incidents" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><IncidentsAdmin /></ProtectedRoute>} />
                 <Route path="/admin/payroll" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Payroll /></ProtectedRoute>} />
 
                 <Route path="/guard" element={<ProtectedRoute allowedRoles={["guard"]}><GuardPortal /></ProtectedRoute>} />

@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../../store/useAuthStore'
 import { formatBs, formatUSD } from '../../utils/currency'
 import { useCurrencyStore } from '../../store/useCurrencyStore'
-import { useCommunityStore, Poll } from '../../store/useCommunityStore'
 import { supabase } from '../../lib/supabase'
+import { createVoting, VotingDTO, listVotings } from '../../lib/votingsApi'
+import { createAnnouncement } from '../../lib/announcementsApi'
+import { IncidentsAdmin } from './IncidentsAdmin'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -41,15 +43,14 @@ export const Admin: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, setWhitelist } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
-  const { addPoll } = useCommunityStore()
 
   const [selectedCluster, setSelectedCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
   const initialTab = (searchParams.get('tab') as any) || 'finance'
-  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents'>(initialTab)
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['finance', 'users', 'payments', 'polls', 'security'].includes(tab)) {
+    if (tab && ['finance', 'users', 'payments', 'polls', 'security', 'incidents'].includes(tab)) {
       setActiveTab(tab as any)
     }
   }, [searchParams])
@@ -59,6 +60,8 @@ export const Admin: React.FC = () => {
     setSearchParams({ tab })
   }
   const [sedematData, setSedematData] = useState<{ aseoBs: number, gasBs: number, aseoUsd: number, gasUsd: number } | null>(null)
+  const [sedematAseoBs, setSedematAseoBs] = useState('')
+  const [sedematGasBs, setSedematGasBs] = useState('')
   const [users, setUsers] = useState<any[]>([])
   const [apiKeys, setApiKeys] = useState<any[]>([])
   const [newKeyName, setNewKeyName] = useState('')
@@ -77,19 +80,8 @@ export const Admin: React.FC = () => {
   })
   const [isSavingSettings, setIsSavingSettings] = useState(false)
 
-  // Poll state
-  const [polls, setPolls] = useState<Poll[]>([
-    {
-      id: '1',
-      title: 'Cambio de Bomba de Agua',
-      description: 'Se requiere la aprobación de la comunidad para la adquisición e instalación de una nueva bomba de agua de 5HP. Cuota extra por unidad: $25.00. Este cambio es crítico para garantizar el suministro constante.',
-      priority: 'Alta',
-      endDate: '30/11/2023',
-      totalVotes: 97,
-      votedHouses: [],
-      options: [{ text: 'A FAVOR', votes: 85 }, { text: 'EN CONTRA', votes: 12 }]
-    }
-  ])
+  // Poll state (Real)
+  const [votings, setVotings] = useState<VotingDTO[]>([])
 
   // Financial State
   const [showGastoDetail, setShowGastoDetail] = useState(false)
@@ -127,6 +119,10 @@ export const Admin: React.FC = () => {
 
       if (paymentError) throw paymentError
       setPayments(paymentData)
+
+      // Fetch Votings
+      const vData = await listVotings()
+      setVotings(vData)
 
       // Fetch Condo Settings
       const { data: settingsData } = await supabase
@@ -227,22 +223,30 @@ export const Admin: React.FC = () => {
   const [opt1, setOpt1] = useState('')
   const [opt2, setOpt2] = useState('')
 
-  const handleCreatePoll = () => {
-    if (!newPollTitle || !newPollDesc || !opt1 || !opt2) return alert('Por favor, complete todos los campos.')
-    const poll: Poll = {
-      id: Date.now().toString(),
-      title: newPollTitle,
-      description: `${newPollDesc}${newPollAmount ? `\n\nMONTO ESTIMADO: ${formatUSD(parseFloat(newPollAmount))}` : ''}`,
-      priority: 'Alta',
-      endDate: 'Cierra en 3 días',
-      totalVotes: 0,
-      votedHouses: [],
-      options: [{ text: opt1, votes: 0 }, { text: opt2, votes: 0 }]
+  const handleCreatePoll = async () => {
+    if (!newPollTitle || !newPollDesc) return alert('Por favor, complete todos los campos.')
+    try {
+      await createVoting({
+        titulo: newPollTitle,
+        descripcion: `${newPollDesc}${newPollAmount ? `\n\nMONTO ESTIMADO: ${formatUSD(parseFloat(newPollAmount))}` : ''}`,
+        fecha_fin: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        monto_propuesto: newPollAmount ? parseFloat(newPollAmount) : undefined,
+      })
+      alert('¡Votación publicada exitosamente!')
+      setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
+      fetchData(); // recargar si es necesario
+    } catch (err: any) {
+      alert('No se pudo publicar la votación: ' + (err.response?.data?.detail || 'Error desconocido'))
     }
-    setPolls([poll, ...polls]) // Usar el estado local de polls
-    addPoll(poll)
-    alert('¡Votación publicada exitosamente!')
-    setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
+  }
+
+  const handleCreateAnnouncement = async (titulo: string, mensaje: string) => {
+    try {
+      await createAnnouncement({ titulo, mensaje, tipo: 'general' })
+      alert('¡Anuncio publicado!')
+    } catch (err) {
+      alert('Error al publicar anuncio')
+    }
   }
 
   const handleProcessSedemat = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -548,18 +552,57 @@ export const Admin: React.FC = () => {
 
       <main style={mainContentStyle}>
 
+        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '25px', width: '100%', scrollbarWidth: 'none' }}>
+           <TabItem active={activeTab === 'finance'} label="Finanzas" icon="account_balance_wallet" onClick={() => handleTabChange('finance')} />
+           <TabItem active={activeTab === 'users'} label="Residentes" icon="group" onClick={() => handleTabChange('users')} />
+           <TabItem active={activeTab === 'payments'} label="Pagos" icon="verified_user" onClick={() => handleTabChange('payments')} />
+           <TabItem active={activeTab === 'polls'} label="Votaciones" icon="how_to_vote" onClick={() => handleTabChange('polls')} />
+           <TabItem active={activeTab === 'incidents'} label="Incidencias" icon="report_problem" onClick={() => handleTabChange('incidents')} />
+           <TabItem active={activeTab === 'security'} label="Seguridad" icon="security" onClick={() => handleTabChange('security')} />
+        </div>
+
         {activeTab === 'finance' && (
           <section style={{ width: '100%' }}>
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Relación Mensual</h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                   {/* Escrito más largo centrado arriba */}
-                   <input type="file" id="sedemat-file" style={{ display: 'none' }} accept=".pdf" onChange={handleProcessSedemat} />
-                   <button onClick={() => document.getElementById('sedemat-file')?.click()} style={{ ...actionBtnStyle, width: 'fit-content', backgroundColor: sedematData ? 'rgba(37, 211, 102, 0.1)' : 'var(--card-bg)' }}>
-                      <span className="material-symbols-outlined" style={{ marginRight: '8px' }}>upload_file</span>
-                      {sedematData ? 'COMPROBANTE CARGADO' : 'SUBIR COMPROBANTE DE PAGO'}
-                   </button>
+                   <div style={cardStyle}>
+                    <p style={labelStyle}>REGISTRAR RECIBO SEDEMAT (MANUAL)</p>
+                    <input
+                      type="number"
+                      placeholder="Monto Aseo (Bs)"
+                      value={sedematAseoBs}
+                      onChange={(e) => setSedematAseoBs(e.target.value)}
+                      style={{ ...inputStyle, marginBottom: '10px' }}
+                    />
+                    <input
+                      type="number"
+                      placeholder="Monto Gas (Bs)"
+                      value={sedematGasBs}
+                      onChange={(e) => setSedematGasBs(e.target.value)}
+                      style={{ ...inputStyle, marginBottom: '10px' }}
+                    />
+                    <button
+                      onClick={() => {
+                        const aseoBs = parseFloat(sedematAseoBs);
+                        const gasBs = parseFloat(sedematGasBs);
+                        if (isNaN(aseoBs) || isNaN(gasBs) || aseoBs < 0 || gasBs < 0) {
+                          return alert('Ingresa montos válidos mayores o iguales a cero');
+                        }
+                        const aseoUsd = aseoBs / bcvRate;
+                        const gasUsd = gasBs / bcvRate;
+                        setSedematData({ aseoBs, gasBs, aseoUsd, gasUsd });
+                        setGastoDetail({ concepto: 'PAGO SERVICIOS MUNICIPALES', monto: aseoUsd + gasUsd, categoria: 'Impuestos/Servicios' });
+                        setShowGastoDetail(true);
+                        setSedematAseoBs('');
+                        setSedematGasBs('');
+                      }}
+                      style={primaryBtnStyle}
+                    >
+                      Registrar Gasto
+                    </button>
+                  </div>
 
                    {/* Otros botones debajo */}
                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
@@ -933,35 +976,37 @@ export const Admin: React.FC = () => {
 
              <p style={labelStyle}>VOTACIONES ACTIVAS / CERRADAS</p>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {polls.map(p => (
-                   <div key={p.id} style={cardStyle}>
+                {votings.length === 0 ? <p style={{textAlign:'center', color:'var(--text-sub)'}}>No hay votaciones registradas.</p> : votings.map(v => (
+                   <div key={v.id} style={cardStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
                          <div>
-                            <p style={{ margin: 0, fontWeight: 700 }}>{p.title}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: Activa • Cierra: {p.endDate}</p>
+                            <p style={{ margin: 0, fontWeight: 700 }}>{v.titulo}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: {v.activa ? 'Activa' : 'Cerrada'} • Cierra: {new Date(v.fecha_fin).toLocaleDateString()}</p>
                          </div>
-                         <button
-                          onClick={() => {
-                            if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
-                              alert("¡Éxito! Se ha generado la deuda masiva.");
-                            }
-                          }}
-                          style={{ ...primaryBtnStyleSmall, backgroundColor: 'var(--accent-gold)' }}
-                         >
-                            Ejecutar Gasto
-                         </button>
+                         {v.activa && (
+                           <button
+                            onClick={() => {
+                                if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
+                                alert("¡Éxito! Se ha generado la deuda masiva.");
+                                }
+                            }}
+                            style={{ ...primaryBtnStyleSmall, backgroundColor: 'var(--accent-gold)' }}
+                           >
+                                Ejecutar Gasto
+                           </button>
+                         )}
                       </div>
-                      <div style={{ marginTop: '15px', display: 'flex', gap: '20px' }}>
-                         {p.options.map((o, idx) => (
-                           <div key={idx} style={{ textAlign: 'center' }}>
-                              <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: idx === 0 ? 'var(--primary-color)' : '#ba1a1a' }}>{o.votes}</p>
-                              <p style={{ margin: 0, fontSize: '9px', fontWeight: 800 }}>{o.text}</p>
-                           </div>
-                         ))}
+                      <div style={{ marginTop: '15px' }}>
+                         <p style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{v.descripcion}</p>
                       </div>
                    </div>
                 ))}
              </div>
+          </section>
+        )}
+        {activeTab === 'incidents' && (
+          <section style={{ width: '100%' }}>
+            <IncidentsAdmin />
           </section>
         )}
         {activeTab === 'security' && (
@@ -1000,24 +1045,13 @@ export const Admin: React.FC = () => {
              </div>
 
              <div style={{ ...cardStyle, marginTop: '20px' }}>
-                <p style={labelStyle}>SEGURIDAD Y API KEYS</p>
-                <input
-                  placeholder="Nombre del cliente (Ej: n8n Reportes)"
-                  value={newKeyName}
-                  onChange={e => setNewKeyName(e.target.value)}
-                  style={{ ...inputStyle, marginBottom: '15px' }}
-                />
+                <p style={labelStyle}>ACCESO RÁPIDO A SEGURIDAD</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '15px' }}>Gestione las llaves de integración y sesiones activas en la pantalla de Privacidad.</p>
                 <button
-                  onClick={async () => {
-                    if(!newKeyName) return alert('Ingresa un nombre');
-                    const fakeKey = 'condo_' + Math.random().toString(36).substring(2, 15);
-                    setGeneratedKey(fakeKey);
-                    setApiKeys([{ id: Date.now(), nombre_cliente: newKeyName, activo: true, fecha_creacion: new Date().toISOString() }, ...apiKeys]);
-                    setNewKeyName('');
-                  }}
+                  onClick={() => navigate('/profile/privacy')}
                   style={{ ...primaryBtnStyle, backgroundColor: 'var(--accent-gold)' }}
                 >
-                  Generar Key de Integración
+                  Ir a Privacidad y API Keys
                 </button>
              </div>
           </section>

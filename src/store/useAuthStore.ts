@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
 import { Preferences } from '@capacitor/preferences'
+import { Device } from '@capacitor/device'
+import { UAParser } from 'ua-parser-js'
 
 // Custom storage for Capacitor Preferences
 const capacitorStorage = {
@@ -35,9 +37,11 @@ interface AuthState {
   user: UserProfile | null
   whitelist: any[]
   authReady: boolean
+  biometricsEnabled: boolean
   setUser: (user: UserProfile | null) => void
   setWhitelist: (list: any[]) => void
   setAuthReady: (ready: boolean) => void
+  setBiometricsEnabled: (enabled: boolean) => void
   updateAvatar: (url: string) => Promise<void>
   signOut: () => Promise<void>
   initialize: () => () => void
@@ -46,15 +50,41 @@ interface AuthState {
 
 let authListenerSubscription: { unsubscribe: () => void } | null = null
 
+async function registerCurrentDevice() {
+  try {
+    const info = await Device.getInfo()
+    const id = await Device.getId()
+
+    let deviceName = `${info.manufacturer || ''} ${info.model || info.platform}`.trim()
+
+    if (info.platform === 'web') {
+      const parser = new UAParser(window.navigator.userAgent)
+      const browser = parser.getBrowser()
+      const os = parser.getOS()
+      deviceName = `${browser.name || 'Navegador'} en ${os.name || 'Web'}`
+    }
+
+    await supabase.rpc('rpc_register_session', {
+      p_device_name: deviceName || 'Dispositivo desconocido',
+      p_device_id: id.identifier,
+      p_platform: info.platform,
+    })
+  } catch (err) {
+    console.warn('Error al registrar dispositivo:', err)
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       whitelist: [],
       authReady: false,
+      biometricsEnabled: false,
       setUser: (user) => set({ user }),
       setWhitelist: (list) => set({ whitelist: list }),
       setAuthReady: (ready) => set({ authReady: ready }),
+      setBiometricsEnabled: (enabled) => set({ biometricsEnabled: enabled }),
       updateAvatar: async (url) => {
         const currentUser = get().user
         if (!currentUser) return
@@ -111,6 +141,7 @@ export const useAuthStore = create<AuthState>()(
 
             if (profile && !profileError) {
               set({ user: profile as UserProfile, authReady: true })
+              registerCurrentDevice() // Registrar sesión real
             } else {
               set({ authReady: true })
             }
@@ -149,6 +180,7 @@ export const useAuthStore = create<AuthState>()(
 
               if (profile) {
                 set({ user: profile as UserProfile, authReady: true })
+                if (event === 'SIGNED_IN') registerCurrentDevice()
               } else {
                 set({ authReady: true })
               }
@@ -185,7 +217,11 @@ export const useAuthStore = create<AuthState>()(
           }
         }
       },
-      partialize: (state) => ({ user: state.user, whitelist: state.whitelist })
+      partialize: (state) => ({
+        user: state.user,
+        whitelist: state.whitelist,
+        biometricsEnabled: state.biometricsEnabled
+      })
     }
   )
 )

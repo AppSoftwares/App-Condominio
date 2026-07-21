@@ -48,3 +48,9 @@ def cast_vote(request: Request, voting_id: int, opcion: str, current_user: Resid
         raise HTTPException(status_code=400, detail="Ya has emitido tu voto para esta propuesta")
 
     return {"message": "Voto registrado correctamente"}
+
+@router.get("/{voting_id}/results")
+def get_voting_results(voting_id: int, session: Session = Depends(get_session)):
+    favor = session.exec(select(func.count()).select_from(VoteRecord).where(VoteRecord.voting_id == voting_id, VoteRecord.opcion == "favor")).one()
+    contra = session.exec(select(func.count()).select_from(VoteRecord).where(VoteRecord.voting_id == voting_id, VoteRecord.opcion == "contra")).one()
+    return {"favor": favor, "contra": contra}
