@@ -56,6 +56,12 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync ios
 
+      - name: Clean CocoaPods cache
+        run: |
+          cd ios/App
+          rm -rf Pods Podfile.lock
+          pod cache clean --all
+
       - name: Install Pods
         run: |
           cd ios/App
