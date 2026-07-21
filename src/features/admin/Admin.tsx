@@ -249,25 +249,6 @@ export const Admin: React.FC = () => {
     }
   }
 
-  const handleProcessSedemat = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const fileName = e.target.files[0].name;
-      alert(`Archivo ${fileName} detectado.`);
-
-      // Simulación de extracción de datos del recibo
-      setTimeout(() => {
-        const aseoBs = 240915.64;
-        const gasBs = 90343.36;
-        const aseoUsd = aseoBs / bcvRate;
-        const gasUsd = gasBs / bcvRate;
-
-        setSedematData({ aseoBs, gasBs, aseoUsd, gasUsd });
-        setGastoDetail({ concepto: 'PAGO SERVICIOS MUNICIPALES', monto: aseoUsd + gasUsd, categoria: 'Impuestos/Servicios' });
-        setShowGastoDetail(true);
-      }, 1000);
-    }
-  }
-
   const handleImportDebts = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];

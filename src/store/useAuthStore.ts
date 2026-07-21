@@ -38,10 +38,12 @@ interface AuthState {
   whitelist: any[]
   authReady: boolean
   biometricsEnabled: boolean
+  mfaRequired: boolean
   setUser: (user: UserProfile | null) => void
   setWhitelist: (list: any[]) => void
   setAuthReady: (ready: boolean) => void
   setBiometricsEnabled: (enabled: boolean) => void
+  setMfaRequired: (required: boolean) => void
   updateAvatar: (url: string) => Promise<void>
   signOut: () => Promise<void>
   initialize: () => () => void
@@ -74,6 +76,18 @@ async function registerCurrentDevice() {
   }
 }
 
+async function checkMfaStatus(): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+    if (error) throw error
+    // Si el usuario tiene un factor verificado (aal2 disponible) pero está en aal1, se requiere MFA
+    return data.currentLevel === 'aal1' && data.nextLevel === 'aal2'
+  } catch (err) {
+    console.error('Error verificando MFA:', err)
+    return false
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -81,10 +95,12 @@ export const useAuthStore = create<AuthState>()(
       whitelist: [],
       authReady: false,
       biometricsEnabled: false,
+      mfaRequired: false,
       setUser: (user) => set({ user }),
       setWhitelist: (list) => set({ whitelist: list }),
       setAuthReady: (ready) => set({ authReady: ready }),
       setBiometricsEnabled: (enabled) => set({ biometricsEnabled: enabled }),
+      setMfaRequired: (required) => set({ mfaRequired: required }),
       updateAvatar: async (url) => {
         const currentUser = get().user
         if (!currentUser) return
@@ -140,8 +156,9 @@ export const useAuthStore = create<AuthState>()(
               .maybeSingle()
 
             if (profile && !profileError) {
-              set({ user: profile as UserProfile, authReady: true })
-              registerCurrentDevice() // Registrar sesión real
+              const mfaNeeded = await checkMfaStatus()
+              set({ user: profile as UserProfile, authReady: true, mfaRequired: mfaNeeded })
+              if (!mfaNeeded) registerCurrentDevice() // Registrar solo si no está bloqueado por MFA
             } else {
               set({ authReady: true })
             }
@@ -179,8 +196,9 @@ export const useAuthStore = create<AuthState>()(
                 .maybeSingle()
 
               if (profile) {
-                set({ user: profile as UserProfile, authReady: true })
-                if (event === 'SIGNED_IN') registerCurrentDevice()
+                const mfaNeeded = await checkMfaStatus()
+                set({ user: profile as UserProfile, authReady: true, mfaRequired: mfaNeeded })
+                if (event === 'SIGNED_IN' && !mfaNeeded) registerCurrentDevice()
               } else {
                 set({ authReady: true })
               }

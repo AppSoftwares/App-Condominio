@@ -86,8 +86,8 @@ Al iniciar, el backend intentará crear tablas y usuarios iniciales si la DB est
 Variables de entorno para frontend: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 
 ```bash
-pnpm install
-pnpm build
+npm install
+npm run build
 ```
 
 ### Docker (opción rápida de desarrollo)

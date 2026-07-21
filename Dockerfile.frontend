@@ -1,11 +1,10 @@
 # Build the frontend
 FROM node:18-alpine AS builder
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+COPY package.json package-lock.json ./
+RUN npm install
 COPY . .
-RUN pnpm build
+RUN npm run build
 
 # Serve with nginx
 FROM nginx:stable-alpine

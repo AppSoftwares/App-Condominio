@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthSplash } from './features/auth/AuthSplash'
 import { Login } from './features/auth/Login'
 import { Register } from './features/auth/Register'
+import { MfaChallenge } from './features/auth/MfaChallenge'
 
 const ResDash = lazy(() => import('./features/dash/ResDash').then(m => ({ default: m.ResDash })))
 const Profile = lazy(() => import('./features/prof/Profile').then(m => ({ default: m.Profile })))
@@ -55,6 +56,8 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 function App() {
   const user = useAuthStore(state => state.user)
   const authReady = useAuthStore(state => state.authReady)
+  const mfaRequired = useAuthStore(state => state.mfaRequired)
+  const setMfaRequired = useAuthStore(state => state.setMfaRequired)
   const initializeAuth = useAuthStore(state => state.initialize)
   const syncAuth = useAuthStore(state => state.sync)
   const fetchRate = useCurrencyStore(state => state.fetchRate)
@@ -177,6 +180,8 @@ function App() {
                     Desbloquear
                 </button>
             </div>
+          ) : mfaRequired ? (
+            <MfaChallenge onVerified={() => setMfaRequired(false)} />
           ) : !authReady && !user ? (
             <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <p>Iniciando sesión...</p>

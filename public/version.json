@@ -1,7 +1,7 @@
 {
-  "versionCode": 27,
-  "versionName": "2.2.7",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.7",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.7/CaminosApp%20v2.2.7.apk",
-  "releaseNotes": "v2.2.7: Auditoría de seguridad completa, soporte offline (IndexedDB), idempotencia en pagos, dashboard de transparencia financiera y mejoras de UX."
+  "versionCode": 28,
+  "versionName": "2.2.8",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.8",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.8/CaminosApp%20v2.2.8.apk",
+  "releaseNotes": "v2.2.8: ¡Lanzamiento Piloto Profesional! Eliminación de simuladores, datos reales en la nube, escaneo QR avanzado, biometría (FaceID/Huella) y seguridad de grado bancario."
 }

@@ -9,8 +9,34 @@ from app.core.limiter import limiter
 from app.core.security import create_tokens, verify_api_key, hash_password
 from app.core.sentry_integration import init_sentry, wrap_app_with_sentry
 from app.routers import buildings, announcements, accounting, reports, reservations, guests, votings, security_admin, auth
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Caminos de la Lagunita API")
+
+# Valores por defecto para desarrollo local y dispositivos móviles (Capacitor)
+DEFAULT_ORIGINS = [
+    "http://localhost",
+    "http://localhost:5173",
+    "capacitor://localhost",
+    "https://localhost"
+]
+
+env_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+
+if not env_origins:
+    print("⚠️  ALLOWED_ORIGINS no está configurada — usando solo los orígenes por defecto (localhost/capacitor).")
+
+# Combinamos y eliminamos duplicados
+ALLOWED_ORIGINS = list(set(DEFAULT_ORIGINS + [o for o in env_origins if o]))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["*"],
+)
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
