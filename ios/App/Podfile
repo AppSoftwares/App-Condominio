@@ -1,6 +1,7 @@
 require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
 platform :ios, '15.0'
+use_modular_headers!
 
 # This is where Capacitor will inject the plugin pods.
 def capacitor_pods
