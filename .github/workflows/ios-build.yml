@@ -30,7 +30,10 @@ jobs:
           java-version: '17'
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --include=optional
+
+      - name: Fix Rollup for MacOS
+        run: npm install @rollup/rollup-darwin-arm64 --no-save
 
       - name: Create .env file
         run: |
