@@ -59,12 +59,14 @@ jobs:
       - name: Install CocoaPods Dependencies
         run: |
           cd ios/App
+          pod deintegrate || true
           pod install
 
       - name: Verify Podfile.lock
         run: |
           if [ -f "ios/App/Podfile.lock" ]; then
             echo "Podfile.lock exists."
+            ls -l ios/App/Podfile.lock
           else
             echo "Error: Podfile.lock not found!"
             exit 1
@@ -83,6 +85,9 @@ jobs:
           mv android/app/build/outputs/apk/release/CaminosApp-v2.2.8.apk "CaminosApp v2.2.8.apk"
 
       - name: Build iOS App (Unsigned)
+        env:
+          PODS_ROOT: ${{ github.workspace }}/ios/App/Pods
+          PODS_PODFILE_DIR_PATH: ${{ github.workspace }}/ios/App
         run: |
           cd ios/App
           xcodebuild -resolvePackageDependencies -workspace App.xcworkspace -scheme App || true
@@ -98,8 +103,7 @@ jobs:
                     CODE_SIGN_IDENTITY="" \
                     COMPILER_INDEX_STORE_ENABLE=NO \
                     ENABLE_USER_SCRIPT_SANDBOXING=NO \
-                    PODS_PODFILE_DIR_PATH="${GITHUB_WORKSPACE}/ios/App" \
-                    PODS_ROOT="${GITHUB_WORKSPACE}/ios/App/Pods" \
+                    ONLY_ACTIVE_ARCH=NO \
                     build
 
       - name: Create IPA for Sideloadly
