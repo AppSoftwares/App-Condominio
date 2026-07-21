@@ -54,7 +54,7 @@ jobs:
           rm -rf ios/App/CapApp-SPM
 
       - name: Capacitor Sync
-        run: npx cap sync ios
+        run: npx cap sync
 
       - name: Clean CocoaPods cache
         run: |
