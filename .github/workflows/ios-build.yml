@@ -56,17 +56,6 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync
 
-      - name: Clean CocoaPods cache
-        run: |
-          cd ios/App
-          rm -rf Pods Podfile.lock
-          pod cache clean --all
-
-      - name: Install Pods
-        run: |
-          cd ios/App
-          pod install
-
       - name: Build Android App (Release)
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
@@ -94,6 +83,7 @@ jobs:
                     CODE_SIGNING_REQUIRED=NO \
                     CODE_SIGN_IDENTITY="" \
                     COMPILER_INDEX_STORE_ENABLE=NO \
+                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                     build
 
       - name: Create IPA for Sideloadly
