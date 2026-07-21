@@ -51,9 +51,16 @@ jobs:
         run: |
           npx @capacitor/assets generate --iconBackgroundColor '#0f5551' --iconBackgroundColorDark '#0f5551'
           find android/app/src/main/res -name "*.webp" -delete || true
+          rm -rf ios/App/CapApp-SPM
+          grep -v "CapApp-SPM" ios/App/App.xcodeproj/project.pbxproj > temp && mv temp ios/App/App.xcodeproj/project.pbxproj
 
       - name: Capacitor Sync
-        run: npx cap sync
+        run: npx cap sync ios
+
+      - name: Install Pods
+        run: |
+          cd ios/App
+          pod install
 
       - name: Build Android App (Release)
         env:
@@ -70,9 +77,9 @@ jobs:
       - name: Build iOS App (Unsigned)
         run: |
           cd ios/App
-          xcodebuild -resolvePackageDependencies -project App.xcodeproj
+          xcodebuild -resolvePackageDependencies -workspace App.xcworkspace -scheme App || true
           
-          xcodebuild -project App.xcodeproj \
+          xcodebuild -workspace App.xcworkspace \
                     -scheme App \
                     -configuration Debug \
                     -destination 'generic/platform=iOS' \
