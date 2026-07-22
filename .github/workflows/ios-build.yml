@@ -103,6 +103,7 @@ jobs:
                     CODE_SIGN_IDENTITY="" \
                     COMPILER_INDEX_STORE_ENABLE=NO \
                     ENABLE_USER_SCRIPT_SANDBOXING=NO \
+                    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
                     ONLY_ACTIVE_ARCH=NO \
                     build
 

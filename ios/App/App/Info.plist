@@ -52,7 +52,7 @@
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIImageName</key>
-		<string>AppIcon-512@2x</string>
+		<string>Splash</string>
 		<key>UIImageRespectsSafeAreaInsets</key>
 		<true/>
 	</dict>
