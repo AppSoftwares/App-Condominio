@@ -61,13 +61,13 @@ jobs:
           rm -rf ios/App/CapApp-SPM
 
       - name: Capacitor Sync
-        run: npx cap sync
+        run: pnpm exec cap sync ios
 
       - name: Install CocoaPods Dependencies
         run: |
           cd ios/App
-          pod deintegrate || true
           pod install
+          ls -la Podfile.lock
 
       - name: Build Android App (Release)
         env:
