@@ -61,7 +61,7 @@ jobs:
           rm -rf ios/App/CapApp-SPM
 
       - name: Capacitor Sync
-        run: pnpm exec cap sync ios
+        run: pnpm exec cap sync
 
       - name: Install CocoaPods Dependencies
         run: |
