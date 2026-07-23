@@ -68,8 +68,11 @@ jobs:
           cd ios/App
           pod install
           # Fix for "The sandbox is not in sync with the Podfile.lock"
-          find Pods -name "*.sh" -type f -exec sed -i '' 's/${SRCROOT}\/\.\.\/Podfile.lock/Podfile.lock/g' {} + || true
-          find Pods -name "*.sh" -type f -exec sed -i '' 's/${SRCROOT}\/Podfile.lock/Podfile.lock/g' {} + || true
+          # This specifically targets the issue where SRCROOT or PODS_ROOT resolve to empty
+          find Pods -name "*.sh" -type f -exec sed -i '' 's|diff "/Podfile.lock"|diff "Podfile.lock"|g' {} + || true
+          find Pods -name "*.sh" -type f -exec sed -i '' 's|diff "${SRCROOT}/../Podfile.lock"|diff "Podfile.lock"|g' {} + || true
+          find Pods -name "*.sh" -type f -exec sed -i '' 's|diff "${PODS_ROOT}/../Podfile.lock"|diff "Podfile.lock"|g' {} + || true
+          ls -la Podfile.lock
 
       - name: Build Android App (Release)
         env:
