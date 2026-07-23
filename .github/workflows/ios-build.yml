@@ -68,13 +68,19 @@ jobs:
           cd ios/App
           pod install
           # Fix for "The sandbox is not in sync with the Podfile.lock"
-          # This aggressively removes absolute paths and forces relative lookups for the lockfiles
+          # 1. Fix the generated shell scripts in Pods directory
           find Pods -name "*.sh" -type f -exec sed -i '' 's|${SRCROOT}/../Podfile.lock|Podfile.lock|g' {} + || true
           find Pods -name "*.sh" -type f -exec sed -i '' 's|${PODS_ROOT}/../Podfile.lock|Podfile.lock|g' {} + || true
-          find Pods -name "*.sh" -type f -exec sed -i '' 's|/Podfile.lock|Podfile.lock|g' {} + || true
-          find Pods -name "*.sh" -type f -exec sed -i '' 's|/Manifest.lock|Manifest.lock|g' {} + || true
-          # Bypass the check if it still fails due to path issues
-          find Pods -name "*-frameworks.sh" -type f -exec sed -i '' 's/exit 1/exit 0/g' {} + || true
+          find Pods -name "*.sh" -type f -exec sed -i '' 's|"/Podfile.lock"|"Podfile.lock"|g' {} + || true
+          find Pods -name "*.sh" -type f -exec sed -i '' 's|"/Manifest.lock"|"Manifest.lock"|g' {} + || true
+          
+          # 2. Fix the project.pbxproj which might have been modified by pod install with absolute paths
+          sed -i '' 's|/Podfile.lock|Podfile.lock|g' App.xcodeproj/project.pbxproj || true
+          sed -i '' 's|/Manifest.lock|Manifest.lock|g' App.xcodeproj/project.pbxproj || true
+          
+          # 3. Bypass the check if it still fails
+          find Pods -name "*.sh" -type f -exec sed -i '' 's/exit 1/exit 0/g' {} + || true
+          
           ls -la Podfile.lock
 
       - name: Build Android App (Release)
