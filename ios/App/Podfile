@@ -25,25 +25,20 @@ target 'App' do
 end
 
 post_install do |installer|
-  # Desactivar sandboxing y neutralizar verificación de sincronización en CI
-  installer.generated_projects.each do |project|
-    project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-      end
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     end
   end
 
   installer.aggregate_targets.each do |target|
+    target.user_project.build_configurations.each do |config|
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    end
     target.user_project.targets.each do |user_target|
       user_target.build_configurations.each do |config|
         config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-      end
-      # Neutralizar la fase de verificación de Manifest.lock si detectamos entorno de CI
-      user_target.shell_script_build_phases.each do |phase|
-        if phase.name.include?('Check Pods Manifest.lock')
-          phase.shell_script = "echo 'Skipping sync check in CI'"
-        end
       end
     end
     target.user_project.save
