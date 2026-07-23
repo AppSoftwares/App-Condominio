@@ -25,14 +25,7 @@ target 'App' do
 end
 
 post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
-      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
-    end
-  end
-
-  # Desactivar sandboxing también en el proyecto principal
+  # Desactivar sandboxing en todos los targets
   installer.aggregate_targets.each do |target|
     target.user_project.targets.each do |user_target|
       user_target.build_configurations.each do |config|
@@ -40,6 +33,13 @@ post_install do |installer|
       end
     end
     target.user_project.save
+  end
+
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    end
   end
 
   assertDeploymentTarget(installer)
