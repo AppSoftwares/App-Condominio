@@ -67,7 +67,9 @@ jobs:
         run: |
           cd ios/App
           pod install
-          ls -la Podfile.lock
+          # Fix for "The sandbox is not in sync with the Podfile.lock"
+          find Pods -name "*.sh" -type f -exec sed -i '' 's/${SRCROOT}\/\.\.\/Podfile.lock/Podfile.lock/g' {} + || true
+          find Pods -name "*.sh" -type f -exec sed -i '' 's/${SRCROOT}\/Podfile.lock/Podfile.lock/g' {} + || true
 
       - name: Build Android App (Release)
         env:
@@ -95,11 +97,8 @@ jobs:
                     CODE_SIGNING_ALLOWED=NO \
                     CODE_SIGNING_REQUIRED=NO \
                     CODE_SIGN_IDENTITY="" \
-                    COMPILER_INDEX_STORE_ENABLE=NO \
                     ENABLE_USER_SCRIPT_SANDBOXING=NO \
-                    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
-                    IBTOOL_NO_STORYBOARD_VALIDATION=YES \
-                    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
+                    COMPILER_INDEX_STORE_ENABLE=NO \
                     ONLY_ACTIVE_ARCH=NO \
                     build
 
