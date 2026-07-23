@@ -67,9 +67,6 @@ jobs:
         run: |
           cd ios/App
           pod install
-          # Forcefully remove the "[CP] Check Pods Manifest.lock" build phase to bypass sandboxing/sync issues in CI.
-          # This is safe because we just ran pod install.
-          ruby -e "require 'xcodeproj'; project = Xcodeproj::Project.open('App.xcodeproj'); project.targets.each { |t| t.shell_script_build_phases.each { |p| t.build_phases.delete(p) if p.name.include?('Check Pods Manifest.lock') } }; project.save"
           ls -la Podfile.lock
 
       - name: Build Android App (Release)
