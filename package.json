@@ -73,8 +73,21 @@
     "vite": "^5.1.0"
   },
   "pnpm": {
+    "overrides": {
+      "sharp": "$sharp"
+    },
     "allowedBuildScripts": [
       "sharp"
-    ]
+    ],
+    "supportedArchitectures": {
+      "os": [
+        "win32",
+        "darwin"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ]
+    }
   }
 }

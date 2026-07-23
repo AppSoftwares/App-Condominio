@@ -35,14 +35,15 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Check Java Version
-        run: java -version
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version found: $VERSION"
 
       - name: Install dependencies
-        run: pnpm install
-
-      - name: Fix Rollup for MacOS
-        run: pnpm add @rollup/rollup-darwin-arm64 --save-optional
+        run: pnpm install --frozen-lockfile || pnpm install
 
       - name: Create .env file
         run: |
@@ -68,16 +69,6 @@ jobs:
           pod deintegrate || true
           pod install
 
-      - name: Verify Podfile.lock
-        run: |
-          if [ -f "ios/App/Podfile.lock" ]; then
-            echo "Podfile.lock exists."
-            ls -l ios/App/Podfile.lock
-          else
-            echo "Error: Podfile.lock not found!"
-            exit 1
-          fi
-
       - name: Build Android App (Release)
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4096m -XX:MaxMetaspaceSize=1024m"
@@ -86,9 +77,10 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace --info
 
-      - name: Prepare Android Artifact
+      - name: Prepare Artifacts
         run: |
-          mv android/app/build/outputs/apk/release/CaminosApp-v2.2.8.apk "CaminosApp v2.2.8.apk"
+          VERSION="${{ steps.package-version.outputs.version }}"
+          mv android/app/build/outputs/apk/release/CaminosApp-v$VERSION.apk "CaminosApp $VERSION.apk"
 
       - name: Build iOS App (Unsigned)
         run: |
@@ -113,6 +105,7 @@ jobs:
 
       - name: Create IPA for Sideloadly
         run: |
+          VERSION="${{ steps.package-version.outputs.version }}"
           APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "*.app" -type d | head -1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: No se encontró el binario .app"
@@ -120,24 +113,23 @@ jobs:
           fi
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
-          zip -rq "CaminosApp v2.2.8.ipa" Payload
+          zip -rq "CaminosApp $VERSION.ipa" Payload
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.2.8
-          name: "CaminosApp v2.2.8"
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: "CaminosApp v${{ steps.package-version.outputs.version }}"
           files: |
             *.ipa
             *.apk
           body: |
-            Actualización CaminosApp v2.2.8 (Lanzamiento Piloto)
-            - Profesionalización: Eliminación total de simuladores. Votaciones, Anuncios e Incidentes ahora funcionan con el backend real.
-            - Hardware Nativo: Integración de escaneo de QR profesional (MLKit) y biometría avanzada (FaceID/Huella).
-            - Seguridad: Activación de RLS en Incidentes, protección MFA (2FA) obligatoria y endurecimiento de políticas CORS.
-            - Auditoría: Nueva tabla de logs de auditoría para rastrear cambios sensibles en la base de datos.
-            - UX: Formateo automático de número de casa (XX-XX) y nuevos estados vacíos en todas las listas principales.
-            - Estandarización: Migración completa a NPM y limpieza de código muerto.
+            Actualización CaminosApp v${{ steps.package-version.outputs.version }}
+            
+            Notas de lanzamiento:
+            - Corrección de compatibilidad en el proceso de construcción para MacOS ARM64.
+            - Automatización mejorada para nombres de archivos y generación de releases.
+            - Incremento de versión interna para auto-actualización.
           draft: false
           prerelease: false
         env:
