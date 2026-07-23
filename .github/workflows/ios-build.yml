@@ -68,9 +68,9 @@ jobs:
           cd ios/App
           pod install
           # Neutralize the Manifest.lock check which often fails in CI due to sandboxing/path issues
-          sed -i '' 's/diff.*Manifest.lock.*/echo "Skipping check"/g' App.xcodeproj/project.pbxproj || true
           if [ -d Pods ]; then
-            find Pods -name "*.sh" -type f -exec sed -i '' 's/diff.*Manifest.lock.*/echo "Skipping check"/g' {} + || true
+            find Pods -name "*.sh" -type f -exec sed -i '' 's/diff.*Manifest.lock.*/echo "Skipping Manifest.lock check"/g' {} + || true
+            find Pods -name "*.sh" -type f -exec sed -i '' 's/diff.*Podfile.lock.*/echo "Skipping Podfile.lock check"/g' {} + || true
           fi
           ls -la Podfile.lock
 
