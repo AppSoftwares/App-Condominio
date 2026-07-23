@@ -32,10 +32,12 @@ post_install do |installer|
     end
   end
 
-  installer.user_project.build_configurations.each do |config|
-    config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+  installer.aggregate_targets.each do |target|
+    target.user_project.build_configurations.each do |config|
+      config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+    end
+    target.user_project.save
   end
-  installer.user_project.save
 
   assertDeploymentTarget(installer)
 end
