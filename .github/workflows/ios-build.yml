@@ -134,8 +134,8 @@ jobs:
           tag_name: v${{ steps.package-version.outputs.version }}
           name: "CaminosApp v${{ steps.package-version.outputs.version }}"
           files: |
-            "CaminosApp ${{ steps.package-version.outputs.version }}.ipa"
-            "CaminosApp ${{ steps.package-version.outputs.version }}.apk"
+            CaminosApp ${{ steps.package-version.outputs.version }}.ipa
+            CaminosApp ${{ steps.package-version.outputs.version }}.apk
           body: |
             Actualización CaminosApp v${{ steps.package-version.outputs.version }}
             
