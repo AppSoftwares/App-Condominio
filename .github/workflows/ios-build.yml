@@ -67,6 +67,16 @@ jobs:
         run: |
           cd ios/App
           pod install
+
+      - name: Verificar include de Pods en xcconfig
+        run: |
+          cd ios
+          echo "--- Buscando include de Pods-App en debug.xcconfig ---"
+          grep -r "Pods-App" debug.xcconfig || echo "⚠️ ADVERTENCIA: debug.xcconfig no incluye el xcconfig de Pods"
+
+      - name: Neutralizar Check Pods Manifest.lock
+        run: |
+          cd ios/App
           # Safely bypass the "Check Pods Manifest.lock" build phase in CI.
           # We modify the shell script content instead of deleting the phase to avoid breaking module links.
           ruby -e "require 'xcodeproj'; project = Xcodeproj::Project.open('App.xcodeproj'); project.targets.each { |t| t.shell_script_build_phases.each { |p| p.shell_script = 'echo \"Bypassing sync check in CI\"' if p.name.include?('Check Pods Manifest.lock') } }; project.save"
@@ -124,15 +134,13 @@ jobs:
           tag_name: v${{ steps.package-version.outputs.version }}
           name: "CaminosApp v${{ steps.package-version.outputs.version }}"
           files: |
-            *.ipa
-            *.apk
+            "CaminosApp ${{ steps.package-version.outputs.version }}.ipa"
+            "CaminosApp ${{ steps.package-version.outputs.version }}.apk"
           body: |
             Actualización CaminosApp v${{ steps.package-version.outputs.version }}
             
             Notas de lanzamiento:
-            - Corrección de compatibilidad en el proceso de construcción para MacOS ARM64.
-            - Automatización mejorada para nombres de archivos y generación de releases.
-            - Incremento de versión interna para auto-actualización.
+            v${{ steps.package-version.outputs.version }}: ¡Lanzamiento Piloto Profesional! Eliminación de simuladores, datos reales en la nube, escaneo QR avanzado, biometría (FaceID/Huella) y seguridad de grado bancario.
           draft: false
           prerelease: false
         env:

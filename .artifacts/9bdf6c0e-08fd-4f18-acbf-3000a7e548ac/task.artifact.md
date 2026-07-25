@@ -1,0 +1,9 @@
+- [x] Configurar archivos .xcconfig
+    - [x] Editar `ios/debug.xcconfig`
+    - [x] Crear `ios/release.xcconfig`
+- [x] Actualizar `project.pbxproj`
+    - [x] Registrar `release.xcconfig` como PBXFileReference
+    - [x] Añadir `release.xcconfig` al grupo principal
+    - [x] Asignar `release.xcconfig` a configuraciones Release
+- [x] Actualizar Workflow de GitHub Actions
+    - [x] Añadir paso de diagnóstico en `ios-build.yml`
