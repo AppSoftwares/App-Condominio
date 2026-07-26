@@ -4,7 +4,7 @@
   "version": "2.2.9",
   "type": "module",
   "engines": {
-    "node": ">=20.0.0",
+    "node": "20.x",
     "npm": ">=10.0.0"
   },
   "scripts": {
@@ -76,7 +76,7 @@
     "overrides": {
       "sharp": "$sharp"
     },
-    "allowedBuildScripts": [
+    "onlyBuiltDependencies": [
       "sharp",
       "esbuild",
       "core-js"
