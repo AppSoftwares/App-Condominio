@@ -140,7 +140,7 @@ jobs:
             Actualización CaminosApp v${{ steps.package-version.outputs.version }}
             
             Notas de lanzamiento:
-            v${{ steps.package-version.outputs.version }}: ¡Lanzamiento Piloto Profesional! Eliminación de simuladores, datos reales en la nube, escaneo QR avanzado, biometría (FaceID/Huella) y seguridad de grado bancario.
+            v${{ steps.package-version.outputs.version }}: Hotfix de regresiones críticas. Se corrigen estados de carga infinitos en Casillero, Invitados y Reservas. Mejora en la estabilidad de red y cierres de sesión. Migración exitosa a Vercel para unificación de servicios.
           draft: false
           prerelease: false
         env:
