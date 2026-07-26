@@ -16,9 +16,13 @@ export const Reservations: React.FC = () => {
   const [isBlocked, setIsBlocked] = useState(false)
 
   useEffect(() => {
-    checkDebtStatus()
-    fetchReservations()
-  }, [])
+    if (user?.id) {
+      checkDebtStatus()
+      fetchReservations()
+    } else {
+      setLoading(false)
+    }
+  }, [user?.id])
 
   const checkDebtStatus = async () => {
     if (!user) return
@@ -32,6 +36,7 @@ export const Reservations: React.FC = () => {
   }
 
   const fetchReservations = async () => {
+    setLoading(true)
     try {
       const today = new Date().toISOString().split('T')[0];
       const { data, error } = await supabase
@@ -60,27 +65,31 @@ export const Reservations: React.FC = () => {
 
   const confirmReservation = async () => {
     if (!date || !time) return alert('Por favor seleccione fecha y hora')
+    if (!user?.id) return alert('No se detectó sesión de usuario.')
 
     try {
       const { error } = await supabase
         .from('reservations')
         .insert([{
-          user_id: user?.id,
+          user_id: user.id,
           area_name: selectedArea,
           reservation_date: date,
           reservation_time: time,
           status: 'confirmed'
         }])
 
-      if (error) throw error
+      if (error) {
+        console.error('Insert error:', error)
+        throw new Error(error.message || 'Error de base de datos')
+      }
 
       alert(`Reserva de ${selectedArea} para el ${date} a las ${time} registrada exitosamente.`)
       setShowModal(false)
       setDate('')
       setTime('')
-      fetchReservations()
+      await fetchReservations()
     } catch (err: any) {
-      alert('Error al reservar: ' + err.message)
+      alert('Error al reservar: ' + (err.message || 'Error desconocido. Verifique su conexión o deudas pendientes.'))
     }
   }
 

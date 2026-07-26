@@ -21,8 +21,12 @@ export const Requests: React.FC = () => {
   const [votedIds, setVotedIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true)
+      setError(null)
       try {
         const [vData, aData] = await Promise.all([
           listVotings(),
@@ -32,12 +36,13 @@ export const Requests: React.FC = () => {
         setAnnouncements(aData)
       } catch (err) {
         console.error('Error cargando comunidad:', err)
+        setError('No se pudo conectar con el servidor de comunidad.')
       } finally {
         setLoading(false)
       }
     }
     fetchData()
-  }, [])
+  }, [user?.id])
 
   const handleVote = async (votingId: number, opcion: 'favor' | 'contra') => {
     try {
@@ -65,6 +70,16 @@ export const Requests: React.FC = () => {
 
         {loading ? (
           <p style={{ textAlign: 'center' }}>Cargando...</p>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: 'rgba(186,26,26,0.05)', borderRadius: '16px', border: '1px solid rgba(186,26,26,0.2)' }}>
+            <p style={{ color: '#ba1a1a', fontWeight: 600, margin: 0 }}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ marginTop: '10px', background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Reintentar
+            </button>
+          </div>
         ) : votings.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay votaciones activas en este momento.</p>
         ) : votings.map(voting => (

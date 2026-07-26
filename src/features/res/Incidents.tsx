@@ -119,25 +119,23 @@ export const Incidents: React.FC = () => {
 
     setIsSubmitting(true)
     try {
-      // ensure authenticated session id for RLS
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-      if (sessionError) throw sessionError
-      const authId = sessionData?.session?.user?.id ?? user?.id ?? sessionUserId
-      if (!authId) throw new Error('No se detectó una sesión activa. Por favor inicie sesión nuevamente.')
-
-      // Generate a PDF of the complaint before sending (or after success)
+      // Generate a PDF of the complaint before sending
       const generateComplaintReceipt = () => {
-        const doc = new jsPDF()
-        doc.setFontSize(20)
-        doc.text("Reporte de Incidencia / Queja", 105, 20, { align: 'center' })
-        doc.setFontSize(12)
-        doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 40)
-        doc.text(`Categoría: ${category}`, 20, 60)
-        doc.text(`Ubicación (Casa): ${location}`, 20, 80)
-        doc.text("Descripción:", 20, 100)
-        const splitText = doc.splitTextToSize(description, 170)
-        doc.text(splitText, 20, 110)
-        doc.save(`Reporte_Queja_${Date.now()}.pdf`)
+        try {
+          const doc = new jsPDF()
+          doc.setFontSize(20)
+          doc.text("Reporte de Incidencia / Queja", 105, 20, { align: 'center' })
+          doc.setFontSize(12)
+          doc.text(`Fecha: ${new Date().toLocaleString()}`, 20, 40)
+          doc.text(`Categoría: ${category}`, 20, 60)
+          doc.text(`Ubicación (Casa): ${location}`, 20, 80)
+          doc.text("Descripción:", 20, 100)
+          const splitText = doc.splitTextToSize(description, 170)
+          doc.text(splitText, 20, 110)
+          doc.save(`Reporte_Queja_${Date.now()}.pdf`)
+        } catch (e) {
+          console.error('Error generating PDF:', e)
+        }
       }
 
       const { error } = await supabase.rpc('rpc_insert_incident', {
@@ -149,7 +147,7 @@ export const Incidents: React.FC = () => {
       if (error) throw error
 
       alert('Reporte enviado con éxito. La administración revisará su caso.')
-      try { generateComplaintReceipt() } catch(e) { console.error('Error generating PDF:', e) }
+      generateComplaintReceipt()
       setLocation('')
       setDescription('')
       fetchMyIncidents()

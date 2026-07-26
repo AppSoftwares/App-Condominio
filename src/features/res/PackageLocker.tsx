@@ -21,21 +21,29 @@ export const PackageLocker = () => {
 
   useEffect(() => {
     fetchPackages();
-  }, []);
+  }, [user?.id]);
 
   const fetchPackages = async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('casillero_virtual')
-      .select('*')
-      .eq('resident_id', user.id)
-      .order('received_at', { ascending: false });
-
-    if (!error && data) {
-      setPackages(data);
+    if (!user) {
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('casillero_virtual')
+        .select('*')
+        .eq('resident_id', user.id)
+        .order('received_at', { ascending: false });
+
+      if (!error && data) {
+        setPackages(data);
+      }
+    } catch (err) {
+      console.error('Error fetching packages:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

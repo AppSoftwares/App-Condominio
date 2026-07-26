@@ -26,12 +26,20 @@ export const Guests: React.FC = () => {
   ]
 
   useEffect(() => {
-    checkDebtStatus()
-    fetchRecentGuests()
-  }, [])
+    if (user?.id) {
+      checkDebtStatus()
+      fetchRecentGuests()
+    } else {
+      setLoading(false)
+    }
+  }, [user?.id])
 
   const checkDebtStatus = async () => {
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
+    setLoading(true)
     try {
       const { data, error } = await supabase.rpc('check_debt_limit', { res_id: user.id })
       if (error) throw error

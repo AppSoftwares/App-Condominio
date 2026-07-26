@@ -233,7 +233,7 @@ export const Payments: React.FC = () => {
 
         if (uploadError) {
           console.error('Error subiendo comprobante:', uploadError)
-          throw uploadError
+          throw new Error('No se pudo subir la imagen del comprobante. Verifique su conexión.')
         }
         console.log('Comprobante subido con éxito.')
 
@@ -243,12 +243,6 @@ export const Payments: React.FC = () => {
 
         screenshotUrl = publicUrl
       }
-
-      // Ensure session user id to satisfy RLS policies
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-      if (sessionError) throw sessionError
-      const authId = sessionData?.session?.user?.id ?? user?.id ?? sessionUserId
-      if (!authId) throw new Error('No se detectó una sesión activa. Por favor inicie sesión nuevamente.')
 
       const cleanReference = sanitizeString(reference)
       const cleanBank = sanitizeString(originBank)

@@ -1,7 +1,7 @@
 {
-  "versionCode": 31,
-  "versionName": "2.2.8",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.8",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.8/CaminosApp%20v2.2.8.apk",
-  "releaseNotes": "v2.2.8: ¡Lanzamiento Piloto Profesional! Eliminación de simuladores, datos reales en la nube, escaneo QR avanzado, biometría (FaceID/Huella) y seguridad de grado bancario."
+  "versionCode": 32,
+  "versionName": "2.2.9",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.9",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.9/CaminosApp%20v2.2.9.apk",
+  "releaseNotes": "v2.2.9: Hotfix de regresiones críticas. Se corrigen estados de carga infinitos en Casillero, Invitados y Reservas. Mejora en la estabilidad de red y cierres de sesión."
 }

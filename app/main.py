@@ -18,7 +18,8 @@ DEFAULT_ORIGINS = [
     "http://localhost",
     "http://localhost:5173",
     "capacitor://localhost",
-    "https://localhost"
+    "https://localhost",
+    "https://app-condominio.vercel.app"
 ]
 
 env_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
