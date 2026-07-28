@@ -158,10 +158,17 @@ export const Layout: React.FC = () => {
               onClick={() => navigate('/admin?tab=polls')}
             />
             <NavIcon
-              icon={location.pathname === '/admin/payroll' ? MdPayments : MdOutlinePayments}
-              active={location.pathname === '/admin/payroll'}
-              onClick={() => navigate('/admin/payroll')}
+              icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'incidents' ? MdWarning : MdOutlineWarningAmber}
+              active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'incidents'}
+              onClick={() => navigate('/admin?tab=incidents')}
             />
+            {user.email?.toLowerCase().trim() === 'admin@caminos.com' && (
+              <NavIcon
+                icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security' ? MdBusiness : MdOutlineBusiness}
+                active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security'}
+                onClick={() => navigate('/admin?tab=security')}
+              />
+            )}
           </>
         ) : (
           <>

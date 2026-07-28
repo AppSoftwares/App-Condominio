@@ -20,9 +20,14 @@ export const Profile: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleLogout = async () => {
+    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return
     try {
       await signOut()
-    } finally {
+      // Limpiar todo el estado local y recargar para asegurar limpieza
+      localStorage.clear()
+      window.location.href = '/'
+    } catch (err) {
+      console.error('Error during logout:', err)
       navigate('/', { replace: true })
     }
   }
@@ -31,15 +36,20 @@ export const Profile: React.FC = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64String = reader.result as string
-        updateAvatar(base64String)
+      try {
+        const reader = new FileReader()
+        reader.onloadend = async () => {
+          const base64String = reader.result as string
+          await updateAvatar(base64String)
+          alert('Foto de perfil actualizada con éxito')
+        }
+        reader.readAsDataURL(file)
+      } catch (err) {
+        alert('Error al actualizar la foto de perfil')
       }
-      reader.readAsDataURL(file)
     }
   }
 

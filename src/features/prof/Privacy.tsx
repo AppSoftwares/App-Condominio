@@ -170,8 +170,18 @@ export const Privacy: React.FC = () => {
             <p style={introTextStyle}>Gestión de seguridad global y cumplimiento normativo del condominio.</p>
 
             <Section title="Control de Staff">
-              <MenuItem icon="badge" label="Gestión de Roles" desc="Permisos de vigilantes y personal" />
-              <MenuItem icon="history_edu" label="Registro de Actividad" desc="Historial de cambios (Audit Log)" />
+              <MenuItem
+                icon="badge"
+                label="Gestión de Roles"
+                desc="Permisos de vigilantes y personal"
+                onClick={() => alert("Módulo de Gestión de Roles en desarrollo. Por favor contacte al soporte para cambios de permisos.")}
+              />
+              <MenuItem
+                icon="history_edu"
+                label="Registro de Actividad"
+                desc="Historial de cambios (Audit Log)"
+                onClick={() => alert("Registro de Actividad disponible en la versión Web Console.")}
+              />
             </Section>
 
             <Section title="Integraciones y API Keys">

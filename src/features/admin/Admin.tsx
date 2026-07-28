@@ -10,8 +10,9 @@ import { IncidentsAdmin } from './IncidentsAdmin'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
-import logoPremium from '../../assets/logo_premium.png'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
+import { votingService, Voting } from '../../services/votingService'
+import { paymentService } from '../../services/paymentService'
 
 const TabItem = ({ active, label, icon, onClick }: any) => (
   <button
@@ -43,8 +44,9 @@ export const Admin: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, setWhitelist } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
+  const isSuperAdmin = user?.email?.toLowerCase().trim() === 'admin@caminos.com'
 
-  const [selectedCluster, setSelectedCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
+  const [selectedCluster, setSelectedCluster] = useState(user?.residential_cluster || RESIDENTIAL_CLUSTERS["Etapa I"][0])
   const initialTab = (searchParams.get('tab') as any) || 'finance'
   const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents'>(initialTab)
 
@@ -81,7 +83,7 @@ export const Admin: React.FC = () => {
   const [isSavingSettings, setIsSavingSettings] = useState(false)
 
   // Poll state (Real)
-  const [votings, setVotings] = useState<VotingDTO[]>([])
+  const [votings, setVotings] = useState<Voting[]>([])
 
   // Financial State
   const [showGastoDetail, setShowGastoDetail] = useState(false)
@@ -102,26 +104,32 @@ export const Admin: React.FC = () => {
     setLoading(true)
     try {
       // Fetch Users
-      const { data: userData, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+      let userQuery = supabase.from('profiles').select('*')
+      if (!isSuperAdmin) {
+        userQuery = userQuery.eq('residential_cluster', user?.residential_cluster)
+      }
+      const { data: userData, error: userError } = await userQuery.order('created_at', { ascending: false })
 
       if (userError) throw userError
       setUsers(userData.filter(u => u.status === 'active' || !u.status))
       setPendingUsers(userData.filter(u => u.status === 'pending'))
 
       // Fetch Payments
-      const { data: paymentData, error: paymentError } = await supabase
-        .from('payments')
-        .select('*, profiles(first_name, last_name, house_number)')
-        .order('created_at', { ascending: false })
-
-      if (paymentError) throw paymentError
+      let paymentData: any[] = []
+      if (isSuperAdmin) {
+        const { data, error } = await supabase
+          .from('payments')
+          .select('*, profiles(first_name, last_name, house_number, residential_cluster)')
+          .order('created_at', { ascending: false })
+        if (error) throw error
+        paymentData = data
+      } else if (user?.residential_cluster) {
+        paymentData = await paymentService.getPaymentsByCluster(user.residential_cluster)
+      }
       setPayments(paymentData)
 
       // Fetch Votings
-      const vData = await listVotings()
+      const vData = await votingService.list(isSuperAdmin ? undefined : user?.residential_cluster)
       setVotings(vData)
 
       // Fetch Condo Settings
@@ -144,14 +152,11 @@ export const Admin: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [isSuperAdmin, user?.residential_cluster])
 
   useEffect(() => {
     fetchData()
-    if (user && user.email?.toLowerCase().trim() !== 'admin@caminos.com' && user.residential_cluster) {
-      setSelectedCluster(user.residential_cluster)
-    }
-  }, [user, fetchData])
+  }, [fetchData])
 
   const approveUser = async (userId: string) => {
     try {
@@ -226,17 +231,18 @@ export const Admin: React.FC = () => {
   const handleCreatePoll = async () => {
     if (!newPollTitle || !newPollDesc) return alert('Por favor, complete todos los campos.')
     try {
-      await createVoting({
-        titulo: newPollTitle,
-        descripcion: `${newPollDesc}${newPollAmount ? `\n\nMONTO ESTIMADO: ${formatUSD(parseFloat(newPollAmount))}` : ''}`,
-        fecha_fin: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        monto_propuesto: newPollAmount ? parseFloat(newPollAmount) : undefined,
+      await votingService.create({
+        title: newPollTitle,
+        description: `${newPollDesc}${newPollAmount ? `\n\nMONTO ESTIMADO: ${formatUSD(parseFloat(newPollAmount))}` : ''}`,
+        end_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        amount_estimated: newPollAmount ? parseFloat(newPollAmount) : undefined,
+        cluster_name: isSuperAdmin ? undefined : user?.residential_cluster
       })
       alert('¡Votación publicada exitosamente!')
       setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
-      fetchData(); // recargar si es necesario
+      fetchData();
     } catch (err: any) {
-      alert('No se pudo publicar la votación: ' + (err.response?.data?.detail || 'Error desconocido'))
+      alert('No se pudo publicar la votación: ' + (err.message || 'Error desconocido'))
     }
   }
 
@@ -438,8 +444,22 @@ export const Admin: React.FC = () => {
     }
   }
 
-  const generateStatementPDF = (resident: any) => {
+  const generateStatementPDF = async (resident: any) => {
     const doc = new jsPDF()
+
+    // Cargar deudas reales
+    const { data: debts } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('residente_id', resident.id)
+        .order('fecha_vencimiento', { ascending: true })
+
+    const { data: payments } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('profile_id', resident.id)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: true })
 
     // Configuración de estilos imitando la referencia
     doc.setFont("helvetica", "bold")
@@ -448,38 +468,46 @@ export const Admin: React.FC = () => {
     doc.text("RIF. J-29900732-3", 10, 20)
     doc.text(`Fecha:  ${new Date().toLocaleDateString('es-VE')}`, 150, 20)
 
-    doc.text("ESTADO DE CUENTA HASTA 31/05/2026", 10, 30)
+    doc.text(`ESTADO DE CUENTA HASTA ${new Date().toLocaleDateString('es-VE')}`, 10, 30)
     doc.line(10, 32, 200, 32)
 
-    doc.text(`PROPIETARIO: ${resident.name.toUpperCase()}`, 10, 40)
+    doc.text(`PROPIETARIO: ${(resident.first_name || resident.name || '').toUpperCase()} ${(resident.last_name || '').toUpperCase()}`, 10, 40)
     doc.text(`CASA: ${resident.house_number}`, 120, 40)
 
-    // Tabla de movimientos (Simulada según la imagen)
+    // Tabla de movimientos real
+    const body: any[] = []
+    let saldo = 0
+
+    debts?.forEach(d => {
+        saldo += Number(d.monto_pendiente)
+        body.push([`${d.concepto} (${d.fecha_vencimiento})`, `${Number(d.monto_pendiente).toFixed(2).replace('.', ',')} $`])
+    })
+
+    payments?.forEach(p => {
+        saldo -= Number(p.monto_usd)
+        body.push([`ABONA EL ${new Date(p.created_at).toLocaleDateString()} - REF: ${p.referencia}`, `-${Number(p.monto_usd).toFixed(2).replace('.', ',')} $`])
+    })
+
     autoTable(doc, {
       startY: 45,
       head: [['DESCRIPCIÓN', 'MONTO $']],
       body: [
-        ['** MÁS SALDO PENDIENTE DE LA JUNTA ANTERIOR', '445,00 $'],
-        ['- ABONA EL 19-06-2023 BS. 271,70 SON 10,00 DOLARES', '-10,00 $'],
-        ['SALDO PENDIENTE HASTA EL 30-06-2023', '435,00 $'],
-        ['- ABONA EL 01-07-2023 BS. 270,50 SON 10,00 DOLARES', '-10,00 $'],
-        ['** MAS CUOTAS DESDE JUNIO HASTA DICIEMBRE 2024 (7 MESES X 20$)', '140,00 $'],
-        ['** MAS CUOTAS ENERO - MAYO 2026', '120,00 $'],
-        ['SALDO PENDIENTE HASTA EL 31/05/2026', `${resident.debt.toFixed(2).replace('.', ',')} $`],
+        ...body,
+        [{ content: 'SALDO PENDIENTE TOTAL', styles: { fontStyle: 'bold' } }, { content: `${saldo.toFixed(2).replace('.', ',')} $`, styles: { fontStyle: 'bold' } }],
       ],
       theme: 'plain',
       styles: { fontSize: 9, cellPadding: 2, font: 'helvetica' },
       headStyles: { fontStyle: 'bold', textColor: [0, 0, 0], fillColor: [240, 240, 240] },
-      columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } }
+      columnStyles: { 1: { halign: 'right' } }
     })
 
     const finalY = (doc as any).lastAutoTable.finalY || 150
     doc.setFontSize(10)
     doc.text("Realizado por:", 10, finalY + 15)
-    doc.text("Lcda. Maria Eugenia Urbina", 10, finalY + 22)
-    doc.text("Administradora", 10, finalY + 27)
+    doc.text("Administración Condominio", 10, finalY + 22)
+    doc.text("Sistema de Gestión Caminos", 10, finalY + 27)
 
-    const fileName = `Estado_de_Cuenta_casa_${resident.house_number}_año_2026.pdf`
+    const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
     doc.save(fileName)
     return fileName
   }
@@ -532,15 +560,6 @@ export const Admin: React.FC = () => {
     }}>
 
       <main style={mainContentStyle}>
-
-        <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '15px', marginBottom: '25px', width: '100%', scrollbarWidth: 'none' }}>
-           <TabItem active={activeTab === 'finance'} label="Finanzas" icon="account_balance_wallet" onClick={() => handleTabChange('finance')} />
-           <TabItem active={activeTab === 'users'} label="Residentes" icon="group" onClick={() => handleTabChange('users')} />
-           <TabItem active={activeTab === 'payments'} label="Pagos" icon="verified_user" onClick={() => handleTabChange('payments')} />
-           <TabItem active={activeTab === 'polls'} label="Votaciones" icon="how_to_vote" onClick={() => handleTabChange('polls')} />
-           <TabItem active={activeTab === 'incidents'} label="Incidencias" icon="report_problem" onClick={() => handleTabChange('incidents')} />
-           <TabItem active={activeTab === 'security'} label="Seguridad" icon="security" onClick={() => handleTabChange('security')} />
-        </div>
 
         {activeTab === 'finance' && (
           <section style={{ width: '100%' }}>
@@ -727,7 +746,7 @@ export const Admin: React.FC = () => {
                     >
                       {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
                         <optgroup key={etapa} label={etapa}>
-                          {conjuntos.map(c => (
+                          {(conjuntos as string[]).map(c => (
                             <option key={c} value={c}>{c}</option>
                           ))}
                         </optgroup>
@@ -957,14 +976,14 @@ export const Admin: React.FC = () => {
 
              <p style={labelStyle}>VOTACIONES ACTIVAS / CERRADAS</p>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {votings.length === 0 ? <p style={{textAlign:'center', color:'var(--text-sub)'}}>No hay votaciones registradas.</p> : votings.map(v => (
+                {votings.length === 0 ? <p style={{textAlign:'center', color:'var(--text-sub)'}}>No hay votaciones registradas.</p> : votings.map((v: any) => (
                    <div key={v.id} style={cardStyle}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
                          <div>
-                            <p style={{ margin: 0, fontWeight: 700 }}>{v.titulo}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: {v.activa ? 'Activa' : 'Cerrada'} • Cierra: {new Date(v.fecha_fin).toLocaleDateString()}</p>
+                            <p style={{ margin: 0, fontWeight: 700 }}>{v.title}</p>
+                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: {v.is_active ? 'Activa' : 'Cerrada'} • Cierra: {new Date(v.end_date).toLocaleDateString()}</p>
                          </div>
-                         {v.activa && (
+                         {v.is_active && (
                            <button
                             onClick={() => {
                                 if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
@@ -978,7 +997,7 @@ export const Admin: React.FC = () => {
                          )}
                       </div>
                       <div style={{ marginTop: '15px' }}>
-                         <p style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{v.descripcion}</p>
+                         <p style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{v.description}</p>
                       </div>
                    </div>
                 ))}
@@ -995,11 +1014,9 @@ export const Admin: React.FC = () => {
              <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", textAlign: 'center', marginBottom: '30px' }}>Super Administrador</h3>
 
              <div style={cardStyle}>
-                <p style={labelStyle}>CREAR NUEVO CONJUNTO / RESIDENCIA</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Seleccione el conjunto y luego adjunte el archivo Excel con la base de datos de propietarios para inicializarlo.</p>
-
+                <p style={labelStyle}>CONFIGURACIÓN DE DATOS BANCARIOS POR CONJUNTO</p>
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={labelStyle}>CONJUNTO A INICIALIZAR</label>
+                  <label style={labelStyle}>SELECCIONAR CONJUNTO</label>
                   <select
                     value={selectedCluster}
                     onChange={e => setSelectedCluster(e.target.value)}
@@ -1014,6 +1031,40 @@ export const Admin: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <input placeholder="Nombre del Banco" style={inputStyle} id="bank_name" />
+                  <input placeholder="Número de Cuenta (20 dígitos)" style={inputStyle} id="bank_acc" />
+                  <input placeholder="RIF del Conjunto" style={inputStyle} id="bank_rif" />
+                  <input placeholder="Email Zelle" style={inputStyle} id="bank_zelle" />
+                  <button
+                    style={primaryBtnStyle}
+                    onClick={async () => {
+                      const name = (document.getElementById('bank_name') as HTMLInputElement).value;
+                      const acc = (document.getElementById('bank_acc') as HTMLInputElement).value;
+                      const rif = (document.getElementById('bank_rif') as HTMLInputElement).value;
+                      const zelle = (document.getElementById('bank_zelle') as HTMLInputElement).value;
+
+                      const { error } = await supabase.from('residential_clusters_info').upsert({
+                        cluster_name: selectedCluster,
+                        bank_name: name,
+                        bank_account: acc,
+                        rif: rif,
+                        zelle_email: zelle
+                      });
+
+                      if (error) alert("Error al guardar: " + error.message);
+                      else alert("Datos bancarios actualizados para " + selectedCluster);
+                    }}
+                  >
+                    GUARDAR DATOS BANCARIOS
+                  </button>
+                </div>
+             </div>
+
+             <div style={{ ...cardStyle, marginTop: '20px' }}>
+                <p style={labelStyle}>CREAR NUEVO CONJUNTO / RESIDENCIA</p>
+                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Seleccione el conjunto y luego adjunte el archivo Excel con la base de datos de propietarios para inicializarlo.</p>
 
                 <input type="file" id="super-import" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportResidents} />
                 <button

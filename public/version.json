@@ -1,7 +1,7 @@
 {
-  "versionCode": 32,
-  "versionName": "2.2.9",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.2.9",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.2.9/CaminosApp%20v2.2.9.apk",
-  "releaseNotes": "v2.2.9: Hotfix de regresiones críticas. Se corrigen estados de carga infinitos en Casillero, Invitados y Reservas. Mejora en la estabilidad de red y cierres de sesión. Migración exitosa a Vercel para unificación de servicios."
+  "versionCode": 33,
+  "versionName": "2.3.0",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.0",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.0/CaminosApp%20v2.3.0.apk",
+  "releaseNotes": "v2.3.0: Mejora integral de seguridad y arquitectura. Restricción de acceso Super Admin (admin@caminos.com), migración de votaciones internas a Supabase, datos bancarios dinámicos por condominio y corrección en el registro de pagos. Refactorización por capas para mayor estabilidad."
 }

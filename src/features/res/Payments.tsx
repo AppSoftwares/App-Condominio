@@ -17,6 +17,8 @@ import { supabase } from '../../lib/supabase'
 import { sanitizeString } from '../../utils/security'
 import { Network } from '@capacitor/network'
 import { enqueueAction } from '../../lib/offlineQueue'
+import { clusterService, ClusterInfo } from '../../services/clusterService'
+import { paymentService } from '../../services/paymentService'
 
 const THEME = {
   colors: {
@@ -60,6 +62,7 @@ export const Payments: React.FC = () => {
   const [debtItems, setDebtItems] = useState<DebtItem[]>([])
   const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
   const [loadingDebts, setLoadingDebts] = useState(true)
+  const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const selectedDebtTotal = debtItems.length > 0
@@ -75,6 +78,11 @@ export const Payments: React.FC = () => {
       setSessionUserId(user.id)
       fetchDebts()
     }
+
+    if (user?.residential_cluster) {
+      clusterService.getInfo(user.residential_cluster).then(setClusterInfo)
+    }
+
     // sync session user id to avoid RLS mismatches
     const sync = async () => {
       try {
@@ -97,7 +105,7 @@ export const Payments: React.FC = () => {
     return () => {
       try { sub?.subscription?.unsubscribe?.() } catch (e) {}
     }
-  }, [user?.id])
+  }, [user?.id, user?.residential_cluster])
 
   const fetchDebts = async () => {
     try {
@@ -261,7 +269,8 @@ export const Payments: React.FC = () => {
         banco_origen: cleanBank,
         evidencia_url: screenshotUrl,
         description: cleanDescription,
-        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds }
+        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
+        idempotency_key: idempotencyKey
       }
 
       const netStatus = await Network.getStatus();
@@ -276,12 +285,7 @@ export const Payments: React.FC = () => {
           return;
       }
 
-      const { error: dbError } = await supabase.rpc('rpc_insert_payment', {
-        ...payload,
-        idempotency_key: idempotencyKey
-      })
-
-      if (dbError) throw dbError
+      await paymentService.registerPayment(payload)
 
       alert("¡Pago registrado con éxito! Su comprobante será validado por la administración en breve.")
       navigate('/dashboard')
@@ -311,8 +315,8 @@ export const Payments: React.FC = () => {
             <div style={infoGridStyle}>
               {isZelle ? (
                 <>
-                  <InfoRow label="EMAIL ZELLE" value="CONDOMINIOLAS HUERTAS@GMAIL.COM" />
-                  <InfoRow label="CONCEPTO" value="Pago casa 14-01" />
+                  <InfoRow label="EMAIL ZELLE" value={clusterInfo?.zelle_email || "CONDOMINIOLASHUERTAS@GMAIL.COM"} />
+                  <InfoRow label="CONCEPTO" value={`Pago casa ${user?.house_number || 'N/A'}`} />
                   <div style={{ marginTop: '10px' }}>
                     <label style={labelStyle}>NOMBRE DEL TITULAR (QUIEN ENVÍA)</label>
                     <input
@@ -326,10 +330,10 @@ export const Payments: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <InfoRow label="BANCO RECEPTOR" value="Banco Nacional de Crédito (0191)" />
-                  <InfoRow label="RIF" value="J-299007323" />
-                  {!isPM && <InfoRow label="CUENTA" value="0191-0000-00-0000000000" />}
-                  <InfoRow label="NOMBRE" value="Adm. Conj. Las Huertas" />
+                  <InfoRow label="BANCO RECEPTOR" value={clusterInfo?.bank_name || "Banco Nacional de Crédito (0191)"} />
+                  <InfoRow label="RIF" value={clusterInfo?.rif || "J-299007323"} />
+                  {!isPM && <InfoRow label="CUENTA" value={clusterInfo?.bank_account || "0191-0000-00-0000000000"} />}
+                  <InfoRow label="NOMBRE" value={clusterInfo?.cluster_name ? `Adm. Conj. ${clusterInfo.cluster_name}` : "Adm. Conj. Las Huertas"} />
 
                   <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
                     <label style={labelStyle}>DATOS DE TU PAGO</label>

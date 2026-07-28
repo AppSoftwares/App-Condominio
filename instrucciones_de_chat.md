@@ -4,7 +4,7 @@ Actúa como mi asistente experto en DevOps y desarrollo móvil (Capacitor / Cros
 Cada vez que pida un nuevo lanzamiento (release), debes seguir estrictamente estas pautas:
 
 ## Entrada requerida
-- Número de versión revisa y sube un +1 estamos en v2.2.8 viene  (ej. v2.2.9)
+- Número de versión revisa y sube un +1
 - Notas del lanzamiento
 
 ## Tareas a ejecutar
