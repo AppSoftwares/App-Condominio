@@ -434,19 +434,6 @@ export const GuardPortal: React.FC = () => {
   )
 }
 
-const Field = ({ label, placeholder, value, onChange }: any) => (
-  <div style={{ textAlign: 'left' }}>
-    <label style={labelStyle}>{label}</label>
-    <input placeholder={placeholder} style={inputStyle} value={value} onChange={onChange} />
-  </div>
-)
-
-const cardStyle = { backgroundColor: 'var(--card-bg)', padding: '25px', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any }
-const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '16px' }
-const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '10px', textTransform: 'uppercase' as any }
-const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }
-const qrBtnStyle = { width: '100%', padding: '22px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '22px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '16px' }
-
 const TabButton = ({ active, onClick, icon, label }: any) => (
   <button onClick={onClick} style={{
     display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '15px',
@@ -468,5 +455,5 @@ const Field = ({ label, placeholder, value, onChange }: any) => (
 const cardStyle = { backgroundColor: 'var(--card-bg)', padding: '25px', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '16px' }
 const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '10px', textTransform: 'uppercase' as any }
-const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, fontSize: '16px' }
+const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }
 const qrBtnStyle = { width: '100%', padding: '22px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '22px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '16px' }
