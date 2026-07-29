@@ -1,7 +1,7 @@
 {
-  "versionCode": 34,
-  "versionName": "2.3.1",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.1",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.1/CaminosApp%20v2.3.1.apk",
-  "releaseNotes": "v2.3.1: Hotfix crítico. Unificación de menús para Vigilante, corrección de ambigüedad en registro de pagos, habilitación de Votaciones Internas con seguridad RLS y mejora en la visualización de reportes PDF en móviles."
+  "versionCode": 35,
+  "versionName": "2.3.2",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.2",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.2/CaminosApp%20v2.3.2.apk",
+  "releaseNotes": "v2.3.2: Mejoras críticas en Vigilancia y Notificaciones. Se activa el registro manual para vigilantes, alertas de seguridad globales por conjunto, notificaciones push inteligentes para votaciones e incidencias (anónimas), y personalización de pases QR por WhatsApp. Mejora en la visualización de reportes financieros en móviles."
 }

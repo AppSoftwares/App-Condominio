@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
 import { votingService, Voting } from '../../services/votingService'
 import { paymentService } from '../../services/paymentService'
+import { notificationService } from '../../services/notificationService'
 
 const TabItem = ({ active, label, icon, onClick }: any) => (
   <button
@@ -124,7 +125,16 @@ export const Admin: React.FC = () => {
         if (error) throw error
         paymentData = data
       } else if (user?.residential_cluster) {
-        paymentData = await paymentService.getPaymentsByCluster(user.residential_cluster)
+        // Filtrado normalizado para asegurar visibilidad
+        const clusterName = user.residential_cluster.trim()
+        const { data, error } = await supabase
+          .from('payments')
+          .select('*, profiles!inner(*)')
+          .ilike('profiles.residential_cluster', `%${clusterName}%`)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        paymentData = data
       }
       setPayments(paymentData)
 
@@ -238,6 +248,15 @@ export const Admin: React.FC = () => {
         amount_estimated: newPollAmount ? parseFloat(newPollAmount) : undefined,
         cluster_name: isSuperAdmin ? undefined : user?.residential_cluster
       })
+
+      // Notificar a los residentes
+      if (user?.residential_cluster) {
+        await notificationService.notifyCluster(user.residential_cluster, {
+          title: "🗳️ Nueva Votación",
+          body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`
+        })
+      }
+
       alert('¡Votación publicada exitosamente!')
       setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
       fetchData();
@@ -509,10 +528,20 @@ export const Admin: React.FC = () => {
 
     const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
 
-    // Mejorar visualización en móviles
-    const blob = doc.output('blob')
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
+    // Vista previa mejorada para móviles
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const base64 = doc.output('datauristring')
+      const win = window.open()
+      if (win) {
+        win.document.write('<iframe src="' + base64 + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>')
+      } else {
+        doc.save(fileName)
+      }
+    } else {
+      const blob = doc.output('blob')
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    }
 
     return fileName
   }

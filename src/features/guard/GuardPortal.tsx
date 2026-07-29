@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { MdCheckCircle, MdCancel, MdInfo, MdInventory, MdQrCodeScanner } from 'react-icons/md'
+import {
+  MdCheckCircle,
+  MdCancel,
+  MdInfo,
+  MdInventory,
+  MdQrCodeScanner,
+  MdWarning,
+  MdHistory,
+  MdRecordVoiceOver,
+  MdNotificationsActive
+} from 'react-icons/md'
 import { Network } from '@capacitor/network'
 import { enqueueAction } from '../../lib/offlineQueue'
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning'
+import { useAuthStore } from '../../store/useAuthStore'
 
 export const GuardPortal: React.FC = () => {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [searchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'control'
 
@@ -16,15 +28,30 @@ export const GuardPortal: React.FC = () => {
   const [scanResult, setScanResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
 
+  // Estados para Registro Manual
+  const [manualVisitor, setManualVisitor] = useState('')
+  const [manualHouse, setManualHouse] = useState('')
+
+  // Estados para Alertas
+  const [alertTitle, setAlertTitle] = useState('')
+  const [alertDesc, setAlertDesc] = useState('')
+  const [alertSeverity, setAlertSeverity] = useState('normal')
+
   // Estados para Casillero Virtual
   const [residentId, setResidentId] = useState('')
   const [courier, setCourier] = useState('')
   const [details, setDetails] = useState('')
   const [residents, setResidents] = useState<any[]>([])
 
+  // Novedades de Residentes
+  const [incidents, setIncidents] = useState<any[]>([])
+
   useEffect(() => {
     if (activeTab === 'packages') {
       fetchResidents()
+    }
+    if (activeTab === 'alerts') {
+      fetchIncidents()
     }
   }, [activeTab])
 
@@ -33,7 +60,58 @@ export const GuardPortal: React.FC = () => {
       .from('profiles')
       .select('id, first_name, last_name, house_number')
       .eq('role', 'resident')
+      .eq('residential_cluster', user?.residential_cluster)
     if (data) setResidents(data)
+  }
+
+  const fetchIncidents = async () => {
+    const { data } = await supabase
+      .from('incidents')
+      .select('*, profiles(first_name, last_name, house_number)')
+      .eq('status', 'Pendiente')
+      .order('created_at', { ascending: false })
+    if (data) setIncidents(data)
+  }
+
+  const handleManualAccess = async () => {
+    if (!manualVisitor || !manualHouse) return alert("Complete los datos del visitante")
+    setLoading(true)
+    try {
+      const { error } = await supabase.from('manual_access_logs').insert([{
+        visitor_name: manualVisitor,
+        destination_house: manualHouse,
+        guard_id: user?.id,
+        cluster_name: user?.residential_cluster
+      }])
+      if (error) throw error
+      alert("✅ Ingreso manual registrado")
+      setManualVisitor(''); setManualHouse('')
+    } catch (err: any) {
+      alert("Error: " + err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateAlert = async () => {
+    if (!alertTitle) return alert("Ingrese un título para la alerta")
+    setLoading(true)
+    try {
+      const { error } = await supabase.from('security_alerts').insert([{
+        title: alertTitle,
+        description: alertDesc,
+        severity: alertSeverity,
+        created_by: user?.id,
+        cluster_name: user?.residential_cluster
+      }])
+      if (error) throw error
+      alert("📢 Alerta publicada a todos los residentes")
+      setAlertTitle(''); setAlertDesc('')
+    } catch (err: any) {
+      alert("Error: " + err.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const startRealScan = async () => {
@@ -76,6 +154,12 @@ export const GuardPortal: React.FC = () => {
           .single()
 
         if (error) throw new Error('Código QR no válido o expirado.')
+
+        // Verificar que sea del mismo conjunto
+        if (data.profiles?.residential_cluster !== user?.residential_cluster) {
+           throw new Error('Este pase pertenece a otro conjunto residencial.')
+        }
+
         setScanResult(data)
       } else {
         // Validación de liberación de paquete
@@ -121,14 +205,12 @@ export const GuardPortal: React.FC = () => {
     const netStatus = await Network.getStatus();
     if (!netStatus.connected) {
         await enqueueAction({
-            tipo: 'visit', // Usamos visit genéricamente para cola offline
+            tipo: 'visit',
             payload,
             idempotencyKey
         })
         alert("✅ Registro guardado offline. Se sincronizará pronto.")
-        setCourier('')
-        setDetails('')
-        setResidentId('')
+        setCourier(''); setDetails(''); setResidentId('')
         setLoading(false)
         return
     }
@@ -140,9 +222,7 @@ export const GuardPortal: React.FC = () => {
     if (error) alert("Error al registrar: " + error.message)
     else {
       alert("✅ Paquete registrado y notificación enviada.")
-      setCourier('')
-      setDetails('')
-      setResidentId('')
+      setCourier(''); setDetails(''); setResidentId('')
     }
     setLoading(false)
   }
@@ -210,7 +290,7 @@ export const GuardPortal: React.FC = () => {
          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '34px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>
            {activeTab === 'control' && 'Control de Accesos'}
            {activeTab === 'packages' && 'Casillero Virtual'}
-           {activeTab === 'alerts' && 'Alertas de Seguridad'}
+           {activeTab === 'alerts' && 'Novedades y Alertas'}
          </h2>
       </section>
 
@@ -222,20 +302,27 @@ export const GuardPortal: React.FC = () => {
            <div style={cardStyle}>
               <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Registro Manual</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                 <Field label="Nombre Visitante" placeholder="Nombre completo" />
+                 <Field label="Nombre Visitante" placeholder="Nombre completo" value={manualVisitor} onChange={(e: any) => setManualVisitor(e.target.value)} />
                  <div style={{ textAlign: 'left' }}>
                     <label style={labelStyle}>Destino (Casa)</label>
                     <input
                         placeholder="Ej: 14-73"
                         style={inputStyle}
+                        value={manualHouse}
                         onChange={(e: any) => {
                             let val = e.target.value.replace(/[^0-9-]/g, '');
                             if (val.length === 2 && !val.includes('-')) val += '-';
-                            if (val.length <= 5) e.target.value = val;
+                            if (val.length <= 5) setManualHouse(val);
                         }}
                     />
                  </div>
-                 <button style={primaryBtnStyle}>Registrar Ingreso</button>
+                 <button
+                  onClick={handleManualAccess}
+                  disabled={loading}
+                  style={primaryBtnStyle}
+                 >
+                   {loading ? 'Registrando...' : 'Registrar Ingreso'}
+                 </button>
               </div>
            </div>
         </div>
@@ -277,10 +364,88 @@ export const GuardPortal: React.FC = () => {
         </div>
       )}
 
-      {/* Otros tabs omitidos por brevedad o mantenidos igual */}
+      {activeTab === 'alerts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+           {/* Crear Alerta */}
+           <div style={cardStyle}>
+              <h3 style={{ textAlign: 'center', marginBottom: '20px' }}>Emitir Alerta de Seguridad</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                 <input
+                  placeholder="Título de la alerta (ej. Portón Averiado)"
+                  style={inputStyle}
+                  value={alertTitle}
+                  onChange={e => setAlertTitle(e.target.value)}
+                 />
+                 <textarea
+                  placeholder="Descripción detallada..."
+                  style={{ ...inputStyle, height: '80px', resize: 'none' }}
+                  value={alertDesc}
+                  onChange={e => setAlertDesc(e.target.value)}
+                 />
+                 <select style={inputStyle} value={alertSeverity} onChange={e => setAlertSeverity(e.target.value)}>
+                    <option value="info">Información (Verde)</option>
+                    <option value="normal">Normal (Amarillo)</option>
+                    <option value="critical">Crítica (Rojo)</option>
+                 </select>
+                 <button
+                  onClick={handleCreateAlert}
+                  disabled={loading}
+                  style={{ ...primaryBtnStyle, backgroundColor: alertSeverity === 'critical' ? '#ba1a1a' : 'var(--primary-color)' }}
+                 >
+                   <MdNotificationsActive size={20} style={{ marginRight: '8px' }} />
+                   Publicar Alerta
+                 </button>
+              </div>
+           </div>
+
+           {/* Quejas de Residentes */}
+           <div style={{ marginTop: '10px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '20px', letterSpacing: '1px' }}>REPORTE DE INCIDENTES (RESIDENTES)</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                 {incidents.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay reportes pendientes.</p>
+                 ) : incidents.map(inc => (
+                    <div key={inc.id} style={{ ...cardStyle, borderLeft: '6px solid var(--accent-gold)' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '13px' }}>{inc.category.toUpperCase()}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(inc.created_at).toLocaleTimeString()}</span>
+                       </div>
+                       <p style={{ margin: '0 0 10px 0', fontSize: '14px' }}>{inc.description}</p>
+                       <div style={{ backgroundColor: 'var(--icon-bg)', padding: '10px', borderRadius: '10px' }}>
+                          <p style={{ margin: 0, fontSize: '12px', fontWeight: 700 }}>Ubicación: Casa {inc.location || inc.profiles?.house_number || 'N/A'}</p>
+                       </div>
+                       <button
+                        onClick={async () => {
+                           await supabase.from('incidents').update({ status: 'Atendido' }).eq('id', inc.id);
+                           fetchIncidents();
+                           alert("Reporte marcado como atendido.");
+                        }}
+                        style={{ ...primaryBtnStyle, padding: '10px', marginTop: '15px', fontSize: '13px', backgroundColor: 'var(--accent-gold)' }}
+                       >
+                         Marcar como Atendido
+                       </button>
+                    </div>
+                 ))}
+              </div>
+           </div>
+        </div>
+      )}
     </div>
   )
 }
+
+const Field = ({ label, placeholder, value, onChange }: any) => (
+  <div style={{ textAlign: 'left' }}>
+    <label style={labelStyle}>{label}</label>
+    <input placeholder={placeholder} style={inputStyle} value={value} onChange={onChange} />
+  </div>
+)
+
+const cardStyle = { backgroundColor: 'var(--card-bg)', padding: '25px', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box' as any }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '16px' }
+const labelStyle = { display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '10px', textTransform: 'uppercase' as any }
+const primaryBtnStyle = { width: '100%', padding: '20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '18px', fontWeight: 700, fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+const qrBtnStyle = { width: '100%', padding: '22px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '22px', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', fontSize: '16px' }
 
 const TabButton = ({ active, onClick, icon, label }: any) => (
   <button onClick={onClick} style={{

@@ -1,0 +1,91 @@
+import { supabase } from '../lib/supabase'
+
+export interface PushMessage {
+  title: string
+  body: string
+  data?: any
+}
+
+export const notificationService = {
+  /**
+   * Envía una notificación push a un usuario específico
+   */
+  async sendToUser(profileId: string, message: PushMessage) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('expo_push_token')
+        .eq('id', profileId)
+        .single()
+
+      if (!profile?.expo_push_token) return
+
+      // Nota: En producción esto debería llamar a un servidor intermedio o Edge Function
+      // que use FCM (Firebase Cloud Messaging) o Expo Push Service.
+      console.log(`Enviando Push a ${profileId}:`, message)
+
+      // Simulamos el envío a través de una RPC que podría gatillar la Edge Function
+      await supabase.rpc('rpc_queue_notification', {
+        p_token: profile.expo_push_token,
+        p_title: message.title,
+        p_body: message.body,
+        p_data: message.data
+      })
+    } catch (err) {
+      console.error('Error enviando notificación push:', err)
+    }
+  },
+
+  /**
+   * Notifica a todos los residentes de un conjunto residencial
+   */
+  async notifyCluster(clusterName: string, message: PushMessage) {
+    try {
+      const { data: residents } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('residential_cluster', clusterName)
+        .eq('role', 'resident')
+
+      if (!residents) return
+
+      await Promise.all(residents.map(r => this.sendToUser(r.id, message)))
+    } catch (err) {
+      console.error('Error notificando al conjunto:', err)
+    }
+  },
+
+  /**
+   * Notifica un incidente (queja) anónima
+   */
+  async reportIncidentPush(culpritHouse: string, clusterName: string, category: string) {
+    // 1. Notificar al Admin
+    const { data: admins } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('residential_cluster', clusterName)
+      .eq('role', 'admin')
+
+    const adminMsg = {
+      title: "🚨 Nuevo Incidente Reportado",
+      body: `Se ha reportado: ${category} en la Casa ${culpritHouse}.`
+    }
+
+    if (admins) admins.forEach(a => this.sendToUser(a.id, adminMsg))
+
+    // 2. Notificar al Infractor (anónimamente)
+    const { data: culprit } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('residential_cluster', clusterName)
+      .eq('house_number', culpritHouse)
+      .single()
+
+    if (culprit) {
+      await this.sendToUser(culprit.id, {
+        title: "⚠️ Aviso de Convivencia",
+        body: `Un residente ha reportado una novedad relacionada con ${category.toLowerCase()} en su domicilio. Por favor, colabore con las normas del conjunto.`
+      })
+    }
+  }
+}

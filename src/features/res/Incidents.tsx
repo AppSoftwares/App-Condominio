@@ -11,6 +11,7 @@ import { jsPDF } from 'jspdf'
 import { useAuthStore } from '../../store/useAuthStore'
 import { sanitizeString } from '../../utils/security'
 import { supabase } from '../../lib/supabase'
+import { notificationService } from '../../services/notificationService'
 
 export const Incidents: React.FC = () => {
   const navigate = useNavigate()
@@ -145,6 +146,11 @@ export const Incidents: React.FC = () => {
       })
 
       if (error) throw error
+
+      // Notificaciones inteligentes
+      if (user?.residential_cluster) {
+        await notificationService.reportIncidentPush(location, user.residential_cluster, category)
+      }
 
       alert('Reporte enviado con éxito. La administración revisará su caso.')
       generateComplaintReceipt()
