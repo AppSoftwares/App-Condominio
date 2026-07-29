@@ -27,7 +27,9 @@ import {
   MdOutlinePayments,
   MdBusiness,
   MdReceiptLong,
-  MdOutlineReceiptLong
+  MdOutlineReceiptLong,
+  MdInventory,
+  MdOutlineInventory
 } from 'react-icons/md'
 import { useAuthStore } from '../store/useAuthStore'
 import { useUpdateStore } from '../store/useUpdateStore'
@@ -123,6 +125,11 @@ export const Layout: React.FC = () => {
               icon={location.pathname === '/guard' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'control') ? MdQrCodeScanner : MdOutlineQrCodeScanner}
               active={location.pathname === '/guard' && (!new URLSearchParams(location.search).get('tab') || new URLSearchParams(location.search).get('tab') === 'control')}
               onClick={() => navigate('/guard?tab=control')}
+            />
+            <NavIcon
+              icon={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'packages' ? MdInventory : MdOutlineInventory}
+              active={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'packages'}
+              onClick={() => navigate('/guard?tab=packages')}
             />
             <NavIcon
               icon={location.pathname === '/guard' && new URLSearchParams(location.search).get('tab') === 'alerts' ? MdWarning : MdOutlineWarningAmber}

@@ -204,13 +204,7 @@ export const GuardPortal: React.FC = () => {
   }
 
   return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', padding: '20px', paddingTop: '94px', paddingBottom: '120px', boxSizing: 'border-box' }}>
-      {/* Selector de Tabs */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '30px', overflowX: 'auto', paddingBottom: '5px' }}>
-         <TabButton active={activeTab === 'control'} onClick={() => navigate('/guard?tab=control')} icon="security" label="Accesos" />
-         <TabButton active={activeTab === 'packages'} onClick={() => navigate('/guard?tab=packages')} icon="inventory_2" label="Paquetes" />
-         <TabButton active={activeTab === 'alerts'} onClick={() => navigate('/guard?tab=alerts')} icon="warning" label="Alertas" />
-      </div>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', padding: '20px', paddingTop: 'calc(20px + env(safe-area-inset-top))', paddingBottom: '120px', boxSizing: 'border-box' }}>
 
       <section style={{ marginBottom: '32px', textAlign: 'center' }}>
          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '34px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>

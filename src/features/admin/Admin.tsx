@@ -508,7 +508,12 @@ export const Admin: React.FC = () => {
     doc.text("Sistema de Gestión Caminos", 10, finalY + 27)
 
     const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
-    doc.save(fileName)
+
+    // Mejorar visualización en móviles
+    const blob = doc.output('blob')
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+
     return fileName
   }
 

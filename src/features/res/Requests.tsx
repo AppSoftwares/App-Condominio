@@ -9,16 +9,16 @@ import {
   MdOutlineDownload
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
-import { listVotings, castVote, getVotingResults, VotingDTO, VotingResults } from '../../lib/votingsApi'
+import { votingService, Voting } from '../../services/votingService'
 import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
 
 export const Requests: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
-  const [votings, setVotings] = useState<VotingDTO[]>([])
+  const [votings, setVotings] = useState<Voting[]>([])
   const [announcements, setAnnouncements] = useState<AnnouncementDTO[]>([])
-  const [votedIds, setVotedIds] = useState<number[]>([])
+  const [votedIds, setVotedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   const [error, setError] = useState<string | null>(null)
@@ -29,7 +29,7 @@ export const Requests: React.FC = () => {
       setError(null)
       try {
         const [vData, aData] = await Promise.all([
-          listVotings(),
+          votingService.list(user?.residential_cluster),
           listAnnouncements()
         ])
         setVotings(vData)
@@ -42,16 +42,16 @@ export const Requests: React.FC = () => {
       }
     }
     fetchData()
-  }, [user?.id])
+  }, [user?.id, user?.residential_cluster])
 
-  const handleVote = async (votingId: number, opcion: 'favor' | 'contra') => {
+  const handleVote = async (votingId: string, opcion: 'favor' | 'contra') => {
+    if (!user) return
     try {
-      await castVote(votingId, opcion)
+      await votingService.castVote(votingId, user.id, opcion)
       setVotedIds([...votedIds, votingId])
       alert('¡Voto registrado con éxito!')
-      // Opcionalmente recargar resultados si el componente los muestra
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'No se pudo registrar el voto.')
+      alert('No se pudo registrar el voto.')
     }
   }
 
@@ -122,13 +122,13 @@ export const Requests: React.FC = () => {
   )
 }
 
-const VotingCard = ({ voting, onVote, hasVoted }: { voting: VotingDTO, onVote: (opcion: 'favor' | 'contra') => void, hasVoted: boolean }) => {
-  const [results, setResults] = useState<VotingResults | null>(null)
+const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opcion: 'favor' | 'contra') => void, hasVoted: boolean }) => {
+  const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
   const [showResults, setShowResults] = useState(hasVoted)
 
   useEffect(() => {
     if (hasVoted) {
-      getVotingResults(voting.id).then(setResults).catch(console.error)
+      votingService.getResults(voting.id).then(setResults).catch(console.error)
     }
   }, [hasVoted, voting.id])
 
@@ -138,8 +138,8 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: VotingDTO, onVote: (
 
   return (
     <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '25px', width: '100%', boxSizing: 'border-box' }}>
-       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{voting.titulo}</h3>
-       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.descripcion}</p>
+       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{voting.title}</h3>
+       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.description}</p>
 
        {showResults && results ? (
          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '10px' }}>
