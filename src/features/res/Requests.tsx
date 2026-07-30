@@ -9,6 +9,7 @@ import {
   MdOutlineDownload
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
 import { votingService, Voting } from '../../services/votingService'
 import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
 
