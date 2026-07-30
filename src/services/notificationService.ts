@@ -56,14 +56,39 @@ export const notificationService = {
   },
 
   /**
+   * Notifica a un residente específico por su número de casa y conjunto
+   */
+  async notifyResidentByHouse(houseNumber: string, clusterName: string, message: PushMessage) {
+    try {
+      // Búsqueda flexible para el conjunto
+      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, expo_push_token')
+        .ilike('residential_cluster', `%${cleanCluster}%`)
+        .eq('house_number', houseNumber)
+        .maybeSingle();
+
+      if (profile?.id) {
+        await this.sendToUser(profile.id, message);
+      }
+    } catch (err) {
+      console.error('Error notificando a residente por casa:', err);
+    }
+  },
+
+  /**
    * Notifica un incidente (queja) anónima
    */
   async reportIncidentPush(culpritHouse: string, clusterName: string, category: string) {
     // 1. Notificar al Admin
+    const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
     const { data: admins } = await supabase
       .from('profiles')
       .select('id')
-      .eq('residential_cluster', clusterName)
+      .ilike('residential_cluster', `%${cleanCluster}%`)
       .eq('role', 'admin')
 
     const adminMsg = {
@@ -74,18 +99,9 @@ export const notificationService = {
     if (admins) admins.forEach(a => this.sendToUser(a.id, adminMsg))
 
     // 2. Notificar al Infractor (anónimamente)
-    const { data: culprit } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('residential_cluster', clusterName)
-      .eq('house_number', culpritHouse)
-      .single()
-
-    if (culprit) {
-      await this.sendToUser(culprit.id, {
-        title: "⚠️ Aviso de Convivencia",
-        body: `Un residente ha reportado una novedad relacionada con ${category.toLowerCase()} en su domicilio. Por favor, colabore con las normas del conjunto.`
-      })
-    }
+    await this.notifyResidentByHouse(culpritHouse, clusterName, {
+      title: "⚠️ Aviso de Convivencia",
+      body: `Un residente ha reportado una novedad relacionada con ${category.toLowerCase()} en su domicilio. Por favor, colabore con las normas del conjunto.`
+    });
   }
 }

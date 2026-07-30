@@ -18,6 +18,7 @@ export const Requests: React.FC = () => {
 
   const [votings, setVotings] = useState<Voting[]>([])
   const [announcements, setAnnouncements] = useState<AnnouncementDTO[]>([])
+  const [securityAlerts, setSecurityAlerts] = useState<any[]>([])
   const [votedIds, setVotedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -28,12 +29,14 @@ export const Requests: React.FC = () => {
       setLoading(true)
       setError(null)
       try {
-        const [vData, aData] = await Promise.all([
+        const [vData, aData, sData] = await Promise.all([
           votingService.list(user?.residential_cluster),
-          listAnnouncements()
+          listAnnouncements(),
+          supabase.from('security_alerts').select('*').order('created_at', { ascending: false }).limit(3)
         ])
         setVotings(vData)
         setAnnouncements(aData)
+        setSecurityAlerts(sData.data || [])
       } catch (err) {
         console.error('Error cargando comunidad:', err)
         setError('No se pudo conectar con el servidor de comunidad.')
@@ -67,6 +70,22 @@ export const Requests: React.FC = () => {
            <MdOutlineHowToVote size={24} style={{ color: '#785919' }} />
            <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Votaciones Activas</h3>
         </div>
+
+        {securityAlerts.length > 0 && (
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#ba1a1a', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined">warning</span> ALERTAS DE SEGURIDAD
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {securityAlerts.map(alert => (
+                <div key={alert.id} style={{ backgroundColor: alert.severity === 'critical' ? 'rgba(186,26,26,0.05)' : 'var(--icon-bg)', border: `1px solid ${alert.severity === 'critical' ? '#ba1a1a' : 'var(--border-color)'}`, borderRadius: '16px', padding: '15px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: alert.severity === 'critical' ? '#ba1a1a' : 'inherit' }}>{alert.title}</p>
+                  <p style={{ margin: '5px 0 0', fontSize: '13px', color: 'var(--text-sub)' }}>{alert.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <p style={{ textAlign: 'center' }}>Cargando...</p>

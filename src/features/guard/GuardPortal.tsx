@@ -16,6 +16,7 @@ import { Network } from '@capacitor/network'
 import { enqueueAction } from '../../lib/offlineQueue'
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning'
 import { useAuthStore } from '../../store/useAuthStore'
+import { notificationService } from '../../services/notificationService'
 
 export const GuardPortal: React.FC = () => {
   const navigate = useNavigate()
@@ -84,7 +85,16 @@ export const GuardPortal: React.FC = () => {
         cluster_name: user?.residential_cluster
       }])
       if (error) throw error
-      alert("✅ Ingreso manual registrado")
+
+      // Notificar al residente
+      if (user?.residential_cluster) {
+        await notificationService.notifyResidentByHouse(manualHouse, user.residential_cluster, {
+          title: "👤 Visita en Puerta",
+          body: `${manualVisitor} se encuentra en la entrada para ingresar a su domicilio.`
+        });
+      }
+
+      alert("✅ Ingreso manual registrado y residente notificado")
       setManualVisitor(''); setManualHouse('')
     } catch (err: any) {
       alert("Error: " + err.message)

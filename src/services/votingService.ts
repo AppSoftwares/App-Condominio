@@ -19,7 +19,8 @@ export const votingService = {
       .order('created_at', { ascending: false })
 
     if (clusterName) {
-      query = query.or(`cluster_name.eq.${clusterName},cluster_name.is.null`)
+      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
+      query = query.or(`cluster_name.ilike.%${cleanCluster}%,cluster_name.is.null`)
     }
 
     const { data, error } = await query

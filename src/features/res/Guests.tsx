@@ -105,7 +105,7 @@ export const Guests: React.FC = () => {
   const handleShareWA = async () => {
     const clusterName = user?.residential_cluster || "Caminos de la Lagunita";
     const areasStr = allowedAreas.map(a => a.charAt(0).toUpperCase() + a.slice(1)).join(', ');
-    const msg = `Hola ${guestName}, aquí tienes tu pase QR de acceso digital para el ${clusterName}. Áreas permitidas: ${areasStr}.`;
+    const msg = `Hola ${guestName}, aquí tienes tu pase QR de acceso digital para el conjunto residencial ${clusterName}. Áreas permitidas: ${areasStr}.`;
 
     if (qrRef.current) {
       try {

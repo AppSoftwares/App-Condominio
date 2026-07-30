@@ -47,7 +47,10 @@ export const Admin: React.FC = () => {
   const bcvRate = useCurrencyStore(state => state.bcvRate)
   const isSuperAdmin = user?.email?.toLowerCase().trim() === 'admin@caminos.com'
 
-  const [selectedCluster, setSelectedCluster] = useState(user?.residential_cluster || RESIDENTIAL_CLUSTERS["Etapa I"][0])
+  const [selectedCluster, setSelectedCluster] = useState(user?.residential_cluster || "Conjunto 14 Las Huertas")
+  const [showPdfModal, setShowPdfModal] = useState(false)
+  const [currentPdfUrl, setCurrentPdfUrl] = useState('')
+
   const initialTab = (searchParams.get('tab') as any) || 'finance'
   const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents'>(initialTab)
 
@@ -528,20 +531,10 @@ export const Admin: React.FC = () => {
 
     const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
 
-    // Vista previa mejorada para móviles
-    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      const base64 = doc.output('datauristring')
-      const win = window.open()
-      if (win) {
-        win.document.write('<iframe src="' + base64 + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>')
-      } else {
-        doc.save(fileName)
-      }
-    } else {
-      const blob = doc.output('blob')
-      const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
-    }
+    // Vista previa mejorada para móviles usando Iframe en Modal
+    const base64 = doc.output('datauristring')
+    setCurrentPdfUrl(base64)
+    setShowPdfModal(true)
 
     return fileName
   }
@@ -1123,6 +1116,17 @@ export const Admin: React.FC = () => {
           </section>
         )}
       </main>
+
+      {/* MODAL PARA VISTA PREVIA DE PDF */}
+      {showPdfModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', zIndex: 3000 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', backgroundColor: 'var(--card-bg)' }}>
+            <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>Vista Previa de Reporte</span>
+            <button onClick={() => setShowPdfModal(false)} style={{ background: 'none', border: 'none', color: '#ba1a1a', fontWeight: 800, cursor: 'pointer' }}>CERRAR</button>
+          </div>
+          <iframe src={currentPdfUrl} style={{ flex: 1, width: '100%', border: 'none' }} title="Reporte PDF" />
+        </div>
+      )}
     </div>
   )
 }
