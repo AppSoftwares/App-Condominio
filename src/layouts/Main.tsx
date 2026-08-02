@@ -64,10 +64,10 @@ export const Layout: React.FC = () => {
       {!isHome && (
         <header style={{
           width: '100%',
-          height: 'calc(60px + env(safe-area-inset-top))',
+          height: 'calc(64px + env(safe-area-inset-top))',
           display: 'flex',
-          alignItems: 'flex-end',
-          padding: '0 20px 15px',
+          alignItems: 'center',
+          padding: 'calc(env(safe-area-inset-top)) 20px 0',
           backgroundColor: 'var(--bg-color)',
           borderBottom: '1px solid var(--border-color)',
           zIndex: 1100,
@@ -81,7 +81,8 @@ export const Layout: React.FC = () => {
               color: 'var(--primary-color)',
               display: 'flex',
               alignItems: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              padding: '10px 0'
             }}
           >
             <MdArrowBackIosNew size={22} />

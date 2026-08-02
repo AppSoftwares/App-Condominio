@@ -36,12 +36,16 @@ export const Reservations: React.FC = () => {
   }
 
   const fetchReservations = async () => {
+    if (!user?.residential_cluster) return
     setLoading(true)
     try {
       const today = new Date().toISOString().split('T')[0];
+      const clusterKeyword = user.residential_cluster.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
       const { data, error } = await supabase
         .from('reservations')
-        .select('*, profiles(first_name, last_name, house_number)')
+        .select('*, profiles!inner(first_name, last_name, house_number, residential_cluster)')
+        .ilike('profiles.residential_cluster', `%${clusterKeyword}%`)
         .gte('reservation_date', today)
         .order('reservation_date', { ascending: true })
 

@@ -44,6 +44,9 @@ export const GuardPortal: React.FC = () => {
   const [details, setDetails] = useState('')
   const [residents, setResidents] = useState<any[]>([])
 
+  // Historial de Accesos
+  const [accessLogs, setAccessLogs] = useState<any[]>([])
+
   // Novedades de Residentes
   const [incidents, setIncidents] = useState<any[]>([])
 
@@ -53,6 +56,9 @@ export const GuardPortal: React.FC = () => {
     }
     if (activeTab === 'alerts') {
       fetchIncidents()
+    }
+    if (activeTab === 'history') {
+      fetchAccessLogs()
     }
   }, [activeTab])
 
@@ -66,12 +72,26 @@ export const GuardPortal: React.FC = () => {
   }
 
   const fetchIncidents = async () => {
+    if (!user?.residential_cluster) return
+    const clusterKeyword = user.residential_cluster.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
     const { data } = await supabase
       .from('incidents')
-      .select('*, profiles(first_name, last_name, house_number)')
+      .select('*, profiles!inner(first_name, last_name, house_number, residential_cluster)')
+      .ilike('profiles.residential_cluster', `%${clusterKeyword}%`)
       .eq('status', 'Pendiente')
       .order('created_at', { ascending: false })
     if (data) setIncidents(data)
+  }
+
+  const fetchAccessLogs = async () => {
+    const { data } = await supabase
+      .from('manual_access_logs')
+      .select('*')
+      .eq('cluster_name', user?.residential_cluster)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    if (data) setAccessLogs(data)
   }
 
   const handleManualAccess = async () => {
@@ -438,6 +458,25 @@ export const GuardPortal: React.FC = () => {
                  ))}
               </div>
            </div>
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+           <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '10px', letterSpacing: '1px' }}>ÚLTIMOS INGRESOS REGISTRADOS</h3>
+           {accessLogs.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay ingresos registrados hoy.</p>
+           ) : accessLogs.map(log => (
+              <div key={log.id} style={{ ...cardStyle, padding: '20px' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                       <p style={{ margin: 0, fontWeight: 700, fontSize: '15px' }}>{log.visitor_name}</p>
+                       <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-sub)' }}>Destino: Casa {log.destination_house}</p>
+                    </div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(log.created_at).toLocaleTimeString()}</span>
+                 </div>
+              </div>
+           ))}
         </div>
       )}
     </div>

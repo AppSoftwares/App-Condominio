@@ -128,12 +128,12 @@ export const Admin: React.FC = () => {
         if (error) throw error
         paymentData = data
       } else if (user?.residential_cluster) {
-        // Filtrado normalizado para asegurar visibilidad
-        const clusterName = user.residential_cluster.trim()
+        // Filtrado inteligente: buscamos la palabra clave del conjunto (ej: "Huertas")
+        const clusterKeyword = user.residential_cluster.replace(/Conjunto\s+\d+\s+/i, '').trim()
         const { data, error } = await supabase
           .from('payments')
           .select('*, profiles!inner(*)')
-          .ilike('profiles.residential_cluster', `%${clusterName}%`)
+          .ilike('profiles.residential_cluster', `%${clusterKeyword}%`)
           .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -1120,9 +1120,9 @@ export const Admin: React.FC = () => {
       {/* MODAL PARA VISTA PREVIA DE PDF */}
       {showPdfModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', zIndex: 3000 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', backgroundColor: 'var(--card-bg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'calc(15px + env(safe-area-inset-top)) 20px 15px', backgroundColor: 'var(--card-bg)' }}>
             <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>Vista Previa de Reporte</span>
-            <button onClick={() => setShowPdfModal(false)} style={{ background: 'none', border: 'none', color: '#ba1a1a', fontWeight: 800, cursor: 'pointer' }}>CERRAR</button>
+            <button onClick={() => setShowPdfModal(false)} style={{ background: 'none', border: 'none', color: '#ba1a1a', fontWeight: 800, cursor: 'pointer', padding: '10px' }}>CERRAR</button>
           </div>
           <iframe src={currentPdfUrl} style={{ flex: 1, width: '100%', border: 'none' }} title="Reporte PDF" />
         </div>

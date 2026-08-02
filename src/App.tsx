@@ -6,6 +6,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { AuthSplash } from './features/auth/AuthSplash'
 import { Login } from './features/auth/Login'
 import { Register } from './features/auth/Register'
+import { ResetPassword } from './features/auth/ResetPassword'
 import { MfaChallenge } from './features/auth/MfaChallenge'
 
 const ResDash = lazy(() => import('./features/dash/ResDash').then(m => ({ default: m.ResDash })))
@@ -192,6 +193,7 @@ function App() {
               <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
               <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
               <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />

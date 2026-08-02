@@ -145,10 +145,10 @@ export const Login: React.FC = () => {
     <div style={{
       minHeight: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'env(safe-area-inset-top) 24px env(safe-area-inset-bottom) 24px', boxSizing: 'border-box', fontFamily: "'Inter', sans-serif"
     }}>
-       <header style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+       <header style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: 'calc(20px + env(safe-area-inset-top)) 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <button
             onClick={() => navigate('/auth')}
-            style={{ position: 'absolute', left: '20px', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+            style={{ position: 'absolute', left: '20px', top: 'calc(20px + env(safe-area-inset-top))', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
           >
             <ArrowLeft size={24} color="#0f5551" />
           </button>

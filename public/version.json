@@ -1,7 +1,7 @@
 {
-  "versionCode": 36,
-  "versionName": "2.3.3",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.3",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.3/CaminosApp%20v2.3.3.apk",
-  "releaseNotes": "v2.3.3: Estabilización crítica. Corrección de seguridad (RLS) para alertas y votaciones, notificaciones automáticas al residente en ingresos manuales, filtro de pagos optimizado para administradores, visor de PDF compatible con móviles y formato de mensaje WhatsApp QR corregido."
+  "versionCode": 37,
+  "versionName": "2.3.4",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.4",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.4/CaminosApp%20v2.3.4.apk",
+  "releaseNotes": "v2.3.4: Estabilización final de UI y persistencia. Corrección de botones inaccesibles (Safe Area), nuevo flujo de recuperación de contraseña dentro de la app, filtros inteligentes por conjunto para votaciones, pagos y reservas, historial de ingresos manuales para vigilantes y notificaciones push automáticas para visitas. Fix de visibilidad de nombres en reservas compartidas."
 }
