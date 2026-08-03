@@ -11,11 +11,12 @@ export const ResetPassword: React.FC = () => {
 
   useEffect(() => {
     // Verificar si hay una sesión activa (Supabase la inyecta automáticamente desde el hash del link de recuperación)
-    supabase.auth.onAuthStateChange(async (event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event !== 'PASSWORD_RECOVERY') {
-        // Si no es un flujo de recuperación, tal vez entró por error
+        setMessage('Enlace inválido o expirado. Solicite uno nuevo desde Login.')
       }
     })
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -40,21 +41,27 @@ export const ResetPassword: React.FC = () => {
       <main style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--card-bg)', borderRadius: '32px', padding: '32px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
         <img src={icono} alt="Logo" style={{ width: '80px', marginBottom: '20px' }} />
         <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', color: 'var(--primary-color)', marginBottom: '10px' }}>Nueva Contraseña</h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '30px' }}>Ingrese su nueva clave de acceso.</p>
+        <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '30px' }}>{message || 'Ingrese su nueva clave de acceso.'}</p>
 
-        <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <input
-            type="password"
-            placeholder="Mínimo 6 caracteres"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
-          />
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
-            {loading ? 'Actualizando...' : 'ACTUALIZAR CONTRASEÑA'}
+        {!message ? (
+          <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <input
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
+            />
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
+              {loading ? 'Actualizando...' : 'ACTUALIZAR CONTRASEÑA'}
+            </button>
+          </form>
+        ) : (
+          <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
+            VOLVER AL LOGIN
           </button>
-        </form>
+        )}
       </main>
     </div>
   )

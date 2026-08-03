@@ -31,7 +31,8 @@ export const GuardPortal: React.FC = () => {
 
   // Estados para Registro Manual
   const [manualVisitor, setManualVisitor] = useState('')
-  const [manualHouse, setManualHouse] = useState('')
+  const [houseSuffix, setHouseSuffix] = useState('')
+  const clusterPrefix = user?.residential_cluster?.match(/\d+/)?.[0] || null
 
   // Estados para Alertas
   const [alertTitle, setAlertTitle] = useState('')
@@ -95,12 +96,16 @@ export const GuardPortal: React.FC = () => {
   }
 
   const handleManualAccess = async () => {
-    if (!manualVisitor || !manualHouse) return alert("Complete los datos del visitante")
+    if (!manualVisitor || !houseSuffix) return alert("Complete los datos del visitante")
     setLoading(true)
     try {
+      const destination = clusterPrefix
+        ? `${clusterPrefix}-${houseSuffix.trim().toUpperCase()}`
+        : houseSuffix.trim().toUpperCase();
+
       const { error } = await supabase.from('manual_access_logs').insert([{
         visitor_name: manualVisitor,
-        destination_house: manualHouse,
+        destination_house: destination,
         guard_id: user?.id,
         cluster_name: user?.residential_cluster
       }])
@@ -108,14 +113,14 @@ export const GuardPortal: React.FC = () => {
 
       // Notificar al residente
       if (user?.residential_cluster) {
-        await notificationService.notifyResidentByHouse(manualHouse, user.residential_cluster, {
+        await notificationService.notifyResidentByHouse(destination, user.residential_cluster, {
           title: "👤 Visita en Puerta",
           body: `${manualVisitor} se encuentra en la entrada para ingresar a su domicilio.`
         });
       }
 
       alert("✅ Ingreso manual registrado y residente notificado")
-      setManualVisitor(''); setManualHouse('')
+      setManualVisitor(''); setHouseSuffix('')
     } catch (err: any) {
       alert("Error: " + err.message)
     } finally {
@@ -135,6 +140,14 @@ export const GuardPortal: React.FC = () => {
         cluster_name: user?.residential_cluster
       }])
       if (error) throw error
+
+      if (user?.residential_cluster) {
+        await notificationService.notifyCluster(user.residential_cluster, {
+          title: `⚠️ Alerta de Seguridad (${alertSeverity})`,
+          body: alertTitle
+        })
+      }
+
       alert("📢 Alerta publicada a todos los residentes")
       setAlertTitle(''); setAlertDesc('')
     } catch (err: any) {
@@ -334,17 +347,21 @@ export const GuardPortal: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                  <Field label="Nombre Visitante" placeholder="Nombre completo" value={manualVisitor} onChange={(e: any) => setManualVisitor(e.target.value)} />
                  <div style={{ textAlign: 'left' }}>
-                    <label style={labelStyle}>Destino (Casa)</label>
-                    <input
-                        placeholder="Ej: 14-73"
-                        style={inputStyle}
-                        value={manualHouse}
-                        onChange={(e: any) => {
-                            let val = e.target.value.replace(/[^0-9-]/g, '');
-                            if (val.length === 2 && !val.includes('-')) val += '-';
-                            if (val.length <= 5) setManualHouse(val);
-                        }}
-                    />
+                    <label style={labelStyle}>Destino (Casa / Apto)</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {clusterPrefix && (
+                        <div style={{ ...inputStyle, width: '70px', textAlign: 'center', backgroundColor: 'var(--border-color)', flexShrink: 0 }}>
+                          {clusterPrefix}-
+                        </div>
+                      )}
+                      <input
+                        placeholder="Ej: 73 o 11A"
+                        style={{ ...inputStyle, flex: 1 }}
+                        value={houseSuffix}
+                        autoCapitalize="characters"
+                        onChange={(e: any) => setHouseSuffix(e.target.value.toUpperCase())}
+                      />
+                    </div>
                  </div>
                  <button
                   onClick={handleManualAccess}

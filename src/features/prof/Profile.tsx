@@ -13,6 +13,7 @@ import {
   MdOutlineEmergency
 } from 'react-icons/md'
 import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate()
@@ -38,18 +39,23 @@ export const Profile: React.FC = () => {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      try {
-        const reader = new FileReader()
-        reader.onloadend = async () => {
-          const base64String = reader.result as string
-          await updateAvatar(base64String)
-          alert('Foto de perfil actualizada con éxito')
-        }
-        reader.readAsDataURL(file)
-      } catch (err) {
-        alert('Error al actualizar la foto de perfil')
-      }
+    if (!file || !user) return
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/avatar_${Date.now()}.${ext}`
+
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+
+      if (upErr) throw upErr
+
+      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+      await updateAvatar(data.publicUrl)
+      alert('Foto de perfil actualizada con éxito')
+    } catch (err) {
+      console.error(err)
+      alert('No se pudo actualizar la foto de perfil. Intente de nuevo.')
     }
   }
 

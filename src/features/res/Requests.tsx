@@ -30,17 +30,23 @@ export const Requests: React.FC = () => {
       setLoading(true)
       setError(null)
       try {
-        const [vData, aData, sData] = await Promise.all([
+        const [vRes, aRes, sRes] = await Promise.allSettled([
           votingService.list(user?.residential_cluster),
           listAnnouncements(),
           supabase.from('security_alerts').select('*').order('created_at', { ascending: false }).limit(3)
         ])
-        setVotings(vData)
-        setAnnouncements(aData)
-        setSecurityAlerts(sData.data || [])
+
+        if (vRes.status === 'fulfilled') setVotings(vRes.value)
+        else console.error('Error votaciones:', vRes.reason)
+
+        if (aRes.status === 'fulfilled') setAnnouncements(aRes.value)
+        else console.error('Error anuncios:', aRes.reason)
+
+        if (sRes.status === 'fulfilled') setSecurityAlerts(sRes.value.data || [])
+        else console.error('Error alertas:', sRes.reason)
+
       } catch (err) {
         console.error('Error cargando comunidad:', err)
-        setError('No se pudo conectar con el servidor de comunidad.')
       } finally {
         setLoading(false)
       }

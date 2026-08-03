@@ -11,6 +11,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
+import { Browser } from '@capacitor/browser'
 import { votingService, Voting } from '../../services/votingService'
 import { paymentService } from '../../services/paymentService'
 import { notificationService } from '../../services/notificationService'
@@ -45,11 +46,9 @@ export const Admin: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, setWhitelist } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
-  const isSuperAdmin = user?.email?.toLowerCase().trim() === 'admin@caminos.com'
+  const isSuperAdmin = user?.role === 'superadmin'
 
   const [selectedCluster, setSelectedCluster] = useState(user?.residential_cluster || "Conjunto 14 Las Huertas")
-  const [showPdfModal, setShowPdfModal] = useState(false)
-  const [currentPdfUrl, setCurrentPdfUrl] = useState('')
 
   const initialTab = (searchParams.get('tab') as any) || 'finance'
   const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents'>(initialTab)
@@ -253,6 +252,13 @@ export const Admin: React.FC = () => {
       })
 
       // Notificar a los residentes
+      if (user?.residential_cluster) {
+        await notificationService.notifyCluster(user.residential_cluster, {
+          title: "🗳️ Nueva Votación",
+          body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`
+        })
+      }
+
       if (user?.residential_cluster) {
         await notificationService.notifyCluster(user.residential_cluster, {
           title: "🗳️ Nueva Votación",
@@ -531,10 +537,9 @@ export const Admin: React.FC = () => {
 
     const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
 
-    // Vista previa mejorada para móviles usando Iframe en Modal
-    const base64 = doc.output('datauristring')
-    setCurrentPdfUrl(base64)
-    setShowPdfModal(true)
+    // Abrir PDF con el navegador/visor del sistema operativo
+    const blobUrl = doc.output('bloburl')
+    await Browser.open({ url: blobUrl.toString() })
 
     return fileName
   }
@@ -763,7 +768,7 @@ export const Admin: React.FC = () => {
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Gestión de Usuarios</h3>
 
-                {user?.email?.toLowerCase().trim() === 'admin@caminos.com' && (
+                {user?.role === 'superadmin' && (
                   <div style={{ marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px' }}>
                     <label style={labelStyle}>CONJUNTO SELECCIONADO PARA ACCIONES (SUPERADMIN)</label>
                     <select
@@ -1116,17 +1121,6 @@ export const Admin: React.FC = () => {
           </section>
         )}
       </main>
-
-      {/* MODAL PARA VISTA PREVIA DE PDF */}
-      {showPdfModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', flexDirection: 'column', zIndex: 3000 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'calc(15px + env(safe-area-inset-top)) 20px 15px', backgroundColor: 'var(--card-bg)' }}>
-            <span style={{ fontWeight: 700, color: 'var(--primary-color)' }}>Vista Previa de Reporte</span>
-            <button onClick={() => setShowPdfModal(false)} style={{ background: 'none', border: 'none', color: '#ba1a1a', fontWeight: 800, cursor: 'pointer', padding: '10px' }}>CERRAR</button>
-          </div>
-          <iframe src={currentPdfUrl} style={{ flex: 1, width: '100%', border: 'none' }} title="Reporte PDF" />
-        </div>
-      )}
     </div>
   )
 }

@@ -105,21 +105,20 @@ export const useAuthStore = create<AuthState>()(
         const currentUser = get().user
         if (!currentUser) return
 
-        try {
-          // 1. Actualizar localmente para feedback inmediato
-          set((state) => ({
-            user: state.user ? { ...state.user, avatar_url: url } : null
-          }))
+        // 1. Actualizar localmente para feedback inmediato
+        set((state) => ({
+          user: state.user ? { ...state.user, avatar_url: url } : null
+        }))
 
-          // 2. Persistir en la base de datos de Supabase
-          const { error } = await supabase
-            .from('profiles')
-            .update({ avatar_url: url })
-            .eq('id', currentUser.id)
+        // 2. Persistir en la base de datos de Supabase
+        const { error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: url })
+          .eq('id', currentUser.id)
 
-          if (error) throw error
-        } catch (err) {
-          console.error('Error al guardar el avatar:', err)
+        if (error) {
+          console.error('Error al guardar el avatar:', error)
+          throw error
         }
       },
       signOut: async () => {

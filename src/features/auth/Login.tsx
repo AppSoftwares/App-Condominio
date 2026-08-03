@@ -35,7 +35,7 @@ export const Login: React.FC = () => {
     if (localUser) {
       let role: UserRole = 'resident'
 
-      if (localUser.email.toLowerCase().trim() === 'admin@caminos.com') {
+      if (localUser.role === 'superadmin') {
         role = 'superadmin'
       } else if (localUser.role === 'ADMINISTRADOR') {
         role = 'admin'
@@ -127,7 +127,7 @@ export const Login: React.FC = () => {
       // Para recuperación de contraseña en producción, el redirectTo debe ser la URL pública.
       // Si aún no tienes dominio, se recomienda usar la URL de Vercel/Netlify.
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) throw error
@@ -148,7 +148,7 @@ export const Login: React.FC = () => {
        <header style={{ position: 'fixed', top: 0, left: 0, width: '100%', padding: 'calc(20px + env(safe-area-inset-top)) 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <button
             onClick={() => navigate('/auth')}
-            style={{ position: 'absolute', left: '20px', top: 'calc(20px + env(safe-area-inset-top))', background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }}
+            style={{ position: 'absolute', left: '20px', top: 'calc(48px + env(safe-area-inset-top))', background: 'none', border: 'none', cursor: 'pointer', padding: '8px', zIndex: 101 }}
           >
             <ArrowLeft size={24} color="#0f5551" />
           </button>

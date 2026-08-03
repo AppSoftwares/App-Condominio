@@ -170,7 +170,7 @@ export const Layout: React.FC = () => {
               active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'incidents'}
               onClick={() => navigate('/admin?tab=incidents')}
             />
-            {user.email?.toLowerCase().trim() === 'admin@caminos.com' && (
+            {user.role === 'superadmin' && (
               <NavIcon
                 icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security' ? MdBusiness : MdOutlineBusiness}
                 active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'security'}

@@ -55,11 +55,11 @@ export const Guests: React.FC = () => {
     if (!user) return
     try {
       const { data, error } = await supabase
-        .from('guest_invitations')
+        .from('unified_guest_access')
         .select('*')
         .eq('resident_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(5)
+        .limit(10)
 
       if (error) throw error
       setRecentGuests(data || [])
