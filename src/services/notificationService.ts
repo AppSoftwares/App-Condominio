@@ -24,8 +24,8 @@ export const notificationService = {
       // que use FCM (Firebase Cloud Messaging) o Expo Push Service.
       console.log(`Enviando Push a ${profileId}:`, message)
 
-      // Simulamos el envío a través de una RPC que podría gatillar la Edge Function
-      await supabase.rpc('rpc_queue_notification', {
+      // Registro en la cola de envío real
+      await supabase.rpc('rpc_send_push', {
         p_token: profile.expo_push_token,
         p_title: message.title,
         p_body: message.body,
