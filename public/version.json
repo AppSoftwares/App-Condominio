@@ -1,7 +1,7 @@
 {
-  "versionCode": 38,
-  "versionName": "2.3.5",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.5",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.5/CaminosApp%20v2.3.5.apk",
-  "releaseNotes": "v2.3.5: Corrección de error 'Paquete no válido' al instalar en Android. Se restaura la firma automática de compatibilidad y se mejora el flujo de actualizaciones."
+  "versionCode": 39,
+  "versionName": "2.3.6",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.6",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.6/CaminosApp%20v2.3.6.apk",
+  "releaseNotes": "v2.3.6: Hotfix de estabilidad crítica. Se corrigen errores de cierre inesperado al iniciar sesión mediante el uso de validaciones de datos nulos y registro seguro de dispositivos. Mejora en la compatibilidad de plugins biométricos."
 }

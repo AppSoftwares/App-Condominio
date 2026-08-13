@@ -28,8 +28,8 @@ export const Login: React.FC = () => {
 
     // 1. Intentar validación con Whitelist (Excel de la imagen)
     const localUser = whitelist.find(u =>
-      u.email.toLowerCase().trim() === cleanEmail &&
-      u.password.toLowerCase().trim() === cleanPassword.toLowerCase()
+      (u.email || '').toString().toLowerCase().trim() === cleanEmail &&
+      (u.password || '').toString().toLowerCase().trim() === cleanPassword.toLowerCase()
     )
 
     if (localUser) {
@@ -43,13 +43,16 @@ export const Login: React.FC = () => {
         role = 'guard'
       }
 
+      const fullName = (localUser.name || 'Usuario').toString()
+      const nameParts = fullName.split(' ')
+
       setUser({
-        id: localUser.id,
-        email: localUser.email,
-        first_name: localUser.name.split(' ')[0],
-        last_name: localUser.name.split(' ')[1] || '',
+        id: localUser.id || Date.now().toString(),
+        email: (localUser.email || '').toString(),
+        first_name: nameParts[0] || 'Usuario',
+        last_name: nameParts.slice(1).join(' ') || '',
         role,
-        residential_cluster: localUser.conjunto,
+        residential_cluster: localUser.conjunto || localUser.residential_cluster,
         house_number: localUser.house_number,
         etapa: localUser.etapa
       })

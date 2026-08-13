@@ -54,25 +54,27 @@ let authListenerSubscription: { unsubscribe: () => void } | null = null
 
 async function registerCurrentDevice() {
   try {
-    const info = await Device.getInfo()
     const id = await Device.getId()
+    const info = await Device.getInfo()
 
     let deviceName = `${info.manufacturer || ''} ${info.model || info.platform}`.trim()
 
     if (info.platform === 'web') {
       const parser = new UAParser(window.navigator.userAgent)
-      const browser = parser.getBrowser()
-      const os = parser.getOS()
-      deviceName = `${browser.name || 'Navegador'} en ${os.name || 'Web'}`
+      deviceName = `${parser.getBrowser().name || 'Navegador'} en ${parser.getOS().name || 'Web'}`
     }
 
-    await supabase.rpc('rpc_register_session', {
+    // Usar rpc_register_session con control de errores absoluto
+    const { error } = await supabase.rpc('rpc_register_session', {
       p_device_name: deviceName || 'Dispositivo desconocido',
       p_device_id: id.identifier,
       p_platform: info.platform,
     })
+
+    if (error) console.warn('RPC register_session error:', error.message)
   } catch (err) {
-    console.warn('Error al registrar dispositivo:', err)
+    // Nunca dejar que este error suba hasta cerrar la app
+    console.error('Safe device registration failed:', err)
   }
 }
 
