@@ -1,7 +1,7 @@
 {
-  "versionCode": 39,
-  "versionName": "2.3.6",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.6",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.6/CaminosApp%20v2.3.6.apk",
-  "releaseNotes": "v2.3.6: Hotfix de estabilidad crítica. Se corrigen errores de cierre inesperado al iniciar sesión mediante el uso de validaciones de datos nulos y registro seguro de dispositivos. Mejora en la compatibilidad de plugins biométricos."
+  "versionCode": 40,
+  "versionName": "2.3.7",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.7",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.7/CaminosApp%20v2.3.7.apk",
+  "releaseNotes": "v2.3.7: Versión de Estabilidad Definitiva. Hardening Zero-Trust en la base de datos, privacidad de incidentes protegida, y corrección de flujos de registro de acceso real. Motor de notificaciones 100% operativo."
 }
