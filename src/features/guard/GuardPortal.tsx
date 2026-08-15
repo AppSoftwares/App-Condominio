@@ -77,9 +77,9 @@ export const GuardPortal: React.FC = () => {
     const clusterKeyword = user.residential_cluster.replace(/Conjunto\s+\d+\s+/i, '').trim();
 
     const { data } = await supabase
-      .from('incidents')
-      .select('*, profiles!inner(first_name, last_name, house_number, residential_cluster)')
-      .ilike('profiles.residential_cluster', `%${clusterKeyword}%`)
+      .from('incidents_guard_view') // Usar vista protegida para privacidad
+      .select('*')
+      .ilike('cluster_name', `%${clusterKeyword}%`)
       .eq('status', 'Pendiente')
       .order('created_at', { ascending: false })
     if (data) setIncidents(data)
@@ -203,6 +203,23 @@ export const GuardPortal: React.FC = () => {
            throw new Error('Este pase pertenece a otro conjunto residencial.')
         }
 
+        // 1. Marcar invitación como usada
+        await supabase.from('guest_invitations').update({ status: 'used' }).eq('id', qrContent)
+
+        // 2. Registrar en historial real
+        await supabase.from('access_logs').insert([{
+            invitation_id: data.id,
+            resident_id: data.resident_id,
+            guest_name: data.guest_name,
+            cluster_name: user?.residential_cluster
+        }])
+
+        // 3. Notificar al residente de la llegada real
+        await notificationService.sendToUser(data.resident_id, {
+            title: "✅ Visita en Casa",
+            body: `${data.guest_name} acaba de ingresar al conjunto.`
+        })
+
         setScanResult(data)
       } else {
         // Validación de liberación de paquete
@@ -264,7 +281,14 @@ export const GuardPortal: React.FC = () => {
 
     if (error) alert("Error al registrar: " + error.message)
     else {
-      alert("✅ Paquete registrado y notificación enviada.")
+      // Notificación real al residente
+      if (residentId) {
+        await notificationService.sendToUser(residentId, {
+          title: "📦 Nuevo Paquete",
+          body: `Tienes un paquete de ${courier} esperando en portería.`
+        });
+      }
+      alert("✅ Paquete registrado y residente notificado.")
       setCourier(''); setDetails(''); setResidentId('')
     }
     setLoading(false)

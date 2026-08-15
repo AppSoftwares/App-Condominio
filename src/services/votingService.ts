@@ -65,5 +65,10 @@ export const votingService = {
       else if (v.option === 'contra') results.contra++
     })
     return results
+  },
+
+  async delete(votingId: string) {
+    const { error } = await supabase.from('internal_votings').delete().eq('id', votingId)
+    if (error) throw error
   }
 }

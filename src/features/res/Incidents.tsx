@@ -140,9 +140,10 @@ export const Incidents: React.FC = () => {
       }
 
       const { error } = await supabase.rpc('rpc_insert_incident', {
-        category: category,
-        location: sanitizeString(location),
-        description: sanitizeString(description)
+        p_category: category,
+        p_location: sanitizeString(location),
+        p_description: sanitizeString(description),
+        p_cluster_name: user?.residential_cluster
       })
 
       if (error) throw error
