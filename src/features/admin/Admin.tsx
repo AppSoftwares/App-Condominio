@@ -265,6 +265,7 @@ export const Admin: React.FC = () => {
       // Notificar a los residentes
       const clusterToNotify = isSuperAdmin ? selectedCluster : user?.residential_cluster
       if (clusterToNotify) {
+        console.log("Notificando a residentes del conjunto:", clusterToNotify);
         await notificationService.notifyCluster(clusterToNotify, {
           title: "🗳️ Nueva Votación",
           body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`

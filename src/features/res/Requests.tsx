@@ -31,24 +31,26 @@ export const Requests: React.FC = () => {
       setError(null)
       try {
         const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const [vRes, aRes, sRes] = await Promise.allSettled([
+        const [vRes, aRes, sRes, myVotesRes] = await Promise.allSettled([
           votingService.list(user?.residential_cluster),
           listAnnouncements(),
           supabase.from('security_alerts')
             .select('*')
             .gt('created_at', yesterday)
             .order('created_at', { ascending: false })
-            .limit(5)
+            .limit(5),
+          supabase.from('internal_votes')
+            .select('voting_id')
+            .eq('profile_id', user?.id)
         ])
 
         if (vRes.status === 'fulfilled') setVotings(vRes.value)
-        else console.error('Error votaciones:', vRes.reason)
-
         if (aRes.status === 'fulfilled') setAnnouncements(aRes.value)
-        else console.error('Error anuncios:', aRes.reason)
-
         if (sRes.status === 'fulfilled') setSecurityAlerts(sRes.value.data || [])
-        else console.error('Error alertas:', sRes.reason)
+
+        if (myVotesRes.status === 'fulfilled' && myVotesRes.value.data) {
+          setVotedIds(myVotesRes.value.data.map((v: any) => v.voting_id))
+        }
 
       } catch (err) {
         console.error('Error cargando comunidad:', err)
@@ -63,7 +65,7 @@ export const Requests: React.FC = () => {
     if (!user) return
     try {
       await votingService.castVote(votingId, user.id, opcion)
-      setVotedIds([...votedIds, votingId])
+      setVotedIds(prev => [...prev, votingId])
       alert('¡Voto registrado con éxito!')
     } catch (err: any) {
       alert('No se pudo registrar el voto.')

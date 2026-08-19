@@ -39,19 +39,37 @@ export const notificationService = {
   },
 
   /**
-   * Notifica a todos los residentes de un conjunto residencial
+   * Notifica a todos los residentes de un conjunto residencial (Optimizado)
    */
   async notifyCluster(clusterName: string, message: PushMessage) {
     try {
-      const { data: residents } = await supabase
+      // Búsqueda flexible para el conjunto para asegurar que coincidan admin y residentes
+      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
+      const { data: residents, error } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('residential_cluster', clusterName)
+        .select('id, expo_push_token')
+        .ilike('residential_cluster', `%${cleanCluster}%`)
         .eq('role', 'resident')
+        .not('expo_push_token', 'is', null);
 
-      if (!residents) return
+      if (error) throw error;
+      if (!residents || residents.length === 0) {
+        console.warn(`No se encontraron residentes con tokens de push en el conjunto: ${clusterName}`);
+        return;
+      }
 
-      await Promise.all(residents.map(r => this.sendToUser(r.id, message)))
+      console.log(`Notificando a ${residents.length} residentes en el conjunto: ${clusterName}`);
+
+      // Encolar todas las notificaciones en paralelo
+      await Promise.all(residents.map(r =>
+        supabase.rpc('rpc_send_push', {
+          p_token: r.expo_push_token,
+          p_title: message.title,
+          p_body: message.body,
+          p_data: message.data
+        })
+      ));
     } catch (err) {
       console.error('Error notificando al conjunto:', err)
     }
