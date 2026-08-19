@@ -30,10 +30,15 @@ export const Requests: React.FC = () => {
       setLoading(true)
       setError(null)
       try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
         const [vRes, aRes, sRes] = await Promise.allSettled([
           votingService.list(user?.residential_cluster),
           listAnnouncements(),
-          supabase.from('security_alerts').select('*').order('created_at', { ascending: false }).limit(3)
+          supabase.from('security_alerts')
+            .select('*')
+            .gt('created_at', yesterday)
+            .order('created_at', { ascending: false })
+            .limit(5)
         ])
 
         if (vRes.status === 'fulfilled') setVotings(vRes.value)
