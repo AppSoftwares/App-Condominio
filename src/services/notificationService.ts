@@ -18,11 +18,13 @@ export const notificationService = {
         .eq('id', profileId)
         .single()
 
-      if (!profile?.expo_push_token) return
+      if (!profile?.expo_push_token) {
+        console.warn(`Usuario ${profileId} no tiene token de push registrado.`);
+        return;
+      }
 
-      // Nota: En producción esto debería llamar a un servidor intermedio o Edge Function
-      // que use FCM (Firebase Cloud Messaging) o Expo Push Service.
-      console.log(`Enviando Push a ${profileId}:`, message)
+      // Registro en la cola de envío real
+      console.log(`Encolando Push para ${profileId} (${profile.expo_push_token})`);
 
       // Registro en la cola de envío real
       await supabase.rpc('rpc_send_push', {

@@ -157,6 +157,13 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
   const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
   const [showResults, setShowResults] = useState(hasVoted)
 
+  // Sincronizar showResults cuando hasVoted cambie (después de votar)
+  useEffect(() => {
+    if (hasVoted) {
+      setShowResults(true)
+    }
+  }, [hasVoted])
+
   const loadResults = useCallback(async () => {
     try {
       const res = await votingService.getResults(voting.id)
