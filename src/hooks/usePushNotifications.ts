@@ -27,10 +27,16 @@ export const usePushNotifications = (userId: string | undefined) => {
 
       await PushNotifications.addListener('registration', async (token) => {
         console.log('Push token:', token.value);
-        await supabase
+        // Aseguramos que el token se guarde siempre, incluso si ya existe
+        const { error } = await supabase
           .from('profiles')
-          .update({ expo_push_token: token.value })
+          .update({
+            expo_push_token: token.value,
+            last_token_update: new Date().toISOString()
+          })
           .eq('id', userId);
+
+        if (error) console.error('Error guardando token en Supabase:', error);
       });
 
       await PushNotifications.addListener('registrationError', (err) => {

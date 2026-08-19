@@ -91,12 +91,19 @@ export const notificationService = {
       .ilike('residential_cluster', `%${cleanCluster}%`)
       .eq('role', 'admin')
 
-    const adminMsg = {
+    const { data: guards } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('residential_cluster', `%${cleanCluster}%`)
+      .eq('role', 'guard')
+
+    const alertMsg = {
       title: "🚨 Nuevo Incidente Reportado",
       body: `Se ha reportado: ${category} en la Casa ${culpritHouse}.`
     }
 
-    if (admins) admins.forEach(a => this.sendToUser(a.id, adminMsg))
+    if (admins) admins.forEach(a => this.sendToUser(a.id, alertMsg))
+    if (guards) guards.forEach(g => this.sendToUser(g.id, alertMsg))
 
     // 2. Notificar al Infractor (anónimamente)
     await this.notifyResidentByHouse(culpritHouse, clusterName, {

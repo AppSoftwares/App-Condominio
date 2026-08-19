@@ -222,6 +222,17 @@ export const Admin: React.FC = () => {
     }
   }
 
+  const deleteVoting = async (id: string) => {
+    if (!window.confirm("¿Está seguro de que desea eliminar esta votación?")) return
+    try {
+      await votingService.delete(id)
+      alert("Votación eliminada")
+      fetchData()
+    } catch (err: any) {
+      alert("Error al eliminar: " + err.message)
+    }
+  }
+
   const miniBtnStyle = { background: 'none', border: '1px solid var(--border-color)', color: 'var(--text-sub)', padding: '6px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }
 
   const financialData = {
@@ -252,13 +263,6 @@ export const Admin: React.FC = () => {
       })
 
       // Notificar a los residentes
-      if (user?.residential_cluster) {
-        await notificationService.notifyCluster(user.residential_cluster, {
-          title: "🗳️ Nueva Votación",
-          body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`
-        })
-      }
-
       if (user?.residential_cluster) {
         await notificationService.notifyCluster(user.residential_cluster, {
           title: "🗳️ Nueva Votación",
@@ -1009,29 +1013,11 @@ export const Admin: React.FC = () => {
              <p style={labelStyle}>VOTACIONES ACTIVAS / CERRADAS</p>
              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                 {votings.length === 0 ? <p style={{textAlign:'center', color:'var(--text-sub)'}}>No hay votaciones registradas.</p> : votings.map((v: any) => (
-                   <div key={v.id} style={cardStyle}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
-                         <div>
-                            <p style={{ margin: 0, fontWeight: 700 }}>{v.title}</p>
-                            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>Estatus: {v.is_active ? 'Activa' : 'Cerrada'} • Cierra: {new Date(v.end_date).toLocaleDateString()}</p>
-                         </div>
-                         {v.is_active && (
-                           <button
-                            onClick={() => {
-                                if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
-                                alert("¡Éxito! Se ha generado la deuda masiva.");
-                                }
-                            }}
-                            style={{ ...primaryBtnStyleSmall, backgroundColor: 'var(--accent-gold)' }}
-                           >
-                                Ejecutar Gasto
-                           </button>
-                         )}
-                      </div>
-                      <div style={{ marginTop: '15px' }}>
-                         <p style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{v.description}</p>
-                      </div>
-                   </div>
+                   <AdminVotingCard
+                    key={v.id}
+                    voting={v}
+                    onDelete={() => deleteVoting(v.id)}
+                   />
                 ))}
              </div>
           </section>
@@ -1121,6 +1107,87 @@ export const Admin: React.FC = () => {
           </section>
         )}
       </main>
+    </div>
+  )
+}
+
+const AdminVotingCard = ({ voting, onDelete }: { voting: Voting, onDelete: () => void }) => {
+  const [results, setResults] = useState<{ favor: number, contra: number }>({ favor: 0, contra: 0 })
+
+  const loadResults = useCallback(async () => {
+    try {
+      const res = await votingService.getResults(voting.id)
+      setResults(res)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [voting.id])
+
+  useEffect(() => {
+    loadResults()
+
+    // Suscripción Realtime para resultados en vivo
+    const channel = supabase
+      .channel(`votes-${voting.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'internal_votes',
+        filter: `voting_id=eq.${voting.id}`
+      }, () => {
+        loadResults()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [voting.id, loadResults])
+
+  return (
+    <div style={cardStyle}>
+       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>
+          <div>
+             <p style={{ margin: 0, fontWeight: 700 }}>{voting.title}</p>
+             <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>
+                {voting.is_active ? 'Activa' : 'Cerrada'} • Cierra: {new Date(voting.end_date).toLocaleDateString()}
+             </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+               onClick={() => {
+                   if(window.confirm("¿Confirmas que deseas generar la deuda masiva por este concepto?")) {
+                    alert("¡Éxito! Se ha generado la deuda masiva.");
+                   }
+               }}
+               style={{ ...primaryBtnStyleSmall, padding: '8px 12px', fontSize: '11px', backgroundColor: 'var(--accent-gold)' }}
+            >
+               Ejecutar Gasto
+            </button>
+            <button
+              onClick={onDelete}
+              style={{ ...primaryBtnStyleSmall, padding: '8px 12px', fontSize: '11px', backgroundColor: '#ba1a1a' }}
+            >
+              Eliminar
+            </button>
+          </div>
+       </div>
+
+       <div style={{ marginTop: '15px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '15px' }}>{voting.description}</p>
+
+          <div style={{ display: 'flex', gap: '20px', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '15px' }}>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+               <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: 'var(--primary-color)' }}>A FAVOR</p>
+               <p style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{results.favor}</p>
+            </div>
+            <div style={{ width: '1px', backgroundColor: 'var(--border-color)' }}></div>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+               <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: '#ba1a1a' }}>EN CONTRA</p>
+               <p style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>{results.contra}</p>
+            </div>
+          </div>
+       </div>
     </div>
   )
 }

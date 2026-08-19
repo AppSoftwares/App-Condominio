@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   MdOutlinePerson,
@@ -152,11 +152,37 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
   const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
   const [showResults, setShowResults] = useState(hasVoted)
 
-  useEffect(() => {
-    if (hasVoted) {
-      votingService.getResults(voting.id).then(setResults).catch(console.error)
+  const loadResults = useCallback(async () => {
+    try {
+      const res = await votingService.getResults(voting.id)
+      setResults(res)
+    } catch (e) {
+      console.error(e)
     }
-  }, [hasVoted, voting.id])
+  }, [voting.id])
+
+  useEffect(() => {
+    if (hasVoted || showResults) {
+      loadResults()
+
+      // Suscripción Realtime para residentes (ver resultados en vivo)
+      const channel = supabase
+        .channel(`resident-votes-${voting.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'internal_votes',
+          filter: `voting_id=eq.${voting.id}`
+        }, () => {
+          loadResults()
+        })
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [hasVoted, showResults, voting.id, loadResults])
 
   const total = results ? (results.favor + results.contra) : 0
   const pctFavor = total > 0 ? Math.round((results!.favor / total) * 100) : 0

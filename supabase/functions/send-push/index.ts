@@ -23,6 +23,9 @@ serve(async (req) => {
       body: record.body,
       data: record.data,
       sound: "default",
+      priority: "high",
+      channelId: "default",
+      _displayInForeground: true
     }
 
     // 3. Envío real a Expo
