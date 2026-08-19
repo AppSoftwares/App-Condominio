@@ -11,7 +11,7 @@ serve(async (req) => {
   try {
     const { record } = await req.json()
 
-    // 2. Cliente administrativo para actualizar el estado saltando RLS
+    // 2. Cliente administrativo
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -23,15 +23,10 @@ serve(async (req) => {
       body: record.body,
       data: record.data,
       sound: "default",
-      priority: "high", // Critical for Doze mode
-      channelId: "default",
-      _displayInForeground: true,
-      // Additional properties for delivery reliability
-      ttl: 2419200, // 4 weeks
-      expiration: Math.floor(Date.now() / 1000) + 3600,
+      priority: "high",
     }
 
-    // 3. Envío real a Expo
+    // 3. Envío real a Expo (Servicio gratuito y universal)
     const res = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },

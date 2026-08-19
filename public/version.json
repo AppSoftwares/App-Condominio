@@ -1,7 +1,7 @@
 {
-  "versionCode": 41,
-  "versionName": "2.3.8",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.8",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.8/CaminosApp%20v2.3.8.apk",
-  "releaseNotes": "v2.3.8: Actualización de mantenimiento y sincronización de versiones multiplataforma."
+  "versionCode": 42,
+  "versionName": "2.3.9",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.9",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.9/CaminosApp%20v2.3.9.apk",
+  "releaseNotes": "v2.3.9: Estabilización de notificaciones push vía Expo y mejoras en la barra de votación."
 }
