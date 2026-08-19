@@ -23,9 +23,12 @@ serve(async (req) => {
       body: record.body,
       data: record.data,
       sound: "default",
-      priority: "high",
+      priority: "high", // Critical for Doze mode
       channelId: "default",
-      _displayInForeground: true
+      _displayInForeground: true,
+      // Additional properties for delivery reliability
+      ttl: 2419200, // 4 weeks
+      expiration: Math.floor(Date.now() / 1000) + 3600,
     }
 
     // 3. Envío real a Expo

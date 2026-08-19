@@ -1,7 +1,7 @@
 {
-  "versionCode": 40,
-  "versionName": "2.3.7",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.7",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.7/CaminosApp%20v2.3.7.apk",
-  "releaseNotes": "v2.3.7: Versión de Estabilidad Definitiva. Hardening Zero-Trust en la base de datos, privacidad de incidentes protegida, y corrección de flujos de registro de acceso real. Motor de notificaciones 100% operativo."
+  "versionCode": 41,
+  "versionName": "2.3.8",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.8",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.8/CaminosApp%20v2.3.8.apk",
+  "releaseNotes": "v2.3.8: Actualización de mantenimiento y sincronización de versiones multiplataforma."
 }

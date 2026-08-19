@@ -199,26 +199,52 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
        <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.description}</p>
 
        {showResults && results ? (
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '10px' }}>
-            <div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                  <span>A FAVOR</span>
-                  <span>{pctFavor}%</span>
+         <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', fontWeight: 800 }}>
+               <span style={{ color: 'var(--primary-color)' }}>A FAVOR: {pctFavor}%</span>
+               <span style={{ color: '#ba1a1a' }}>EN CONTRA: {pctContra}%</span>
+            </div>
+            <div style={{
+               height: '35px',
+               width: '100%',
+               backgroundColor: 'var(--icon-bg)',
+               borderRadius: '12px',
+               overflow: 'hidden',
+               display: 'flex',
+               boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+            }}>
+               <div style={{
+                  width: `${pctFavor}%`,
+                  height: '100%',
+                  backgroundColor: 'var(--primary-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'width 1s ease',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 800
+               }}>
+                  {pctFavor > 15 ? `${pctFavor}%` : ''}
                </div>
-               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pctFavor}%`, height: '100%', backgroundColor: 'var(--primary-color)', transition: 'width 0.8s ease' }}></div>
+               <div style={{
+                  width: `${pctContra}%`,
+                  height: '100%',
+                  backgroundColor: '#ba1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'width 1s ease',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 800
+               }}>
+                  {pctContra > 15 ? `${pctContra}%` : ''}
                </div>
             </div>
-            <div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                  <span>EN CONTRA</span>
-                  <span>{pctContra}%</span>
-               </div>
-               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pctContra}%`, height: '100%', backgroundColor: '#ba1a1a', transition: 'width 0.8s ease' }}></div>
-               </div>
-            </div>
-            <p style={{ textAlign: 'center', color: 'var(--text-sub)', fontSize: '11px', marginTop: '10px' }}>{total} votos registrados en total</p>
+            <p style={{ textAlign: 'center', color: 'var(--text-sub)', fontSize: '11px', marginTop: '15px', fontWeight: 600 }}>
+               Total participación: {total} residentes
+            </p>
          </div>
        ) : (
          <div style={{ display: 'flex', gap: '10px' }}>

@@ -38,15 +38,23 @@ export const Register: React.FC = () => {
         email: cleanEmail,
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          // Detectar si estamos en producción para el redireccionamiento
+          emailRedirectTo: window.location.origin.includes('localhost')
+            ? 'http://localhost:5173/login'
+            : 'https://app-condominio.vercel.app/login',
           data: {
-            first_name: firstName,
-            last_name: lastName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
           }
         }
       })
 
-      if (authError) throw authError
+      if (authError) {
+        if (authError.message.includes('rate limit')) {
+          throw new Error('Se ha superado el límite de correos. Por favor, intente de nuevo en unos minutos o contacte a soporte.');
+        }
+        throw authError;
+      }
 
       if (authData.user) {
         // 3. Crear Perfil con estado 'pendiente'
