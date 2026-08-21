@@ -10,12 +10,33 @@ export const ResetPassword: React.FC = () => {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    // Verificar si hay una sesión activa (Supabase la inyecta automáticamente desde el hash del link de recuperación)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event !== 'PASSWORD_RECOVERY') {
-        setMessage('Enlace inválido o expirado. Solicite uno nuevo desde Login.')
+    let handled = false
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        handled = true
+        setMessage('')
       }
     })
+
+    // Si el evento ya se disparó antes de montar este componente, valida con getSession()
+    const checkExisting = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        handled = true
+        setMessage('')
+      } else if (!handled) {
+        // Pequeño retardo para dar tiempo al procesamiento del hash
+        setTimeout(async () => {
+          if (!handled) {
+            const { data: retry } = await supabase.auth.getSession()
+            if (retry.session) setMessage('')
+            else setMessage('Enlace inválido o expirado. Solicite uno nuevo desde Login.')
+          }
+        }, 1500)
+      }
+    }
+    checkExisting()
+
     return () => subscription.unsubscribe()
   }, [])
 

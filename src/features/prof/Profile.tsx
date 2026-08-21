@@ -50,8 +50,19 @@ export const Profile: React.FC = () => {
 
       if (upErr) throw upErr
 
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      await updateAvatar(data.publicUrl)
+      // Limpiar avatares anteriores del usuario (deja solo el nuevo)
+      const { data: existing } = await supabase.storage.from('avatars').list(user.id)
+      if (existing) {
+        const toDelete = existing
+          .filter(f => `${user.id}/${f.name}` !== path)
+          .map(f => `${user.id}/${f.name}`)
+        if (toDelete.length > 0) {
+          await supabase.storage.from('avatars').remove(toDelete)
+        }
+      }
+
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path)
+      await updateAvatar(publicData.publicUrl)
       alert('Foto de perfil actualizada con éxito')
     } catch (err) {
       console.error(err)

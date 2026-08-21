@@ -31,7 +31,7 @@ export const usePushNotifications = (userId: string | undefined) => {
         const { error } = await supabase
           .from('profiles')
           .update({
-            expo_push_token: token.value,
+            fcm_token: token.value,
             last_token_update: new Date().toISOString()
           })
           .eq('id', userId);

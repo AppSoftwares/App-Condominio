@@ -43,12 +43,14 @@ The content is organized as follows:
 .artifacts/0b3db42d-bfaf-493c-b5b5-6ca6ffb0f5a6/implementation_plan.artifact.md
 .artifacts/0b3db42d-bfaf-493c-b5b5-6ca6ffb0f5a6/task.artifact.md
 .artifacts/0b3db42d-bfaf-493c-b5b5-6ca6ffb0f5a6/walkthrough.artifact.md
+.artifacts/21bf585a-9fb4-4707-a8d4-25dcb53e63ec/implementation_plan.artifact.md
 .artifacts/9bdf6c0e-08fd-4f18-acbf-3000a7e548ac/implementation_plan.artifact.md
 .artifacts/9bdf6c0e-08fd-4f18-acbf-3000a7e548ac/task.artifact.md
 .artifacts/9bdf6c0e-08fd-4f18-acbf-3000a7e548ac/walkthrough.artifact.md
 .artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/implementation_plan.artifact.md
 .artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/task.artifact.md
 .artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/walkthrough.artifact.md
+.artifacts/implementation_plan.artifact.md
 .env.example
 .env.prod.example
 .github/desktop.ini
@@ -380,7 +382,12 @@ supabase/.temp/project-ref
 supabase/.temp/rest-version
 supabase/.temp/storage-migration
 supabase/.temp/storage-version
+supabase/06_final_verification_queries.sql
+supabase/fix_fcm_bridge.sql
+supabase/fix_notifications.sql
 supabase/functions/send-push/index.ts
+supabase/setup_avatar_storage.sql
+supabase/storage_setup.sql
 tailwind.config.js
 tests/test_accounting_service.py
 tests/test_password_hashing.py
@@ -389,6 +396,7 @@ tsconfig.json
 tsconfig.node.json
 vercel.json
 vite.config.ts
+walkthrough.artifact.md
 </directory_structure>
 
 <files>
@@ -6295,15 +6303,6 @@ The shape language is structured and dependable. A consistent **8px border radiu
 </body></html>
 </file>
 
-<file path="assets/desktop.ini">
-[.ShellClassInfo]
-IconResource=C:\Users\admin\Documents\CaminosApp\assets\icono.ico,0
-[ViewState]
-Mode=
-Vid=
-FolderType=Pictures
-</file>
-
 <file path="audit.md">
 # Auditoría de Seguridad - Caminos de la Lagunita
 
@@ -7053,6 +7052,116 @@ CREATE POLICY "Anyone can check if email is whitelisted" ON residents_whitelist
 -- Esto ya está en el package.json (@tanstack/react-query).
 </file>
 
+<file path="production_schema.sql">
+-- SCHEMA DE PRODUCCIÓN PARA CAMINOS DE LA LAGUNITA
+
+-- 1. TABLA DE PERFILES
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    first_name TEXT,
+    last_name TEXT,
+    role TEXT DEFAULT 'resident' CHECK (role IN ('resident', 'admin', 'guard', 'superadmin')),
+    residential_cluster TEXT,
+    house_number TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'inactive')),
+    avatar_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. TABLA DE DEUDAS (Para que aparezcan en el Dashboard)
+CREATE TABLE IF NOT EXISTS public.debts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    residente_id UUID REFERENCES public.profiles(id),
+    concepto TEXT NOT NULL,
+    monto_pendiente DECIMAL NOT NULL DEFAULT 0,
+    fecha_vencimiento DATE,
+    pagada BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. TABLA DE PAGOS
+CREATE TABLE IF NOT EXISTS public.payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID REFERENCES public.profiles(id),
+    monto_bs DECIMAL,
+    monto_usd DECIMAL,
+    referencia TEXT,
+    banco_origen TEXT,
+    status TEXT DEFAULT 'pendiente' CHECK (status IN ('pendiente', 'approved', 'rejected')),
+    evidencia_url TEXT,
+    description TEXT,
+    details JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. TABLA DE ANUNCIOS
+CREATE TABLE IF NOT EXISTS public.announcements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    titulo TEXT NOT NULL,
+    mensaje TEXT,
+    tipo TEXT DEFAULT 'general',
+    imagen_url TEXT,
+    fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. TABLA DE INCIDENCIAS
+CREATE TABLE IF NOT EXISTS public.incidents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID REFERENCES public.profiles(id),
+    category TEXT,
+    location TEXT,
+    description TEXT,
+    status TEXT DEFAULT 'Pendiente',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 6. HABILITAR RLS
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.debts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.incidents ENABLE ROW LEVEL SECURITY;
+
+-- 7. POLÍTICAS BÁSICAS
+-- Profiles: Propios o Admin
+CREATE POLICY "Profiles access" ON public.profiles FOR ALL USING (auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
+
+-- Debts: Propias o Admin
+CREATE POLICY "Debts access" ON public.debts FOR SELECT USING (residente_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
+
+-- Payments: Propios o Admin
+CREATE POLICY "Payments access" ON public.payments FOR ALL USING (profile_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
+
+-- Announcements: Todos ven
+CREATE POLICY "Announcements view" ON public.announcements FOR SELECT USING (true);
+
+-- Incidents: Propios o Admin
+CREATE POLICY "Incidents access" ON public.incidents FOR ALL USING (profile_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
+
+-- 8. FUNCIÓN DE SEGURIDAD PARA ADMIN (Corregida y Endurecida)
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'superadmin')
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.is_admin FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
+
+-- 9. INSERTAR USUARIOS INICIALES (Instrucciones)
+-- Nota: Los usuarios deben crearse primero en Supabase Auth y luego insertarse aquí.
+-- Sin embargo, el sistema de Whitelist en el código ya permite el login inicial.
+</file>
+
 <file path="production_users.sql">
 -- SCRIPT PARA SINCRONIZAR USUARIOS EN LA BASE DE DATOS PÚBLICA (profiles)
 -- Sincronizado con los UUIDs reales de Supabase Auth.
@@ -7414,6 +7523,220 @@ ON CONFLICT (id) DO UPDATE SET
   status = EXCLUDED.status;
 
 -- End of script
+</file>
+
+<file path="sql/layered_access_and_cutoff.sql">
+-- 0. ASEGURAR EXTENSIONES Y TABLAS BASE
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. TABLA DE INVITACIONES CON ACCESO POR CAPAS
+CREATE TABLE IF NOT EXISTS public.guest_invitations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    resident_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    guest_name TEXT NOT NULL,
+    guest_id_number TEXT,
+    allowed_areas TEXT[] DEFAULT ARRAY['residencia'], -- 'residencia', 'parrilleras', 'cancha', 'bohio'
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'used', 'expired', 'cancelled')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '24 hours')
+);
+
+-- Habilitar RLS para Invitaciones
+ALTER TABLE public.guest_invitations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Residents can manage their own invitations" ON public.guest_invitations
+    FOR ALL USING (auth.uid() = resident_id);
+
+CREATE POLICY "Guards can view all invitations" ON public.guest_invitations
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'guard'));
+
+-- 2. ASEGURAR TABLA DE PAGOS (Basado en requerimiento 'pagos_condominio')
+-- Nota: En producción usamos la tabla 'payments', pero mantenemos esta lógica para compatibilidad si se usa 'pagos_condominio'
+CREATE TABLE IF NOT EXISTS public.pagos_condominio (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    residente_id UUID REFERENCES public.profiles(id),
+    mes_correspondiente DATE NOT NULL,
+    monto DECIMAL NOT NULL,
+    pagado BOOLEAN DEFAULT FALSE,
+    fecha_pago TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. FUNCIÓN PARA VERIFICAR DEUDA (3 o más meses) - ENDURECIDA
+CREATE OR REPLACE FUNCTION public.check_debt_limit(res_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    meses_deuda INTEGER;
+BEGIN
+    -- Verificar en la tabla de deudas oficial
+    SELECT COUNT(*) INTO meses_deuda
+    FROM public.debts
+    WHERE residente_id = res_id AND pagada = FALSE;
+
+    -- También verificar en pagos_condominio si existe
+    IF meses_deuda < 3 THEN
+        DECLARE
+            meses_antiguos INTEGER;
+        BEGIN
+            SELECT COUNT(*) INTO meses_antiguos
+            FROM public.pagos_condominio
+            WHERE residente_id = res_id AND pagado = FALSE;
+            meses_deuda := meses_deuda + meses_antiguos;
+        END;
+    END IF;
+
+    RETURN meses_deuda >= 3;
+END;
+$$;
+
+-- Restringir acceso
+REVOKE EXECUTE ON FUNCTION public.check_debt_limit FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.check_debt_limit TO authenticated;
+
+-- 4. TRIGGER PARA BLOQUEAR GENERACIÓN DE QR Y RESERVAS - ENDURECIDO
+CREATE OR REPLACE FUNCTION public.enforce_debt_cutoff()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF public.check_debt_limit(NEW.resident_id) THEN
+        RAISE EXCEPTION 'Acceso bloqueado por deuda pendiente (3 o más meses). Por favor regularice su situación.';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+-- Trigger para Invitaciones
+DROP TRIGGER IF EXISTS tr_block_guest_invitation ON public.guest_invitations;
+CREATE TRIGGER tr_block_guest_invitation
+BEFORE INSERT ON public.guest_invitations
+FOR EACH ROW EXECUTE FUNCTION public.enforce_debt_cutoff();
+
+-- Trigger para Reservas
+CREATE OR REPLACE FUNCTION public.enforce_debt_cutoff_reservations()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    IF public.check_debt_limit(NEW.user_id) THEN
+        RAISE EXCEPTION 'Reserva bloqueada por deuda pendiente (3 o más meses). Por favor regularice su situación.';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_block_reservation ON public.reservations;
+CREATE TRIGGER tr_block_reservation
+BEFORE INSERT ON public.reservations
+FOR EACH ROW EXECUTE FUNCTION public.enforce_debt_cutoff_reservations();
+</file>
+
+<file path="sql/rpc_functions.sql">
+-- RPC helper functions with security hardening (fined search_path and execution limits)
+
+-- Insert payment as authenticated user
+CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
+  monto_bs numeric,
+  monto_usd numeric,
+  referencia text,
+  banco_origen text,
+  evidencia_url text,
+  description text,
+  details jsonb,
+  p_profile_id uuid DEFAULT auth.uid()
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  INSERT INTO public.payments(
+    profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
+  ) VALUES (
+    COALESCE(p_profile_id, auth.uid()), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.rpc_insert_payment FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
+
+-- Insert incident as authenticated user
+CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
+  category text,
+  location text,
+  description text
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  INSERT INTO public.incidents(
+    profile_id, category, location, description, status, created_at
+  ) VALUES (
+    auth.uid(), category, location, description, 'Pendiente', now()
+  );
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.rpc_insert_incident FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
+</file>
+
+<file path="sql/STORAGE_PERMISSIONS.sql">
+-- EJECUTA ESTO EN EL SQL EDITOR DE SUPABASE PARA ARREGLAR LA SUBIDA DE COMPROBANTES - SECURE VERSION
+
+-- 1. Crear el bucket si no existe
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('payment-captures', 'payment-captures', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Borrar políticas antiguas para evitar duplicados
+DROP POLICY IF EXISTS "Permitir subida a residentes" ON storage.objects;
+DROP POLICY IF EXISTS "Permitir lectura pública" ON storage.objects;
+DROP POLICY IF EXISTS "Permitir actualización a dueños" ON storage.objects;
+DROP POLICY IF EXISTS "Admin full access to captures" ON storage.objects;
+DROP POLICY IF EXISTS "Residents can view own captures" ON storage.objects;
+
+-- 2. Habilitar subida para usuarios autenticados
+CREATE POLICY "Permitir subida a residentes" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'payment-captures');
+
+-- 3. Seguridad de Lectura (SELECT):
+-- Evitamos la lectura pública global de la TABLA de objetos (que permite listar).
+-- Los archivos seguirán siendo accesibles vía URL directa porque el bucket es 'public'.
+
+-- Los residentes solo pueden ver sus propios registros en la tabla
+CREATE POLICY "Residents can view own captures" ON storage.objects
+FOR SELECT TO authenticated
+USING (bucket_id = 'payment-captures' AND owner = auth.uid());
+
+-- Los administradores pueden ver todos los registros
+CREATE POLICY "Admin full access to captures" ON storage.objects
+FOR ALL TO authenticated
+USING (
+  bucket_id = 'payment-captures' AND
+  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin')))
+);
+
+-- 4. Permitir que el usuario actualice sus propios archivos
+CREATE POLICY "Permitir actualización a dueños" ON storage.objects
+FOR UPDATE TO authenticated
+USING (bucket_id = 'payment-captures' AND owner = auth.uid());
 </file>
 
 <file path="src/components/ErrorBoundary.tsx">
@@ -8630,6 +8953,55 @@ Se han corregido todas las regresiones reportadas y se ha preparado la versión 
      - `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
 </file>
 
+<file path=".artifacts/21bf585a-9fb4-4707-a8d4-25dcb53e63ec/implementation_plan.artifact.md">
+# Plan de Mejora de Notificaciones, Autenticación y Perfil
+
+Revisión técnica senior para estabilizar el sistema de notificaciones en modo Doze, corregir errores de registro de usuarios y asegurar la persistencia de fotos de perfil en Supabase.
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Configuración de Firebase:** Para que las notificaciones funcionen en "modo dormido" (Doze), se requiere que el archivo `google-services.json` esté correctamente integrado en el proyecto Android y que se configure la API de FCM en las Edge Functions de Supabase.
+> **Deep Linking:** Para los correos de recuperación, es vital configurar el "Site URL" en Supabase como `com.caminosapp://login` o similar para que el enlace abra la app directamente.
+
+## Proposed Changes
+
+### 1. Notificaciones Push (Estabilidad y Modo Doze)
+
+#### [MODIFY] [usePushNotifications.ts](file:///C:/Users/admin/Documents/CaminosApp/src/hooks/usePushNotifications.ts)
+- Mejorar el registro del token para asegurar que se capture el token nativo de FCM.
+
+#### [MODIFY] [send-push/index.ts](file:///C:/Users/admin/Documents/CaminosApp/supabase/functions/send-push/index.ts)
+- Cambiar el endpoint de Expo por el de FCM Directo (o Expo con prioridad alta). Dado que Capacitor usa FCM nativo, lo ideal es usar FCM directamente para evitar la incompatibilidad de tokens.
+
+#### [MODIFY] [notificationService.ts](file:///C:/Users/admin/Documents/CaminosApp/src/services/notificationService.ts)
+- Asegurar que el payload incluya `priority: high` y los campos de datos necesarios para despertar al dispositivo.
+
+### 2. Autenticación y Registro
+
+#### [MODIFY] [Register.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/Register.tsx)
+- Agregar `emailRedirectTo` en `signUp` para manejar correctamente la redirección post-validación.
+- Validar la limpieza de datos antes del envío.
+
+### 3. Perfil y Fotos (Persistencia)
+
+#### [MODIFY] [Profile.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/prof/Profile.tsx)
+- Optimizar la lógica de subida a Supabase Storage y asegurar que la URL sea pública y accesible.
+
+#### [NEW] [storage_setup.sql](file:///C:/Users/admin/Documents/CaminosApp/supabase/storage_setup.sql)
+- Script para crear el bucket `avatars` y configurar las políticas RLS necesarias.
+
+## Verification Plan
+
+### Automated Tests
+- n/a (Pruebas manuales requeridas por ser hardware/push).
+
+### Manual Verification
+- Registrar un nuevo usuario y verificar la recepción del correo de confirmación.
+- Cambiar la foto de perfil y recargar la app para confirmar persistencia.
+- Enviar una notificación de prueba con el teléfono bloqueado para verificar el despertar (Doze mode).
+</file>
+
 <file path=".artifacts/9bdf6c0e-08fd-4f18-acbf-3000a7e548ac/implementation_plan.artifact.md">
 # Reparación del Build de iOS - Módulo Capacitor no encontrado
 
@@ -8708,6 +9080,48 @@ Se han aplicado las correcciones necesarias para que el build de iOS en GitHub A
 
 > [!TIP]
 > Si en el futuro agregas nuevos plugins de Capacitor, `pod install` seguirá funcionando correctamente ya que ahora Xcode sabe que debe leer las configuraciones desde estos archivos `.xcconfig` que hemos vinculado.
+</file>
+
+<file path=".artifacts/implementation_plan.artifact.md">
+# Plan de Actualización a la Versión v2.3.8
+
+Este plan detalla los pasos para sincronizar todos los componentes del proyecto a la versión **v2.3.8**, siguiendo las directrices del archivo `instrucciones_de_chat.md`.
+
+## User Review Required
+
+> [!IMPORTANT]
+> Se ha detectado que `package.json` y `android/app/build.gradle` ya contienen la versión `2.3.8` y el `versionCode 41` (incrementado desde el `40` usado en la `2.3.7`). Este plan sincronizará el resto de los archivos (`version.json` en todas las plataformas y el proyecto iOS) a estos valores.
+
+## Proposed Changes
+
+### [Core / Metadata]
+
+#### [MODIFY] [version.json](file:///C:/Users/admin/Documents/CaminosApp/public/version.json)
+- Actualizar `versionName` a `2.3.8`.
+- Actualizar `versionCode` a `41`.
+- Actualizar URLs de descarga y notas de lanzamiento.
+
+#### [MODIFY] [version.json](file:///C:/Users/admin/Documents/CaminosApp/android/app/src/main/assets/public/version.json)
+- Sincronizar con el archivo raíz.
+
+#### [MODIFY] [version.json](file:///C:/Users/admin/Documents/CaminosApp/ios/App/App/public/version.json)
+- Sincronizar con el archivo raíz.
+
+### [iOS Platform]
+
+#### [MODIFY] [project.pbxproj](file:///C:/Users/admin/Documents/CaminosApp/ios/App/App.xcodeproj/project.pbxproj)
+- Actualizar `MARKETING_VERSION` a `2.3.8`.
+- Actualizar `CURRENT_PROJECT_VERSION` a `41`.
+
+## Verification Plan
+
+### Manual Verification
+- Verificar que todos los archivos `version.json` tengan el mismo contenido.
+- Confirmar que los archivos de configuración de Android e iOS reflejen la versión `2.3.8`.
+- Ejecutar comandos de sincronización sugeridos:
+  ```bash
+  pnpm run build; npx cap sync android; npx cap sync ios;
+  ```
 </file>
 
 <file path=".github/workflows/ci.yml">
@@ -9954,6 +10368,15 @@ def get_transparency_summary(session: Session, mes: int, anio: int):
     }
 </file>
 
+<file path="assets/desktop.ini">
+[.ShellClassInfo]
+IconResource=C:\Users\admin\Documents\CaminosApp\assets\icono.ico,0
+[ViewState]
+Mode=
+Vid=
+FolderType=Pictures
+</file>
+
 <file path="capacitor.config.ts">
 import type { CapacitorConfig } from '@capacitor/cli';
 
@@ -10232,116 +10655,6 @@ CAPACITOR_DEBUG = true
 
 <file path="ios/release.xcconfig">
 #include "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"
-</file>
-
-<file path="production_schema.sql">
--- SCHEMA DE PRODUCCIÓN PARA CAMINOS DE LA LAGUNITA
-
--- 1. TABLA DE PERFILES
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    first_name TEXT,
-    last_name TEXT,
-    role TEXT DEFAULT 'resident' CHECK (role IN ('resident', 'admin', 'guard', 'superadmin')),
-    residential_cluster TEXT,
-    house_number TEXT,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'inactive')),
-    avatar_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 2. TABLA DE DEUDAS (Para que aparezcan en el Dashboard)
-CREATE TABLE IF NOT EXISTS public.debts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    residente_id UUID REFERENCES public.profiles(id),
-    concepto TEXT NOT NULL,
-    monto_pendiente DECIMAL NOT NULL DEFAULT 0,
-    fecha_vencimiento DATE,
-    pagada BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 3. TABLA DE PAGOS
-CREATE TABLE IF NOT EXISTS public.payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID REFERENCES public.profiles(id),
-    monto_bs DECIMAL,
-    monto_usd DECIMAL,
-    referencia TEXT,
-    banco_origen TEXT,
-    status TEXT DEFAULT 'pendiente' CHECK (status IN ('pendiente', 'approved', 'rejected')),
-    evidencia_url TEXT,
-    description TEXT,
-    details JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 4. TABLA DE ANUNCIOS
-CREATE TABLE IF NOT EXISTS public.announcements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    titulo TEXT NOT NULL,
-    mensaje TEXT,
-    tipo TEXT DEFAULT 'general',
-    imagen_url TEXT,
-    fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 5. TABLA DE INCIDENCIAS
-CREATE TABLE IF NOT EXISTS public.incidents (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID REFERENCES public.profiles(id),
-    category TEXT,
-    location TEXT,
-    description TEXT,
-    status TEXT DEFAULT 'Pendiente',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 6. HABILITAR RLS
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.debts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.incidents ENABLE ROW LEVEL SECURITY;
-
--- 7. POLÍTICAS BÁSICAS
--- Profiles: Propios o Admin
-CREATE POLICY "Profiles access" ON public.profiles FOR ALL USING (auth.uid() = id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
-
--- Debts: Propias o Admin
-CREATE POLICY "Debts access" ON public.debts FOR SELECT USING (residente_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
-
--- Payments: Propios o Admin
-CREATE POLICY "Payments access" ON public.payments FOR ALL USING (profile_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
-
--- Announcements: Todos ven
-CREATE POLICY "Announcements view" ON public.announcements FOR SELECT USING (true);
-
--- Incidents: Propios o Admin
-CREATE POLICY "Incidents access" ON public.incidents FOR ALL USING (profile_id = auth.uid() OR (SELECT role FROM public.profiles WHERE id = auth.uid()) IN ('admin', 'superadmin'));
-
--- 8. FUNCIÓN DE SEGURIDAD PARA ADMIN (Corregida y Endurecida)
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.profiles
-    WHERE id = auth.uid() AND role IN ('admin', 'superadmin')
-  );
-END;
-$$;
-
-REVOKE EXECUTE ON FUNCTION public.is_admin FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
-
--- 9. INSERTAR USUARIOS INICIALES (Instrucciones)
--- Nota: Los usuarios deben crearse primero en Supabase Auth y luego insertarse aquí.
--- Sin embargo, el sistema de Whitelist en el código ya permite el login inicial.
 </file>
 
 <file path="requirements.txt">
@@ -10884,6 +11197,106 @@ CREATE POLICY "Users can update own vote" ON public.internal_votes
 FOR UPDATE USING (auth.uid() = profile_id);
 </file>
 
+<file path="sql/fix_payments_table.sql">
+-- SCRIPT DE REPARACIÓN INTEGRAL PARA TABLA DE PAGOS (CAMINOS APP) - HARDENED VERSION
+
+DO $$
+BEGIN
+    -- 1. Asegurar que la tabla existe
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
+        CREATE TABLE public.payments (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    END IF;
+
+    -- 2. Asegurar columna profile_id (y migrar desde user_id si existe)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
+        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'user_id') THEN
+            UPDATE public.payments SET profile_id = user_id;
+        END IF;
+    END IF;
+
+    -- 3. Asegurar columna monto_usd (y migrar desde amount_usd si existe)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'amount_usd') THEN
+            UPDATE public.payments SET monto_usd = amount_usd;
+        END IF;
+    END IF;
+
+    -- 4. Asegurar columna monto_bs
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
+    END IF;
+
+    -- 5. Asegurar columna referencia
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
+        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
+    END IF;
+
+    -- 6. Asegurar columna banco_origen
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
+        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
+    END IF;
+
+    -- 7. Asegurar columna evidencia_url (y migrar desde screenshot_url si existe)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
+        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'screenshot_url') THEN
+            UPDATE public.payments SET evidencia_url = screenshot_url;
+        END IF;
+    END IF;
+
+    -- 8. Asegurar columna description
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
+        ALTER TABLE public.payments ADD COLUMN description TEXT;
+    END IF;
+
+    -- 9. Asegurar columna details
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
+        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
+    END IF;
+
+    -- 10. Asegurar columna status
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
+        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
+    END IF;
+
+END $$;
+
+-- 11. Re-crear la función RPC con endurecimiento de seguridad (Sin p_profile_id)
+CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
+  monto_bs numeric,
+  monto_usd numeric,
+  referencia text,
+  banco_origen text,
+  evidencia_url text,
+  description text,
+  details jsonb
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Verificar que el usuario esté autenticado
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'No autorizado';
+  END IF;
+
+  INSERT INTO public.payments(
+    profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
+  ) VALUES (
+    auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
+  );
+END;
+$$;
+
+-- Restringir ejecución solo a usuarios autenticados
+REVOKE EXECUTE ON FUNCTION public.rpc_insert_payment FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
+</file>
+
 <file path="sql/FIX_RECURSION_DEFINITIVO.sql">
 -- COPIA Y PEGA ESTE SCRIPT EN EL SQL EDITOR DE SUPABASE PARA ARREGLAR EL ERROR "Infinite Recursion"
 
@@ -11169,120 +11582,6 @@ END;
 $$;
 </file>
 
-<file path="sql/layered_access_and_cutoff.sql">
--- 0. ASEGURAR EXTENSIONES Y TABLAS BASE
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 1. TABLA DE INVITACIONES CON ACCESO POR CAPAS
-CREATE TABLE IF NOT EXISTS public.guest_invitations (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    resident_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
-    guest_name TEXT NOT NULL,
-    guest_id_number TEXT,
-    allowed_areas TEXT[] DEFAULT ARRAY['residencia'], -- 'residencia', 'parrilleras', 'cancha', 'bohio'
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'used', 'expired', 'cancelled')),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '24 hours')
-);
-
--- Habilitar RLS para Invitaciones
-ALTER TABLE public.guest_invitations ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Residents can manage their own invitations" ON public.guest_invitations
-    FOR ALL USING (auth.uid() = resident_id);
-
-CREATE POLICY "Guards can view all invitations" ON public.guest_invitations
-    FOR SELECT USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'guard'));
-
--- 2. ASEGURAR TABLA DE PAGOS (Basado en requerimiento 'pagos_condominio')
--- Nota: En producción usamos la tabla 'payments', pero mantenemos esta lógica para compatibilidad si se usa 'pagos_condominio'
-CREATE TABLE IF NOT EXISTS public.pagos_condominio (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    residente_id UUID REFERENCES public.profiles(id),
-    mes_correspondiente DATE NOT NULL,
-    monto DECIMAL NOT NULL,
-    pagado BOOLEAN DEFAULT FALSE,
-    fecha_pago TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 3. FUNCIÓN PARA VERIFICAR DEUDA (3 o más meses) - ENDURECIDA
-CREATE OR REPLACE FUNCTION public.check_debt_limit(res_id UUID)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-    meses_deuda INTEGER;
-BEGIN
-    -- Verificar en la tabla de deudas oficial
-    SELECT COUNT(*) INTO meses_deuda
-    FROM public.debts
-    WHERE residente_id = res_id AND pagada = FALSE;
-
-    -- También verificar en pagos_condominio si existe
-    IF meses_deuda < 3 THEN
-        DECLARE
-            meses_antiguos INTEGER;
-        BEGIN
-            SELECT COUNT(*) INTO meses_antiguos
-            FROM public.pagos_condominio
-            WHERE residente_id = res_id AND pagado = FALSE;
-            meses_deuda := meses_deuda + meses_antiguos;
-        END;
-    END IF;
-
-    RETURN meses_deuda >= 3;
-END;
-$$;
-
--- Restringir acceso
-REVOKE EXECUTE ON FUNCTION public.check_debt_limit FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.check_debt_limit TO authenticated;
-
--- 4. TRIGGER PARA BLOQUEAR GENERACIÓN DE QR Y RESERVAS - ENDURECIDO
-CREATE OR REPLACE FUNCTION public.enforce_debt_cutoff()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-    IF public.check_debt_limit(NEW.resident_id) THEN
-        RAISE EXCEPTION 'Acceso bloqueado por deuda pendiente (3 o más meses). Por favor regularice su situación.';
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
--- Trigger para Invitaciones
-DROP TRIGGER IF EXISTS tr_block_guest_invitation ON public.guest_invitations;
-CREATE TRIGGER tr_block_guest_invitation
-BEFORE INSERT ON public.guest_invitations
-FOR EACH ROW EXECUTE FUNCTION public.enforce_debt_cutoff();
-
--- Trigger para Reservas
-CREATE OR REPLACE FUNCTION public.enforce_debt_cutoff_reservations()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-    IF public.check_debt_limit(NEW.user_id) THEN
-        RAISE EXCEPTION 'Reserva bloqueada por deuda pendiente (3 o más meses). Por favor regularice su situación.';
-    END IF;
-    RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS tr_block_reservation ON public.reservations;
-CREATE TRIGGER tr_block_reservation
-BEFORE INSERT ON public.reservations
-FOR EACH ROW EXECUTE FUNCTION public.enforce_debt_cutoff_reservations();
-</file>
-
 <file path="sql/link_manual_access.sql">
 -- ================================================================================
 -- SCRIPT PARA VINCULACIÓN AUTOMÁTICA DE INGRESOS MANUALES (Vigilante -> Residente)
@@ -11486,61 +11785,54 @@ ON CONFLICT DO NOTHING;
 */
 </file>
 
-<file path="sql/rpc_functions.sql">
--- RPC helper functions with security hardening (fined search_path and execution limits)
+<file path="sql/rls_fix_profiles.sql">
+-- Fix for infinite recursion in RLS policy on public.profiles
+-- 1) Create helper function that checks if current auth.uid() is admin
+--    The function is SECURITY DEFINER so it can query profiles without being affected by RLS.
 
--- Insert payment as authenticated user
-CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
-  monto_bs numeric,
-  monto_usd numeric,
-  referencia text,
-  banco_origen text,
-  evidencia_url text,
-  description text,
-  details jsonb,
-  p_profile_id uuid DEFAULT auth.uid()
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+CREATE OR REPLACE FUNCTION public.is_admin_user()
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  _role text;
 BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'No autorizado';
-  END IF;
-
-  INSERT INTO public.payments(
-    profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
-  ) VALUES (
-    COALESCE(p_profile_id, auth.uid()), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
-  );
+  SELECT role INTO _role FROM public.profiles WHERE id = auth.uid();
+  RETURN _role IN ('admin', 'superadmin');
+EXCEPTION WHEN OTHERS THEN
+  RETURN false;
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.rpc_insert_payment FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_admin_user FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.is_admin_user TO authenticated;
 
--- Insert incident as authenticated user
-CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
-  category text,
-  location text,
-  description text
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'No autorizado';
-  END IF;
+-- 2) Replace the existing recursive policy with two safe policies
+-- Drop any old policies first so the script is idempotent
+DROP POLICY IF EXISTS "Profiles access" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles admin access" ON public.profiles;
 
-  INSERT INTO public.incidents(
-    profile_id, category, location, description, status, created_at
-  ) VALUES (
-    auth.uid(), category, location, description, 'Pendiente', now()
+DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+
+CREATE POLICY "owner_update_no_privesc" ON public.profiles
+  FOR ALL TO authenticated
+  USING (auth.uid() = id)
+  WITH CHECK (
+    auth.uid() = id
+    AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
   );
-END;
-$$;
 
-REVOKE EXECUTE ON FUNCTION public.rpc_insert_incident FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
+-- Allow admin users (evaluated via SECURITY DEFINER function) to access profiles
+CREATE POLICY "Profiles admin access" ON public.profiles
+  FOR ALL
+  USING (public.is_admin_user());
+
+-- Note: after applying, verify any other policies that used subselects on profiles and adjust similarly.
 </file>
 
 <file path="sql/security_and_notifications.sql">
@@ -11730,49 +12022,6 @@ $$;
 GRANT EXECUTE ON FUNCTION public.rpc_register_session(text, text, text, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.revoke_session(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_my_sessions() TO authenticated;
-</file>
-
-<file path="sql/STORAGE_PERMISSIONS.sql">
--- EJECUTA ESTO EN EL SQL EDITOR DE SUPABASE PARA ARREGLAR LA SUBIDA DE COMPROBANTES - SECURE VERSION
-
--- 1. Crear el bucket si no existe
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('payment-captures', 'payment-captures', true)
-ON CONFLICT (id) DO NOTHING;
-
--- Borrar políticas antiguas para evitar duplicados
-DROP POLICY IF EXISTS "Permitir subida a residentes" ON storage.objects;
-DROP POLICY IF EXISTS "Permitir lectura pública" ON storage.objects;
-DROP POLICY IF EXISTS "Permitir actualización a dueños" ON storage.objects;
-DROP POLICY IF EXISTS "Admin full access to captures" ON storage.objects;
-DROP POLICY IF EXISTS "Residents can view own captures" ON storage.objects;
-
--- 2. Habilitar subida para usuarios autenticados
-CREATE POLICY "Permitir subida a residentes" ON storage.objects
-FOR INSERT TO authenticated
-WITH CHECK (bucket_id = 'payment-captures');
-
--- 3. Seguridad de Lectura (SELECT):
--- Evitamos la lectura pública global de la TABLA de objetos (que permite listar).
--- Los archivos seguirán siendo accesibles vía URL directa porque el bucket es 'public'.
-
--- Los residentes solo pueden ver sus propios registros en la tabla
-CREATE POLICY "Residents can view own captures" ON storage.objects
-FOR SELECT TO authenticated
-USING (bucket_id = 'payment-captures' AND owner = auth.uid());
-
--- Los administradores pueden ver todos los registros
-CREATE POLICY "Admin full access to captures" ON storage.objects
-FOR ALL TO authenticated
-USING (
-  bucket_id = 'payment-captures' AND
-  (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin')))
-);
-
--- 4. Permitir que el usuario actualice sus propios archivos
-CREATE POLICY "Permitir actualización a dueños" ON storage.objects
-FOR UPDATE TO authenticated
-USING (bucket_id = 'payment-captures' AND owner = auth.uid());
 </file>
 
 <file path="sql/system_updates.sql">
@@ -12705,62 +12954,6 @@ export const PackageLocker = () => {
 };
 </file>
 
-<file path="src/hooks/usePushNotifications.ts">
-import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { supabase } from '../lib/supabase';
-
-export const usePushNotifications = (userId: string | undefined) => {
-  useEffect(() => {
-    // Solo intentar si es un dispositivo nativo y hay usuario
-    if (userId && Capacitor.isNativePlatform()) {
-      initPush();
-    }
-  }, [userId]);
-
-  const initPush = async () => {
-    try {
-      // Importación dinámica para que Vite no se rompa en la web
-      const { PushNotifications } = await import('@capacitor/push-notifications');
-
-      let permStatus = await PushNotifications.checkPermissions();
-
-      if (permStatus.receive === 'prompt') {
-        permStatus = await PushNotifications.requestPermissions();
-      }
-
-      if (permStatus.receive !== 'granted') return;
-
-      await PushNotifications.register();
-
-      await PushNotifications.addListener('registration', async (token) => {
-        console.log('Push token:', token.value);
-        await supabase
-          .from('profiles')
-          .update({ expo_push_token: token.value })
-          .eq('id', userId);
-      });
-
-      await PushNotifications.addListener('registrationError', (err) => {
-        console.error('Error en registro Push:', err.error);
-      });
-
-      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('Push recibida:', notification);
-        // Podríamos disparar una notificación local o actualizar un estado global
-      });
-
-      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-        console.log('Push acción realizada:', notification.actionId);
-        // Redirigir según el tipo de notificación
-      });
-    } catch (error) {
-      console.warn('Capacitor Push Notifications no disponibles en este entorno');
-    }
-  };
-};
-</file>
-
 <file path="src/i18n/index.ts">
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
@@ -13198,57 +13391,175 @@ optimize-existing-functions-again
 v1.67.26
 </file>
 
-<file path="supabase/functions/send-push/index.ts">
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+<file path="supabase/06_final_verification_queries.sql">
+-- CONSULTAS DE VERIFICACIÓN PARA EL ADMINISTRADOR
+-- Ejecuta esto para ver el estado de las notificaciones
 
-serve(async (req) => {
-  // 1. Verificación de Secreto (Seguridad de invocación)
-  const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
-  if (req.headers.get('x-webhook-secret') !== webhookSecret) {
-    return new Response('Unauthorized', { status: 401 })
-  }
+-- 1. Ver cola de notificaciones y errores
+SELECT status, error_message, count(*)
+FROM public.push_notifications
+GROUP BY status, error_message;
 
-  try {
-    const { record } = await req.json()
+-- 2. Ver usuarios con token registrado
+SELECT email, expo_push_token, last_token_update
+FROM public.profiles
+WHERE expo_push_token IS NOT NULL;
+</file>
 
-    // 2. Cliente administrativo para actualizar el estado saltando RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+<file path="supabase/fix_fcm_bridge.sql">
+-- 1. Asegurar tabla de historial de notificaciones con campos para depuración
+CREATE TABLE IF NOT EXISTS public.push_notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    token TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    data JSONB,
+    status TEXT DEFAULT 'pending',
+    error_message TEXT,
+    attempts INTEGER DEFAULT 0,
+    last_attempt TIMESTAMP WITH TIME ZONE,
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-    const payload = {
-      to: record.token,
-      title: record.title,
-      body: record.body,
-      data: record.data,
-      sound: "default",
-    }
+-- 2. Habilitar RLS (Denegar acceso directo a usuarios, solo sistema)
+ALTER TABLE public.push_notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "system_only" ON public.push_notifications;
+CREATE POLICY "system_only" ON public.push_notifications FOR ALL USING (false);
 
-    // 3. Envío real a Expo
-    const res = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload),
-    })
+-- 3. RPC para envío (ya existía pero lo reforzamos)
+CREATE OR REPLACE FUNCTION public.rpc_send_push(
+  p_token text,
+  p_title text,
+  p_body text,
+  p_data jsonb DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.push_notifications (token, title, body, data)
+  VALUES (p_token, p_title, p_body, p_data);
+END;
+$$;
+</file>
 
-    const result = await res.json()
-    const expoError = result?.data?.status === 'error' ? result.data.message : null
+<file path="supabase/fix_notifications.sql">
+-- FIX NOTIFICACIONES PUSH PARA MODO DOZE Y ESTABILIDAD
 
-    // 4. Actualización del historial (Éxito o error de Expo)
-    await supabaseAdmin.from('push_notifications').update({
-      status: expoError ? 'error' : 'sent',
-      error_message: expoError,
-      sent_at: new Date().toISOString()
-    }).eq('id', record.id)
+-- 1. Asegurar tabla de notificaciones
+CREATE TABLE IF NOT EXISTS public.push_notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    token TEXT NOT NULL,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    data JSONB,
+    status TEXT DEFAULT 'pending',
+    error_message TEXT,
+    sent_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } })
+-- Denegar acceso directo a residentes por seguridad
+ALTER TABLE public.push_notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "internal_deny_all" ON public.push_notifications;
+CREATE POLICY "internal_deny_all" ON public.push_notifications FOR ALL USING (false);
 
-  } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
-  }
-})
+-- 2. Crear RPC para insertar en la cola
+CREATE OR REPLACE FUNCTION public.rpc_send_push(
+  p_token text,
+  p_title text,
+  p_body text,
+  p_data jsonb DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.push_notifications (token, title, body, data)
+  VALUES (p_token, p_title, p_body, p_data);
+END;
+$$;
+
+-- Otorgar permisos de ejecución a usuarios autenticados
+GRANT EXECUTE ON FUNCTION public.rpc_send_push TO authenticated;
+
+-- 3. Habilitar el Trigger Webhook (Esto debe hacerse en el Dashboard de Supabase)
+-- Nombre: send-push-webhook
+-- Evento: INSERT en public.push_notifications
+-- URL: Tu URL de Edge Function (https://<project>.supabase.co/functions/v1/send-push)
+-- Header: x-webhook-secret: <tu_secreto>
+</file>
+
+<file path="supabase/setup_avatar_storage.sql">
+-- CONFIGURACIÓN DE STORAGE PARA AVATARES
+
+-- 1. Crear el bucket si no existe
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Borrar políticas antiguas para evitar duplicados
+DROP POLICY IF EXISTS "Avatares públicos" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios pueden subir su propio avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios pueden borrar su propio avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios pueden actualizar su propio avatar" ON storage.objects;
+
+-- 2. Permitir lectura pública (Cualquiera puede ver las fotos de perfil)
+CREATE POLICY "Avatares públicos" ON storage.objects
+FOR SELECT USING (bucket_id = 'avatars');
+
+-- 3. Permitir subida (Solo el dueño del archivo, identificado por la carpeta con su ID)
+CREATE POLICY "Usuarios pueden subir su propio avatar" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (
+    bucket_id = 'avatars' AND
+    (storage.foldername(name))[1] = auth.uid()::text
+);
+
+-- 4. Permitir actualización/borrado (Solo el dueño)
+CREATE POLICY "Usuarios pueden actualizar su propio avatar" ON storage.objects
+FOR UPDATE TO authenticated
+USING (
+    bucket_id = 'avatars' AND
+    (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Usuarios pueden borrar su propio avatar" ON storage.objects
+FOR DELETE TO authenticated
+USING (
+    bucket_id = 'avatars' AND
+    (storage.foldername(name))[1] = auth.uid()::text
+);
+</file>
+
+<file path="supabase/storage_setup.sql">
+-- CONFIGURACIÓN DE ALMACENAMIENTO PARA AVATARES
+
+-- 1. Crear el bucket si no existe
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- 2. Políticas de acceso para el bucket 'avatars'
+-- Permitir que cualquiera vea los avatares
+CREATE POLICY "Avatares públicos" ON storage.objects
+FOR SELECT USING (bucket_id = 'avatars');
+
+-- Permitir que usuarios autenticados suban sus propios avatares
+CREATE POLICY "Usuarios pueden subir avatares" ON storage.objects
+FOR INSERT WITH CHECK (
+  bucket_id = 'avatars' AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Permitir que usuarios actualicen sus propios avatares
+CREATE POLICY "Usuarios pueden actualizar avatares" ON storage.objects
+FOR UPDATE USING (
+  bucket_id = 'avatars' AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Permitir que usuarios eliminen sus propios avatares
+CREATE POLICY "Usuarios pueden eliminar avatares" ON storage.objects
+FOR DELETE USING (
+  bucket_id = 'avatars' AND
+  auth.uid()::text = (storage.foldername(name))[1]
+);
 </file>
 
 <file path="tests/test_accounting_service.py">
@@ -13451,6 +13762,38 @@ def test_cast_vote_closed_voting(client: TestClient, session: Session):
     }
   ]
 }
+</file>
+
+<file path="walkthrough.artifact.md">
+# Walkthrough: Estabilización de Notificaciones, Auth y Mejoras en Votaciones
+
+Se han implementado todas las mejoras técnicas y visuales solicitadas para asegurar el correcto funcionamiento de las notificaciones push, el registro de usuarios y la experiencia de votación.
+
+## Cambios Realizados
+
+### 1. Notificaciones Push y Modo Doze
+- **Edge Function Reforzada:** Se actualizó `supabase/functions/send-push/index.ts` para incluir `priority: high` y parámetros de expiración, lo que permite despertar dispositivos en modo ahorro de energía (Doze).
+- **Cola de Notificaciones:** Se creó la tabla `push_notifications` y el RPC `rpc_send_push` en [fix_fcm_bridge.sql](file:///C:/Users/admin/Documents/CaminosApp/supabase/fix_fcm_bridge.sql) para gestionar el envío asíncrono y registrar fallos.
+
+### 2. Autenticación y Registro
+- **Corrección en `Register.tsx`:** Se mejoró el manejo de errores para detectar límites de envío de correos (Rate Limit) y se ajustó la URL de redirección para que funcione correctamente tanto en desarrollo como en producción (Vercel).
+
+### 3. Persistencia de Fotos de Perfil
+- **Políticas de Storage:** Se crearon las reglas RLS en [setup_avatar_storage.sql](file:///C:/Users/admin/Documents/CaminosApp/supabase/setup_avatar_storage.sql) para el bucket `avatars`. Ahora las fotos se guardan permanentemente y solo el usuario dueño puede modificarlas/borrarlas, garantizando que no se pierdan.
+
+### 4. Nueva Barra de Porcentaje en Votaciones
+- **Rediseño Visual:** Se modificó el componente `VotingCard` en [Requests.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/res/Requests.tsx). Ahora, tras votar, el residente verá una única barra bicolor (Verde para "A Favor", Rojo para "En Contra") con los porcentajes integrados, similar a la referencia proporcionada.
+
+## Instrucciones para el Administrador (Supabase Dashboard)
+
+Para que todo funcione al 100%, debes realizar lo siguiente en tu panel de Supabase:
+
+1.  **SQL Editor:** Ejecuta los archivos `.sql` creados en la carpeta `supabase/` (especialmente `setup_avatar_storage.sql` y `fix_fcm_bridge.sql`).
+2.  **SMTP:** Ve a `Project Settings > Auth` y configura un proveedor de correo (SendGrid, Mailgun, etc.) para evitar los errores de validación de usuarios.
+3.  **Webhook:** Asegúrate de tener un Webhook en `Database > Webhooks` que dispare la función `send-push` cada vez que se inserte una fila en `push_notifications`.
+
+## Verificación
+Puedes realizar una votación de prueba desde el panel de Administrador. Los residentes deberían recibir la notificación y, al votar, verán el nuevo diseño de resultados.
 </file>
 
 <file path=".artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/walkthrough.artifact.md">
@@ -13916,302 +14259,137 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres PGDATABASE=cami
 - Si necesitas, puedo ayudarte a preparar scripts de despliegue más avanzados (Docker, CI/CD, migraciones).
 </file>
 
-<file path="sql/rls_fix_profiles.sql">
--- Fix for infinite recursion in RLS policy on public.profiles
--- 1) Create helper function that checks if current auth.uid() is admin
---    The function is SECURITY DEFINER so it can query profiles without being affected by RLS.
+<file path="sql/clean_and_fix_master.sql">
+-- SCRIPT MAESTRO DE LIMPIEZA Y REPARACIÓN (v2.1.4)
+-- Ejecuta este script para solucionar los errores de "function not unique" y "dependency"
 
-CREATE OR REPLACE FUNCTION public.is_admin_user()
-RETURNS boolean
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  _role text;
+-- 1. LIMPIEZA DE FUNCIONES ANTERIORES
+-- Usamos CASCADE para borrar políticas dependientes automáticamente
+DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb) CASCADE;
+DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb, uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.rpc_insert_incident(text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.check_debt_limit(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin_user() CASCADE;
+
+-- 2. REPARACIÓN DE TABLA DE PAGOS
+DO $$
 BEGIN
-  SELECT role INTO _role FROM public.profiles WHERE id = auth.uid();
-  RETURN _role IN ('admin', 'superadmin');
-EXCEPTION WHEN OTHERS THEN
-  RETURN false;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
+        CREATE TABLE public.payments (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    END IF;
+
+    -- Columnas de usuario
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
+        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
+    END IF;
+
+    -- Columnas de montos
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
+    END IF;
+
+    -- Otros campos
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
+        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
+        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
+        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
+        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
+        ALTER TABLE public.payments ADD COLUMN description TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
+        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
+    END IF;
+END $$;
+
+-- 3. RE-CREACIÓN DE FUNCIONES (Endurecidas)
+
+-- Función: is_admin
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin'));
 END;
 $$;
 
-REVOKE EXECUTE ON FUNCTION public.is_admin_user FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.is_admin_user TO authenticated;
+-- Función: rpc_insert_payment (CORREGIDA CON IDEMPOTENCIA)
+CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
+  monto_bs numeric, monto_usd numeric, referencia text, banco_origen text,
+  evidencia_url text, description text, details jsonb,
+  idempotency_key text DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at, idempotency_key)
+  VALUES (auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now(), idempotency_key)
+  ON CONFLICT (idempotency_key) DO NOTHING;
+END;
+$$;
 
--- 2) Replace the existing recursive policy with two safe policies
--- Drop any old policies first so the script is idempotent
-DROP POLICY IF EXISTS "Profiles access" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles admin access" ON public.profiles;
+-- Función: rpc_insert_incident
+CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
+  category text, location text, description text
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  INSERT INTO public.incidents(profile_id, category, location, description, status, created_at)
+  VALUES (auth.uid(), category, location, description, 'Pendiente', now());
+END;
+$$;
 
-DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
-DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
-DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+-- 4. RE-CREACIÓN DE POLÍTICAS (Tras el CASCADE)
+DO $$
+BEGIN
+    -- Profiles Admin access
+    DROP POLICY IF EXISTS "admin_read" ON public.profiles;
+    CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin());
 
-CREATE POLICY "owner_update_no_privesc" ON public.profiles
-  FOR ALL TO authenticated
-  USING (auth.uid() = id)
-  WITH CHECK (
-    auth.uid() = id
-    AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
-  );
+    DROP POLICY IF EXISTS "admin_update" ON public.profiles;
+    CREATE POLICY "admin_update" ON public.profiles FOR UPDATE USING (public.is_admin());
 
--- Allow admin users (evaluated via SECURITY DEFINER function) to access profiles
-CREATE POLICY "Profiles admin access" ON public.profiles
-  FOR ALL
-  USING (public.is_admin_user());
+    -- Profiles Owner access (CORREGIDA)
+    DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+    DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+    DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+    CREATE POLICY "owner_update_no_privesc" ON public.profiles
+      FOR ALL TO authenticated
+      USING (auth.uid() = id)
+      WITH CHECK (
+        auth.uid() = id
+        AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+      );
 
--- Note: after applying, verify any other policies that used subselects on profiles and adjust similarly.
-</file>
+    -- Payments access (CORREGIDA - Solo Admin escribe, residentes via RPC)
+    DROP POLICY IF EXISTS "Payments access" ON public.payments;
+    CREATE POLICY "payments_select_own_or_admin" ON public.payments
+      FOR SELECT TO authenticated
+      USING (profile_id = auth.uid() OR public.is_admin());
 
-<file path="src/features/auth/Register.tsx">
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/useAuthStore'
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
-import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
+    CREATE POLICY "payments_admin_write" ON public.payments
+      FOR UPDATE TO authenticated
+      USING (public.is_admin())
+      WITH CHECK (public.is_admin());
+END $$;
 
-export const Register: React.FC = () => {
-  const navigate = useNavigate()
-  const { whitelist } = useAuthStore()
-  const [step, setStep] = useState(1)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [cluster, setCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
-  const [house, setHouse] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-
-    try {
-      // 1. Validación contra la lista importada del Excel
-      const cleanEmail = email.trim().toLowerCase();
-      const whitelistedUser = whitelist.find(u => u.email.toLowerCase().trim() === cleanEmail);
-
-      if (!whitelistedUser) {
-        alert('Este correo no está registrado en el sistema oficial de la urbanización. Por favor, contacte a la administración.')
-        setLoading(false)
-        return
-      }
-
-      // 2. Registro Real en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
-          }
-        }
-      })
-
-      if (authError) throw authError
-
-      if (authData.user) {
-        // 3. Crear Perfil con estado 'pendiente'
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: authData.user.id,
-              email: cleanEmail,
-              first_name: firstName,
-              last_name: lastName,
-              role: 'resident',
-              residential_cluster: cluster,
-              etapa: getEtapaForCluster(cluster),
-              house_number: house,
-              status: 'pending' // El admin deberá aprobarlo
-            }
-          ])
-
-        if (profileError) throw profileError
-
-        alert(`¡Registro exitoso! Bienvenido ${firstName}. Su solicitud ha sido enviada y el administrador validará su acceso pronto.`)
-        navigate('/login')
-      }
-    } catch (err: any) {
-      alert('Error al registrar residente: ' + (err.message || 'Error desconocido'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', letterSpacing: '0.5px' }
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
-  const containerStyle: React.CSSProperties = { height: '100%', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' }
-
-  if (step === 1) {
-    return (
-      <div style={containerStyle}>
-        <header style={{ ...headerStyle, position: 'relative', justifyContent: 'center' }}>
-          <button
-            onClick={() => navigate('/auth')}
-            style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
-          >
-            <ArrowLeft size={24} color="#0f5551" />
-          </button>
-          <h1 style={{ ...titleStyle, margin: 0 }}>Crear Cuenta</h1>
-        </header>
-
-        <main style={mainContentStyle}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <div style={stepIndicatorStyle}><span style={{ color: 'white', fontWeight: 700 }}>1</span></div>
-            <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Datos de Acceso</h2>
-            <p style={{ fontSize: '14px', color: '#6f7978' }}>Configure su correo y contraseña</p>
-          </div>
-
-          <div style={cardStyle}>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={labelStyle}>Correo Electrónico</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ejemplo@email.com"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck="false"
-                style={inputStyle}
-              />
-            </div>
-            <div style={{ marginBottom: '30px' }}>
-              <label style={labelStyle}>Contraseña</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  autoCapitalize="none"
-                  style={{ ...inputStyle, paddingRight: '50px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--primary-color)',
-                    padding: '8px',
-                    zIndex: 10
-                  }}
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-            <button onClick={() => setStep(2)} style={primaryBtnStyle}>Siguiente</button>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  return (
-    <div style={containerStyle}>
-      <header style={{ ...headerStyle, position: 'relative', justifyContent: 'center' }}>
-        <button
-          onClick={() => setStep(1)}
-          style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
-        >
-          <ArrowLeft size={24} color="#0f5551" />
-        </button>
-        <h1 style={{ ...titleStyle, margin: 0 }}>Datos Residenciales</h1>
-      </header>
-
-      <main style={mainContentStyle}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <div style={stepIndicatorStyle}><span style={{ color: 'white', fontWeight: 700 }}>2</span></div>
-          <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Ubicación</h2>
-          <p style={{ fontSize: '14px', color: '#6f7978' }}>Confirme su casa en el conjunto</p>
-        </div>
-
-        <form onSubmit={handleRegister} style={cardStyle}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
-            <div>
-              <label style={labelStyle}>Nombre</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={e => setFirstName(e.target.value)}
-                placeholder="Juan"
-                autoCorrect="off"
-                spellCheck="false"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Apellido</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={e => setLastName(e.target.value)}
-                placeholder="Pérez"
-                autoCorrect="off"
-                spellCheck="false"
-                style={inputStyle}
-              />
-            </div>
-          </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Conjunto / Etapa</label>
-            <select value={cluster} onChange={e => setCluster(e.target.value)} style={inputStyle}>
-              {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
-                <optgroup key={etapa} label={etapa}>
-                  {conjuntos.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-          <div style={{ marginBottom: '30px' }}>
-            <label style={labelStyle}>Número de Casa</label>
-            <input
-              type="text"
-              inputMode="tel"
-              value={house}
-              onChange={e => setHouse(e.target.value)}
-              placeholder="Ej: 14-02"
-              autoCorrect="off"
-              spellCheck="false"
-              style={inputStyle}
-            />
-          </div>
-          <button type="submit" disabled={loading} style={primaryBtnStyle}>
-            {loading ? 'Validando...' : 'Enviar Solicitud'}
-          </button>
-        </form>
-      </main>
-    </div>
-  )
-}
-
-const headerStyle: React.CSSProperties = { height: '64px', backgroundColor: 'white', borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px' }
-const backBtnStyle: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }
-const titleStyle: React.CSSProperties = { fontFamily: "'EB Garamond', serif", fontSize: '20px', color: '#0f5551', fontWeight: 700, margin: '0 0 0 15px' }
-const mainContentStyle: React.CSSProperties = { padding: '40px 20px', maxWidth: '500px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }
-const cardStyle: React.CSSProperties = { backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '24px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
-const primaryBtnStyle: React.CSSProperties = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }
-const stepIndicatorStyle: React.CSSProperties = { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }
+-- 5. PERMISOS
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
 </file>
 
 <file path="src/features/auth/ResetPassword.tsx">
@@ -14692,6 +14870,68 @@ const inputStyle = { flex: 1, padding: '12px 15px', borderRadius: '12px', border
 const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }
 </file>
 
+<file path="src/hooks/usePushNotifications.ts">
+import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { supabase } from '../lib/supabase';
+
+export const usePushNotifications = (userId: string | undefined) => {
+  useEffect(() => {
+    // Solo intentar si es un dispositivo nativo y hay usuario
+    if (userId && Capacitor.isNativePlatform()) {
+      initPush();
+    }
+  }, [userId]);
+
+  const initPush = async () => {
+    try {
+      // Importación dinámica para que Vite no se rompa en la web
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+
+      let permStatus = await PushNotifications.checkPermissions();
+
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') return;
+
+      await PushNotifications.register();
+
+      await PushNotifications.addListener('registration', async (token) => {
+        console.log('Push token:', token.value);
+        // Aseguramos que el token se guarde siempre, incluso si ya existe
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            expo_push_token: token.value,
+            last_token_update: new Date().toISOString()
+          })
+          .eq('id', userId);
+
+        if (error) console.error('Error guardando token en Supabase:', error);
+      });
+
+      await PushNotifications.addListener('registrationError', (err) => {
+        console.error('Error en registro Push:', err.error);
+      });
+
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('Push recibida:', notification);
+        // Podríamos disparar una notificación local o actualizar un estado global
+      });
+
+      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('Push acción realizada:', notification.actionId);
+        // Redirigir según el tipo de notificación
+      });
+    } catch (error) {
+      console.warn('Capacitor Push Notifications no disponibles en este entorno');
+    }
+  };
+};
+</file>
+
 <file path=".artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/implementation_plan.artifact.md">
 # Implementation Plan - UI Refinement and Android Crash Fix
 
@@ -14750,239 +14990,6 @@ Revert certain height constraints that might be causing the "circular movement" 
     - `[ ]` Adjust container styles in `Admin.tsx`
     - `[ ]` Adjust container styles in `Payroll.tsx`
 - `[ ]` Build and Sync
-</file>
-
-<file path="sql/clean_and_fix_master.sql">
--- SCRIPT MAESTRO DE LIMPIEZA Y REPARACIÓN (v2.1.4)
--- Ejecuta este script para solucionar los errores de "function not unique" y "dependency"
-
--- 1. LIMPIEZA DE FUNCIONES ANTERIORES
--- Usamos CASCADE para borrar políticas dependientes automáticamente
-DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb, uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.rpc_insert_incident(text, text, text) CASCADE;
-DROP FUNCTION IF EXISTS public.check_debt_limit(uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
-DROP FUNCTION IF EXISTS public.is_admin_user() CASCADE;
-
--- 2. REPARACIÓN DE TABLA DE PAGOS
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
-        CREATE TABLE public.payments (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-    END IF;
-
-    -- Columnas de usuario
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
-        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
-    END IF;
-
-    -- Columnas de montos
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
-    END IF;
-
-    -- Otros campos
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
-        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
-        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
-        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
-        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
-        ALTER TABLE public.payments ADD COLUMN description TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
-        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
-    END IF;
-END $$;
-
--- 3. RE-CREACIÓN DE FUNCIONES (Endurecidas)
-
--- Función: is_admin
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin'));
-END;
-$$;
-
--- Función: rpc_insert_payment (CORREGIDA CON IDEMPOTENCIA)
-CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
-  monto_bs numeric, monto_usd numeric, referencia text, banco_origen text,
-  evidencia_url text, description text, details jsonb,
-  idempotency_key text DEFAULT NULL
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
-  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at, idempotency_key)
-  VALUES (auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now(), idempotency_key)
-  ON CONFLICT (idempotency_key) DO NOTHING;
-END;
-$$;
-
--- Función: rpc_insert_incident
-CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
-  category text, location text, description text
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
-  INSERT INTO public.incidents(profile_id, category, location, description, status, created_at)
-  VALUES (auth.uid(), category, location, description, 'Pendiente', now());
-END;
-$$;
-
--- 4. RE-CREACIÓN DE POLÍTICAS (Tras el CASCADE)
-DO $$
-BEGIN
-    -- Profiles Admin access
-    DROP POLICY IF EXISTS "admin_read" ON public.profiles;
-    CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin());
-
-    DROP POLICY IF EXISTS "admin_update" ON public.profiles;
-    CREATE POLICY "admin_update" ON public.profiles FOR UPDATE USING (public.is_admin());
-
-    -- Profiles Owner access (CORREGIDA)
-    DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
-    DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
-    DROP POLICY IF EXISTS "owner_access" ON public.profiles;
-    CREATE POLICY "owner_update_no_privesc" ON public.profiles
-      FOR ALL TO authenticated
-      USING (auth.uid() = id)
-      WITH CHECK (
-        auth.uid() = id
-        AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
-      );
-
-    -- Payments access (CORREGIDA - Solo Admin escribe, residentes via RPC)
-    DROP POLICY IF EXISTS "Payments access" ON public.payments;
-    CREATE POLICY "payments_select_own_or_admin" ON public.payments
-      FOR SELECT TO authenticated
-      USING (profile_id = auth.uid() OR public.is_admin());
-
-    CREATE POLICY "payments_admin_write" ON public.payments
-      FOR UPDATE TO authenticated
-      USING (public.is_admin())
-      WITH CHECK (public.is_admin());
-END $$;
-
--- 5. PERMISOS
-REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
-</file>
-
-<file path="sql/fix_payments_table.sql">
--- SCRIPT DE REPARACIÓN INTEGRAL PARA TABLA DE PAGOS (CAMINOS APP) - HARDENED VERSION
-
-DO $$
-BEGIN
-    -- 1. Asegurar que la tabla existe
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
-        CREATE TABLE public.payments (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-    END IF;
-
-    -- 2. Asegurar columna profile_id (y migrar desde user_id si existe)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
-        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'user_id') THEN
-            UPDATE public.payments SET profile_id = user_id;
-        END IF;
-    END IF;
-
-    -- 3. Asegurar columna monto_usd (y migrar desde amount_usd si existe)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'amount_usd') THEN
-            UPDATE public.payments SET monto_usd = amount_usd;
-        END IF;
-    END IF;
-
-    -- 4. Asegurar columna monto_bs
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
-    END IF;
-
-    -- 5. Asegurar columna referencia
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
-        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
-    END IF;
-
-    -- 6. Asegurar columna banco_origen
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
-        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
-    END IF;
-
-    -- 7. Asegurar columna evidencia_url (y migrar desde screenshot_url si existe)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
-        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
-        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'screenshot_url') THEN
-            UPDATE public.payments SET evidencia_url = screenshot_url;
-        END IF;
-    END IF;
-
-    -- 8. Asegurar columna description
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
-        ALTER TABLE public.payments ADD COLUMN description TEXT;
-    END IF;
-
-    -- 9. Asegurar columna details
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
-        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
-    END IF;
-
-    -- 10. Asegurar columna status
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
-        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
-    END IF;
-
-END $$;
-
--- 11. Re-crear la función RPC con endurecimiento de seguridad (Sin p_profile_id)
-CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
-  monto_bs numeric,
-  monto_usd numeric,
-  referencia text,
-  banco_origen text,
-  evidencia_url text,
-  description text,
-  details jsonb
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  -- Verificar que el usuario esté autenticado
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'No autorizado';
-  END IF;
-
-  INSERT INTO public.payments(
-    profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at
-  ) VALUES (
-    auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now()
-  );
-END;
-$$;
-
--- Restringir ejecución solo a usuarios autenticados
-REVOKE EXECUTE ON FUNCTION public.rpc_insert_payment FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
 </file>
 
 <file path="src/features/admin/Payroll.tsx">
@@ -16011,116 +16018,6 @@ api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
 export default api;
 </file>
 
-<file path="src/services/notificationService.ts">
-import { supabase } from '../lib/supabase'
-
-export interface PushMessage {
-  title: string
-  body: string
-  data?: any
-}
-
-export const notificationService = {
-  /**
-   * Envía una notificación push a un usuario específico
-   */
-  async sendToUser(profileId: string, message: PushMessage) {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('expo_push_token')
-        .eq('id', profileId)
-        .single()
-
-      if (!profile?.expo_push_token) return
-
-      // Nota: En producción esto debería llamar a un servidor intermedio o Edge Function
-      // que use FCM (Firebase Cloud Messaging) o Expo Push Service.
-      console.log(`Enviando Push a ${profileId}:`, message)
-
-      // Registro en la cola de envío real
-      await supabase.rpc('rpc_send_push', {
-        p_token: profile.expo_push_token,
-        p_title: message.title,
-        p_body: message.body,
-        p_data: message.data
-      })
-    } catch (err) {
-      console.error('Error enviando notificación push:', err)
-    }
-  },
-
-  /**
-   * Notifica a todos los residentes de un conjunto residencial
-   */
-  async notifyCluster(clusterName: string, message: PushMessage) {
-    try {
-      const { data: residents } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('residential_cluster', clusterName)
-        .eq('role', 'resident')
-
-      if (!residents) return
-
-      await Promise.all(residents.map(r => this.sendToUser(r.id, message)))
-    } catch (err) {
-      console.error('Error notificando al conjunto:', err)
-    }
-  },
-
-  /**
-   * Notifica a un residente específico por su número de casa y conjunto
-   */
-  async notifyResidentByHouse(houseNumber: string, clusterName: string, message: PushMessage) {
-    try {
-      // Búsqueda flexible para el conjunto
-      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, expo_push_token')
-        .ilike('residential_cluster', `%${cleanCluster}%`)
-        .eq('house_number', houseNumber)
-        .maybeSingle();
-
-      if (profile?.id) {
-        await this.sendToUser(profile.id, message);
-      }
-    } catch (err) {
-      console.error('Error notificando a residente por casa:', err);
-    }
-  },
-
-  /**
-   * Notifica un incidente (queja) anónima
-   */
-  async reportIncidentPush(culpritHouse: string, clusterName: string, category: string) {
-    // 1. Notificar al Admin
-    const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
-
-    const { data: admins } = await supabase
-      .from('profiles')
-      .select('id')
-      .ilike('residential_cluster', `%${cleanCluster}%`)
-      .eq('role', 'admin')
-
-    const adminMsg = {
-      title: "🚨 Nuevo Incidente Reportado",
-      body: `Se ha reportado: ${category} en la Casa ${culpritHouse}.`
-    }
-
-    if (admins) admins.forEach(a => this.sendToUser(a.id, adminMsg))
-
-    // 2. Notificar al Infractor (anónimamente)
-    await this.notifyResidentByHouse(culpritHouse, clusterName, {
-      title: "⚠️ Aviso de Convivencia",
-      body: `Un residente ha reportado una novedad relacionada con ${category.toLowerCase()} en su domicilio. Por favor, colabore con las normas del conjunto.`
-    });
-  }
-}
-</file>
-
 <file path="src/services/votingService.ts">
 import { supabase } from '../lib/supabase'
 
@@ -16542,6 +16439,263 @@ export const AuthSplash: React.FC = () => {
 }
 </file>
 
+<file path="src/features/auth/Register.tsx">
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../../store/useAuthStore'
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
+import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
+
+export const Register: React.FC = () => {
+  const navigate = useNavigate()
+  const { whitelist } = useAuthStore()
+  const [step, setStep] = useState(1)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [cluster, setCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
+  const [house, setHouse] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      // 1. Validación contra la lista importada del Excel
+      const cleanEmail = email.trim().toLowerCase();
+      const whitelistedUser = whitelist.find(u => u.email.toLowerCase().trim() === cleanEmail);
+
+      if (!whitelistedUser) {
+        alert('Este correo no está registrado en el sistema oficial de la urbanización. Por favor, contacte a la administración.')
+        setLoading(false)
+        return
+      }
+
+      // 2. Registro Real en Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: password,
+        options: {
+          // Detectar si estamos en producción para el redireccionamiento
+          emailRedirectTo: window.location.origin.includes('localhost')
+            ? 'http://localhost:5173/login'
+            : 'https://app-condominio.vercel.app/login',
+          data: {
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+          }
+        }
+      })
+
+      if (authError) {
+        if (authError.message.includes('rate limit')) {
+          throw new Error('Se ha superado el límite de correos. Por favor, intente de nuevo en unos minutos o contacte a soporte.');
+        }
+        throw authError;
+      }
+
+      if (authData.user) {
+        // 3. Crear Perfil con estado 'pendiente'
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              email: cleanEmail,
+              first_name: firstName,
+              last_name: lastName,
+              role: 'resident',
+              residential_cluster: cluster,
+              etapa: getEtapaForCluster(cluster),
+              house_number: house,
+              status: 'pending' // El admin deberá aprobarlo
+            }
+          ])
+
+        if (profileError) throw profileError
+
+        alert(`¡Registro exitoso! Bienvenido ${firstName}. Su solicitud ha sido enviada y el administrador validará su acceso pronto.`)
+        navigate('/login')
+      }
+    } catch (err: any) {
+      alert('Error al registrar residente: ' + (err.message || 'Error desconocido'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px', letterSpacing: '0.5px' }
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '14px', borderRadius: '10px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
+  const containerStyle: React.CSSProperties = { height: '100%', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' }
+
+  if (step === 1) {
+    return (
+      <div style={containerStyle}>
+        <header style={{ ...headerStyle, position: 'relative', justifyContent: 'center' }}>
+          <button
+            onClick={() => navigate('/auth')}
+            style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
+          >
+            <ArrowLeft size={24} color="#0f5551" />
+          </button>
+          <h1 style={{ ...titleStyle, margin: 0 }}>Crear Cuenta</h1>
+        </header>
+
+        <main style={mainContentStyle}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div style={stepIndicatorStyle}><span style={{ color: 'white', fontWeight: 700 }}>1</span></div>
+            <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Datos de Acceso</h2>
+            <p style={{ fontSize: '14px', color: '#6f7978' }}>Configure su correo y contraseña</p>
+          </div>
+
+          <div style={cardStyle}>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>Correo Electrónico</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="ejemplo@email.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ marginBottom: '30px' }}>
+              <label style={labelStyle}>Contraseña</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoCapitalize="none"
+                  style={{ ...inputStyle, paddingRight: '50px' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary-color)',
+                    padding: '8px',
+                    zIndex: 10
+                  }}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+            <button onClick={() => setStep(2)} style={primaryBtnStyle}>Siguiente</button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div style={containerStyle}>
+      <header style={{ ...headerStyle, position: 'relative', justifyContent: 'center' }}>
+        <button
+          onClick={() => setStep(1)}
+          style={{ ...backBtnStyle, position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}
+        >
+          <ArrowLeft size={24} color="#0f5551" />
+        </button>
+        <h1 style={{ ...titleStyle, margin: 0 }}>Datos Residenciales</h1>
+      </header>
+
+      <main style={mainContentStyle}>
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <div style={stepIndicatorStyle}><span style={{ color: 'white', fontWeight: 700 }}>2</span></div>
+          <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Ubicación</h2>
+          <p style={{ fontSize: '14px', color: '#6f7978' }}>Confirme su casa en el conjunto</p>
+        </div>
+
+        <form onSubmit={handleRegister} style={cardStyle}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px' }}>
+            <div>
+              <label style={labelStyle}>Nombre</label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder="Juan"
+                autoCorrect="off"
+                spellCheck="false"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Apellido</label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                placeholder="Pérez"
+                autoCorrect="off"
+                spellCheck="false"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Conjunto / Etapa</label>
+            <select value={cluster} onChange={e => setCluster(e.target.value)} style={inputStyle}>
+              {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
+                <optgroup key={etapa} label={etapa}>
+                  {conjuntos.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div style={{ marginBottom: '30px' }}>
+            <label style={labelStyle}>Número de Casa</label>
+            <input
+              type="text"
+              inputMode="tel"
+              value={house}
+              onChange={e => setHouse(e.target.value)}
+              placeholder="Ej: 14-02"
+              autoCorrect="off"
+              spellCheck="false"
+              style={inputStyle}
+            />
+          </div>
+          <button type="submit" disabled={loading} style={primaryBtnStyle}>
+            {loading ? 'Validando...' : 'Enviar Solicitud'}
+          </button>
+        </form>
+      </main>
+    </div>
+  )
+}
+
+const headerStyle: React.CSSProperties = { height: '64px', backgroundColor: 'white', borderBottom: '1px solid #bfc8c7', display: 'flex', alignItems: 'center', padding: '0 20px' }
+const backBtnStyle: React.CSSProperties = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px' }
+const titleStyle: React.CSSProperties = { fontFamily: "'EB Garamond', serif", fontSize: '20px', color: '#0f5551', fontWeight: 700, margin: '0 0 0 15px' }
+const mainContentStyle: React.CSSProperties = { padding: '40px 20px', maxWidth: '500px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }
+const cardStyle: React.CSSProperties = { backgroundColor: 'white', border: '1px solid #bfc8c7', borderRadius: '24px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
+const primaryBtnStyle: React.CSSProperties = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }
+const stepIndicatorStyle: React.CSSProperties = { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }
+</file>
+
 <file path="src/hooks/useUpdateCheck.ts">
 import { useEffect, useState, useRef } from 'react';
 import { App } from '@capacitor/app';
@@ -16727,6 +16881,60 @@ export const useUpdateCheck = () => {
     checkUpdates // Permite re-verificar si es necesario
   };
 };
+</file>
+
+<file path="supabase/functions/send-push/index.ts">
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+
+serve(async (req) => {
+  // 1. Verificación de Secreto (Seguridad de invocación)
+  const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
+  if (req.headers.get('x-webhook-secret') !== webhookSecret) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  try {
+    const { record } = await req.json()
+
+    // 2. Cliente administrativo
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
+    const payload = {
+      to: record.token,
+      title: record.title,
+      body: record.body,
+      data: record.data,
+      sound: "default",
+      priority: "high",
+    }
+
+    // 3. Envío real a Expo (Servicio gratuito y universal)
+    const res = await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload),
+    })
+
+    const result = await res.json()
+    const expoError = result?.data?.status === 'error' ? result.data.message : null
+
+    // 4. Actualización del historial (Éxito o error de Expo)
+    await supabaseAdmin.from('push_notifications').update({
+      status: expoError ? 'error' : 'sent',
+      error_message: expoError,
+      sent_at: new Date().toISOString()
+    }).eq('id', record.id)
+
+    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } })
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
+  }
+})
 </file>
 
 <file path="src/layouts/Main.tsx">
@@ -17014,376 +17222,6 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-</file>
-
-<file path="ios/App/App.xcodeproj/project.pbxproj">
-// !$*UTF8*$!
-{
-	archiveVersion = 1;
-	classes = {
-	};
-	objectVersion = 60;
-	objects = {
-
-/* Begin PBXBuildFile section */
-		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
-		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
-		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
-		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
-		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
-		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
-		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
-/* End PBXBuildFile section */
-
-/* Begin PBXFileReference section */
-		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
-		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
-		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
-		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
-		958DCC732DB07C7200EA8C5F /* release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = release.xcconfig; path = ../release.xcconfig; sourceTree = SOURCE_ROOT; };
-/* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		504EC3011FED79650016851F /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
-/* Begin PBXGroup section */
-		504EC2FB1FED79650016851F = {
-			isa = PBXGroup;
-			children = (
-				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
-				958DCC732DB07C7200EA8C5F /* release.xcconfig */,
-				504EC3061FED79650016851F /* App */,
-				504EC3051FED79650016851F /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		504EC3051FED79650016851F /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				504EC3041FED79650016851F /* App.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		504EC3061FED79650016851F /* App */ = {
-			isa = PBXGroup;
-			children = (
-				50379B222058CBB4000EE86E /* capacitor.config.json */,
-				504EC3071FED79650016851F /* AppDelegate.swift */,
-				504EC30B1FED79650016851F /* Main.storyboard */,
-				504EC30E1FED79650016851F /* Assets.xcassets */,
-				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
-				504EC3131FED79650016851F /* Info.plist */,
-				2FAD9762203C412B000D30F8 /* config.xml */,
-				50B271D01FEDC1A000F3C39B /* public */,
-			);
-			path = App;
-			sourceTree = "<group>";
-		};
-/* End PBXGroup section */
-
-/* Begin PBXNativeTarget section */
-		504EC3031FED79650016851F /* App */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */;
-			buildPhases = (
-				504EC3001FED79650016851F /* Sources */,
-				504EC3011FED79650016851F /* Frameworks */,
-				504EC3021FED79650016851F /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = App;
-			packageProductDependencies = (
-			);
-			productName = App;
-			productReference = 504EC3041FED79650016851F /* App.app */;
-			productType = "com.apple.product-type.application";
-		};
-/* End PBXNativeTarget section */
-
-/* Begin PBXProject section */
-		504EC2FC1FED79650016851F /* Project object */ = {
-			isa = PBXProject;
-			attributes = {
-				LastSwiftUpdateCheck = 920;
-				LastUpgradeCheck = 920;
-				TargetAttributes = {
-					504EC3031FED79650016851F = {
-						CreatedOnToolsVersion = 9.2;
-						LastSwiftMigration = 1100;
-						ProvisioningStyle = Automatic;
-					};
-				};
-			};
-			buildConfigurationList = 504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */;
-			compatibilityVersion = "Xcode 8.0";
-			developmentRegion = en;
-			hasScannedForEncodings = 0;
-			knownRegions = (
-				en,
-				Base,
-			);
-			mainGroup = 504EC2FB1FED79650016851F;
-			packageReferences = (
-			);
-			productRefGroup = 504EC3051FED79650016851F /* Products */;
-			projectDirPath = "";
-			projectRoot = "";
-			targets = (
-				504EC3031FED79650016851F /* App */,
-			);
-		};
-/* End PBXProject section */
-
-/* Begin PBXResourcesBuildPhase section */
-		504EC3021FED79650016851F /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
-				50B271D11FEDC1A000F3C39B /* public in Resources */,
-				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
-				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
-				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
-				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
-/* Begin PBXSourcesBuildPhase section */
-		504EC3001FED79650016851F /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXSourcesBuildPhase section */
-
-/* Begin PBXVariantGroup section */
-		504EC30B1FED79650016851F /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				504EC30C1FED79650016851F /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
-		504EC3101FED79650016851F /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				504EC3111FED79650016851F /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
-/* Begin XCBuildConfiguration section */
-		504EC3141FED79650016851F /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MTL_ENABLE_DEBUG_INFO = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = iphoneos;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		504EC3151FED79650016851F /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 958DCC732DB07C7200EA8C5F /* release.xcconfig */;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		504EC3171FED79650016851F /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
-				PRODUCT_BUNDLE_IDENTIFIER = com.caminos.lagunita;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		504EC3181FED79650016851F /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 958DCC732DB07C7200EA8C5F /* release.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = App/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.caminos.lagunita;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-/* End XCBuildConfiguration section */
-
-/* Begin XCConfigurationList section */
-		504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				504EC3141FED79650016851F /* Debug */,
-				504EC3151FED79650016851F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				504EC3171FED79650016851F /* Debug */,
-				504EC3181FED79650016851F /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-/* End XCConfigurationList section */
-
-/* Begin XCLocalSwiftPackageReference section */
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-/* End XCSwiftPackageProductDependency section */
-	};
-	rootObject = 504EC2FC1FED79650016851F /* Project object */;
 }
 </file>
 
@@ -18853,252 +18691,511 @@ const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', borde
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }
 </file>
 
-<file path="src/features/res/Requests.tsx">
-import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  MdOutlinePerson,
-  MdOutlineHowToVote,
-  MdOutlineHistory,
-  MdOutlinePictureAsPdf,
-  MdOutlineEventNote,
-  MdOutlineDownload
-} from 'react-icons/md'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
-import { votingService, Voting } from '../../services/votingService'
-import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
+<file path="src/services/notificationService.ts">
+import { supabase } from '../lib/supabase'
 
-export const Requests: React.FC = () => {
-  const navigate = useNavigate()
-  const { user } = useAuthStore()
-
-  const [votings, setVotings] = useState<Voting[]>([])
-  const [announcements, setAnnouncements] = useState<AnnouncementDTO[]>([])
-  const [securityAlerts, setSecurityAlerts] = useState<any[]>([])
-  const [votedIds, setVotedIds] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const [vRes, aRes, sRes] = await Promise.allSettled([
-          votingService.list(user?.residential_cluster),
-          listAnnouncements(),
-          supabase.from('security_alerts').select('*').order('created_at', { ascending: false }).limit(3)
-        ])
-
-        if (vRes.status === 'fulfilled') setVotings(vRes.value)
-        else console.error('Error votaciones:', vRes.reason)
-
-        if (aRes.status === 'fulfilled') setAnnouncements(aRes.value)
-        else console.error('Error anuncios:', aRes.reason)
-
-        if (sRes.status === 'fulfilled') setSecurityAlerts(sRes.value.data || [])
-        else console.error('Error alertas:', sRes.reason)
-
-      } catch (err) {
-        console.error('Error cargando comunidad:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [user?.id, user?.residential_cluster])
-
-  const handleVote = async (votingId: string, opcion: 'favor' | 'contra') => {
-    if (!user) return
-    try {
-      await votingService.castVote(votingId, user.id, opcion)
-      setVotedIds([...votedIds, votingId])
-      alert('¡Voto registrado con éxito!')
-    } catch (err: any) {
-      alert('No se pudo registrar el voto.')
-    }
-  }
-
-  return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box', paddingTop: '10px' }}>
-        <section style={{ marginBottom: '30px' }}>
-           <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Portal de Comunidad</h2>
-           <p style={{ fontSize: '14px', color: 'var(--text-sub)', margin: 0 }}>Participe en las decisiones de nuestra comunidad.</p>
-        </section>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
-           <MdOutlineHowToVote size={24} style={{ color: '#785919' }} />
-           <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Votaciones Activas</h3>
-        </div>
-
-        {securityAlerts.length > 0 && (
-          <div style={{ marginBottom: '30px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#ba1a1a', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="material-symbols-outlined">warning</span> ALERTAS DE SEGURIDAD
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {securityAlerts.map(alert => (
-                <div key={alert.id} style={{ backgroundColor: alert.severity === 'critical' ? 'rgba(186,26,26,0.05)' : 'var(--icon-bg)', border: `1px solid ${alert.severity === 'critical' ? '#ba1a1a' : 'var(--border-color)'}`, borderRadius: '16px', padding: '15px' }}>
-                  <p style={{ margin: 0, fontWeight: 700, color: alert.severity === 'critical' ? '#ba1a1a' : 'inherit' }}>{alert.title}</p>
-                  <p style={{ margin: '5px 0 0', fontSize: '13px', color: 'var(--text-sub)' }}>{alert.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {loading ? (
-          <p style={{ textAlign: 'center' }}>Cargando...</p>
-        ) : error ? (
-          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: 'rgba(186,26,26,0.05)', borderRadius: '16px', border: '1px solid rgba(186,26,26,0.2)' }}>
-            <p style={{ color: '#ba1a1a', fontWeight: 600, margin: 0 }}>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{ marginTop: '10px', background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              Reintentar
-            </button>
-          </div>
-        ) : votings.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay votaciones activas en este momento.</p>
-        ) : votings.map(voting => (
-          <VotingCard
-            key={voting.id}
-            voting={voting}
-            hasVoted={votedIds.includes(voting.id)}
-            onVote={(opcion) => handleVote(voting.id, opcion)}
-          />
-        ))}
-
-        <div style={historyCardStyle}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <MdOutlineHistory size={24} />
-              <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Historial</h4>
-           </div>
-           <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Resultados de votaciones anteriores.</p>
-        </div>
-
-        <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Comunicados</h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-           {announcements.length === 0 ? (
-             <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay comunicados oficiales publicados.</p>
-           ) : announcements.map(ann => (
-             <div key={ann.id} style={annCardStyle}>
-                <div style={annIconStyle}>
-                   <MdOutlineEventNote size={24} />
-                </div>
-                <div style={{ flex: 1 }}>
-                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.titulo}</p>
-                   <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(ann.fecha_creacion).toLocaleDateString()}</p>
-                </div>
-                <MdOutlineDownload size={20} style={{ color: 'var(--text-sub)' }} />
-             </div>
-           ))}
-        </div>
-      </main>
-    </div>
-  )
+export interface PushMessage {
+  title: string
+  body: string
+  data?: any
 }
 
-const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opcion: 'favor' | 'contra') => void, hasVoted: boolean }) => {
-  const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
-  const [showResults, setShowResults] = useState(hasVoted)
-
-  const loadResults = useCallback(async () => {
+export const notificationService = {
+  /**
+   * Envía una notificación push a un usuario específico
+   */
+  async sendToUser(profileId: string, message: PushMessage) {
     try {
-      const res = await votingService.getResults(voting.id)
-      setResults(res)
-    } catch (e) {
-      console.error(e)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('expo_push_token')
+        .eq('id', profileId)
+        .single()
+
+      if (!profile?.expo_push_token) {
+        console.warn(`Usuario ${profileId} no tiene token de push registrado.`);
+        return;
+      }
+
+      // Registro en la cola de envío real
+      console.log(`Encolando Push para ${profileId} (${profile.expo_push_token})`);
+
+      // Registro en la cola de envío real
+      await supabase.rpc('rpc_send_push', {
+        p_token: profile.expo_push_token,
+        p_title: message.title,
+        p_body: message.body,
+        p_data: message.data
+      })
+    } catch (err) {
+      console.error('Error enviando notificación push:', err)
     }
-  }, [voting.id])
+  },
 
-  useEffect(() => {
-    if (hasVoted || showResults) {
-      loadResults()
+  /**
+   * Notifica a todos los residentes de un conjunto residencial (Optimizado)
+   */
+  async notifyCluster(clusterName: string, message: PushMessage) {
+    try {
+      // Búsqueda flexible para el conjunto para asegurar que coincidan admin y residentes
+      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
 
-      // Suscripción Realtime para residentes (ver resultados en vivo)
-      const channel = supabase
-        .channel(`resident-votes-${voting.id}`)
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'internal_votes',
-          filter: `voting_id=eq.${voting.id}`
-        }, () => {
-          loadResults()
+      const { data: residents, error } = await supabase
+        .from('profiles')
+        .select('id, expo_push_token')
+        .ilike('residential_cluster', `%${cleanCluster}%`)
+        .eq('role', 'resident')
+        .not('expo_push_token', 'is', null);
+
+      if (error) throw error;
+      if (!residents || residents.length === 0) {
+        console.warn(`No se encontraron residentes con tokens de push en el conjunto: ${clusterName}`);
+        return;
+      }
+
+      console.log(`Notificando a ${residents.length} residentes en el conjunto: ${clusterName}`);
+
+      // Encolar todas las notificaciones en paralelo
+      await Promise.all(residents.map(r =>
+        supabase.rpc('rpc_send_push', {
+          p_token: r.expo_push_token,
+          p_title: message.title,
+          p_body: message.body,
+          p_data: message.data
         })
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
+      ));
+    } catch (err) {
+      console.error('Error notificando al conjunto:', err)
     }
-  }, [hasVoted, showResults, voting.id, loadResults])
+  },
 
-  const total = results ? (results.favor + results.contra) : 0
-  const pctFavor = total > 0 ? Math.round((results!.favor / total) * 100) : 0
-  const pctContra = total > 0 ? Math.round((results!.contra / total) * 100) : 0
+  /**
+   * Notifica a un residente específico por su número de casa y conjunto
+   */
+  async notifyResidentByHouse(houseNumber: string, clusterName: string, message: PushMessage) {
+    try {
+      // Búsqueda flexible para el conjunto
+      const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
 
-  return (
-    <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '25px', width: '100%', boxSizing: 'border-box' }}>
-       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{voting.title}</h3>
-       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.description}</p>
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, expo_push_token')
+        .ilike('residential_cluster', `%${cleanCluster}%`)
+        .eq('house_number', houseNumber)
+        .maybeSingle();
 
-       {showResults && results ? (
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '10px' }}>
-            <div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                  <span>A FAVOR</span>
-                  <span>{pctFavor}%</span>
-               </div>
-               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pctFavor}%`, height: '100%', backgroundColor: 'var(--primary-color)', transition: 'width 0.8s ease' }}></div>
-               </div>
-            </div>
-            <div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                  <span>EN CONTRA</span>
-                  <span>{pctContra}%</span>
-               </div>
-               <div style={{ height: '8px', backgroundColor: 'var(--icon-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${pctContra}%`, height: '100%', backgroundColor: '#ba1a1a', transition: 'width 0.8s ease' }}></div>
-               </div>
-            </div>
-            <p style={{ textAlign: 'center', color: 'var(--text-sub)', fontSize: '11px', marginTop: '10px' }}>{total} votos registrados en total</p>
-         </div>
-       ) : (
-         <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              onClick={() => onVote('favor')}
-              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: 'var(--primary-color)' }}
-            >
-              A Favor
-            </button>
-            <button
-              onClick={() => onVote('contra')}
-              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: '#ba1a1a' }}
-            >
-              En Contra
-            </button>
-         </div>
-       )}
-       {hasVoted && (
-         <div style={{ textAlign: 'center', color: 'var(--primary-color)', fontWeight: 700, fontSize: '14px', marginTop: '15px' }}>✓ Tu voto ha sido registrado</div>
-       )}
-    </div>
-  )
+      if (profile?.id) {
+        await this.sendToUser(profile.id, message);
+      }
+    } catch (err) {
+      console.error('Error notificando a residente por casa:', err);
+    }
+  },
+
+  /**
+   * Notifica un incidente (queja) anónima
+   */
+  async reportIncidentPush(culpritHouse: string, clusterName: string, category: string) {
+    // 1. Notificar al Admin
+    const cleanCluster = clusterName.replace(/Conjunto\s+\d+\s+/i, '').trim();
+
+    const { data: admins } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('residential_cluster', `%${cleanCluster}%`)
+      .eq('role', 'admin')
+
+    const { data: guards } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('residential_cluster', `%${cleanCluster}%`)
+      .eq('role', 'guard')
+
+    const alertMsg = {
+      title: "🚨 Nuevo Incidente Reportado",
+      body: `Se ha reportado: ${category} en la Casa ${culpritHouse}.`
+    }
+
+    if (admins) admins.forEach(a => this.sendToUser(a.id, alertMsg))
+    if (guards) guards.forEach(g => this.sendToUser(g.id, alertMsg))
+
+    // 2. Notificar al Infractor (anónimamente)
+    await this.notifyResidentByHouse(culpritHouse, clusterName, {
+      title: "⚠️ Aviso de Convivencia",
+      body: `Un residente ha reportado una novedad relacionada con ${category.toLowerCase()} en su domicilio. Por favor, colabore con las normas del conjunto.`
+    });
+  }
 }
+</file>
 
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
-const historyCardStyle = { backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '24px', padding: '25px', width: '100%', boxSizing: 'border-box' as any }
-const annCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px' }
-const annIconStyle = { width: '44px', height: '44px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }
-const primaryBtnStyle = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }
+<file path="ios/App/App.xcodeproj/project.pbxproj">
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
+		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
+		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
+		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
+		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
+		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
+		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
+		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
+		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		958DCC732DB07C7200EA8C5F /* release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = release.xcconfig; path = ../release.xcconfig; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		504EC3011FED79650016851F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		504EC2FB1FED79650016851F = {
+			isa = PBXGroup;
+			children = (
+				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
+				958DCC732DB07C7200EA8C5F /* release.xcconfig */,
+				504EC3061FED79650016851F /* App */,
+				504EC3051FED79650016851F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		504EC3051FED79650016851F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				504EC3041FED79650016851F /* App.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		504EC3061FED79650016851F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				50379B222058CBB4000EE86E /* capacitor.config.json */,
+				504EC3071FED79650016851F /* AppDelegate.swift */,
+				504EC30B1FED79650016851F /* Main.storyboard */,
+				504EC30E1FED79650016851F /* Assets.xcassets */,
+				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
+				504EC3131FED79650016851F /* Info.plist */,
+				2FAD9762203C412B000D30F8 /* config.xml */,
+				50B271D01FEDC1A000F3C39B /* public */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		504EC3031FED79650016851F /* App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */;
+			buildPhases = (
+				504EC3001FED79650016851F /* Sources */,
+				504EC3011FED79650016851F /* Frameworks */,
+				504EC3021FED79650016851F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = App;
+			packageProductDependencies = (
+			);
+			productName = App;
+			productReference = 504EC3041FED79650016851F /* App.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		504EC2FC1FED79650016851F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 920;
+				LastUpgradeCheck = 920;
+				TargetAttributes = {
+					504EC3031FED79650016851F = {
+						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 1100;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 504EC2FB1FED79650016851F;
+			packageReferences = (
+			);
+			productRefGroup = 504EC3051FED79650016851F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				504EC3031FED79650016851F /* App */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		504EC3021FED79650016851F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
+				50B271D11FEDC1A000F3C39B /* public in Resources */,
+				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
+				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
+				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
+				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		504EC3001FED79650016851F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		504EC30B1FED79650016851F /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				504EC30C1FED79650016851F /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		504EC3101FED79650016851F /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				504EC3111FED79650016851F /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		504EC3141FED79650016851F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		504EC3151FED79650016851F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 958DCC732DB07C7200EA8C5F /* release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		504EC3171FED79650016851F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 42;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.3.9;
+				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
+				PRODUCT_BUNDLE_IDENTIFIER = com.caminos.lagunita;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		504EC3181FED79650016851F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 958DCC732DB07C7200EA8C5F /* release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 42;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.3.9;
+				PRODUCT_BUNDLE_IDENTIFIER = com.caminos.lagunita;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				504EC3141FED79650016851F /* Debug */,
+				504EC3151FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				504EC3171FED79650016851F /* Debug */,
+				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 504EC2FC1FED79650016851F /* Project object */;
+}
 </file>
 
 <file path="src/features/auth/Login.tsx">
@@ -20169,6 +20266,294 @@ export const useAuthStore = create<AuthState>()(
 )
 </file>
 
+<file path="src/features/res/Requests.tsx">
+import React, { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePerson,
+  MdOutlineHowToVote,
+  MdOutlineHistory,
+  MdOutlinePictureAsPdf,
+  MdOutlineEventNote,
+  MdOutlineDownload
+} from 'react-icons/md'
+import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
+import { votingService, Voting } from '../../services/votingService'
+import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
+
+export const Requests: React.FC = () => {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+
+  const [votings, setVotings] = useState<Voting[]>([])
+  const [announcements, setAnnouncements] = useState<AnnouncementDTO[]>([])
+  const [securityAlerts, setSecurityAlerts] = useState<any[]>([])
+  const [votedIds, setVotedIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        const [vRes, aRes, sRes, myVotesRes] = await Promise.allSettled([
+          votingService.list(user?.residential_cluster),
+          listAnnouncements(),
+          supabase.from('security_alerts')
+            .select('*')
+            .gt('created_at', yesterday)
+            .order('created_at', { ascending: false })
+            .limit(5),
+          supabase.from('internal_votes')
+            .select('voting_id')
+            .eq('profile_id', user?.id)
+        ])
+
+        if (vRes.status === 'fulfilled') setVotings(vRes.value)
+        if (aRes.status === 'fulfilled') setAnnouncements(aRes.value)
+        if (sRes.status === 'fulfilled') setSecurityAlerts(sRes.value.data || [])
+
+        if (myVotesRes.status === 'fulfilled' && myVotesRes.value.data) {
+          setVotedIds(myVotesRes.value.data.map((v: any) => v.voting_id))
+        }
+
+      } catch (err) {
+        console.error('Error cargando comunidad:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [user?.id, user?.residential_cluster])
+
+  const handleVote = async (votingId: string, opcion: 'favor' | 'contra') => {
+    if (!user) return
+    try {
+      await votingService.castVote(votingId, user.id, opcion)
+      setVotedIds(prev => [...prev, votingId])
+      alert('¡Voto registrado con éxito!')
+    } catch (err: any) {
+      alert('No se pudo registrar el voto.')
+    }
+  }
+
+  return (
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box', paddingTop: '10px' }}>
+        <section style={{ marginBottom: '30px' }}>
+           <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Portal de Comunidad</h2>
+           <p style={{ fontSize: '14px', color: 'var(--text-sub)', margin: 0 }}>Participe en las decisiones de nuestra comunidad.</p>
+        </section>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
+           <MdOutlineHowToVote size={24} style={{ color: '#785919' }} />
+           <h3 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>Votaciones Activas</h3>
+        </div>
+
+        {securityAlerts.length > 0 && (
+          <div style={{ marginBottom: '30px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#ba1a1a', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="material-symbols-outlined">warning</span> ALERTAS DE SEGURIDAD
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {securityAlerts.map(alert => (
+                <div key={alert.id} style={{ backgroundColor: alert.severity === 'critical' ? 'rgba(186,26,26,0.05)' : 'var(--icon-bg)', border: `1px solid ${alert.severity === 'critical' ? '#ba1a1a' : 'var(--border-color)'}`, borderRadius: '16px', padding: '15px' }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: alert.severity === 'critical' ? '#ba1a1a' : 'inherit' }}>{alert.title}</p>
+                  <p style={{ margin: '5px 0 0', fontSize: '13px', color: 'var(--text-sub)' }}>{alert.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Cargando...</p>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '20px', backgroundColor: 'rgba(186,26,26,0.05)', borderRadius: '16px', border: '1px solid rgba(186,26,26,0.2)' }}>
+            <p style={{ color: '#ba1a1a', fontWeight: 600, margin: 0 }}>{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ marginTop: '10px', background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : votings.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay votaciones activas en este momento.</p>
+        ) : votings.map(voting => (
+          <VotingCard
+            key={voting.id}
+            voting={voting}
+            hasVoted={votedIds.includes(voting.id)}
+            onVote={(opcion) => handleVote(voting.id, opcion)}
+          />
+        ))}
+
+        <div style={historyCardStyle}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <MdOutlineHistory size={24} />
+              <h4 style={{ margin: 0, fontSize: '20px', fontWeight: 700 }}>Historial</h4>
+           </div>
+           <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Resultados de votaciones anteriores.</p>
+        </div>
+
+        <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Comunicados</h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+           {announcements.length === 0 ? (
+             <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay comunicados oficiales publicados.</p>
+           ) : announcements.map(ann => (
+             <div key={ann.id} style={annCardStyle}>
+                <div style={annIconStyle}>
+                   <MdOutlineEventNote size={24} />
+                </div>
+                <div style={{ flex: 1 }}>
+                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.titulo}</p>
+                   <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(ann.fecha_creacion).toLocaleDateString()}</p>
+                </div>
+                <MdOutlineDownload size={20} style={{ color: 'var(--text-sub)' }} />
+             </div>
+           ))}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opcion: 'favor' | 'contra') => void, hasVoted: boolean }) => {
+  const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
+  const [showResults, setShowResults] = useState(hasVoted)
+
+  // Sincronizar showResults cuando hasVoted cambie (después de votar)
+  useEffect(() => {
+    if (hasVoted) {
+      setShowResults(true)
+    }
+  }, [hasVoted])
+
+  const loadResults = useCallback(async () => {
+    try {
+      const res = await votingService.getResults(voting.id)
+      setResults(res)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [voting.id])
+
+  useEffect(() => {
+    if (hasVoted || showResults) {
+      loadResults()
+
+      // Suscripción Realtime para residentes (ver resultados en vivo)
+      const channel = supabase
+        .channel(`resident-votes-${voting.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'internal_votes',
+          filter: `voting_id=eq.${voting.id}`
+        }, () => {
+          loadResults()
+        })
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [hasVoted, showResults, voting.id, loadResults])
+
+  const total = results ? (results.favor + results.contra) : 0
+  const pctFavor = total > 0 ? Math.round((results!.favor / total) * 100) : 0
+  const pctContra = total > 0 ? Math.round((results!.contra / total) * 100) : 0
+
+  return (
+    <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.03)', marginBottom: '25px', width: '100%', boxSizing: 'border-box' }}>
+       <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', margin: '0 0 10px', color: 'var(--primary-color)' }}>{voting.title}</h3>
+       <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '20px' }}>{voting.description}</p>
+
+       {showResults && results ? (
+         <div style={{ marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px', fontWeight: 800 }}>
+               <span style={{ color: 'var(--primary-color)' }}>A FAVOR: {pctFavor}%</span>
+               <span style={{ color: '#ba1a1a' }}>EN CONTRA: {pctContra}%</span>
+            </div>
+            <div style={{
+               height: '35px',
+               width: '100%',
+               backgroundColor: 'var(--icon-bg)',
+               borderRadius: '12px',
+               overflow: 'hidden',
+               display: 'flex',
+               boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
+            }}>
+               <div style={{
+                  width: `${pctFavor}%`,
+                  height: '100%',
+                  backgroundColor: 'var(--primary-color)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'width 1s ease',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 800
+               }}>
+                  {pctFavor > 15 ? `${pctFavor}%` : ''}
+               </div>
+               <div style={{
+                  width: `${pctContra}%`,
+                  height: '100%',
+                  backgroundColor: '#ba1a1a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'width 1s ease',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 800
+               }}>
+                  {pctContra > 15 ? `${pctContra}%` : ''}
+               </div>
+            </div>
+            <p style={{ textAlign: 'center', color: 'var(--text-sub)', fontSize: '11px', marginTop: '15px', fontWeight: 600 }}>
+               Total participación: {total} residentes
+            </p>
+         </div>
+       ) : (
+         <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => onVote('favor')}
+              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: 'var(--primary-color)' }}
+            >
+              A Favor
+            </button>
+            <button
+              onClick={() => onVote('contra')}
+              style={{ ...primaryBtnStyle, flex: 1, backgroundColor: '#ba1a1a' }}
+            >
+              En Contra
+            </button>
+         </div>
+       )}
+       {hasVoted && (
+         <div style={{ textAlign: 'center', color: 'var(--primary-color)', fontWeight: 700, fontSize: '14px', marginTop: '15px' }}>✓ Tu voto ha sido registrado</div>
+       )}
+    </div>
+  )
+}
+
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
+const historyCardStyle = { backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '24px', padding: '25px', width: '100%', boxSizing: 'border-box' as any }
+const annCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px' }
+const annIconStyle = { width: '44px', height: '44px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }
+const primaryBtnStyle = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }
+</file>
+
 <file path="src/components/UpdateModal.tsx">
 import React from 'react';
 
@@ -20574,15 +20959,10 @@ export const Admin: React.FC = () => {
       })
 
       // Notificar a los residentes
-      if (user?.residential_cluster) {
-        await notificationService.notifyCluster(user.residential_cluster, {
-          title: "🗳️ Nueva Votación",
-          body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`
-        })
-      }
-
-      if (user?.residential_cluster) {
-        await notificationService.notifyCluster(user.residential_cluster, {
+      const clusterToNotify = isSuperAdmin ? selectedCluster : user?.residential_cluster
+      if (clusterToNotify) {
+        console.log("Notificando a residentes del conjunto:", clusterToNotify);
+        await notificationService.notifyCluster(clusterToNotify, {
           title: "🗳️ Nueva Votación",
           body: `Se ha publicado: ${newPollTitle}. Su opinión es importante.`
         })
@@ -21529,8 +21909,8 @@ android {
         applicationId "com.caminos.lagunita"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 41
-        versionName "2.3.8"
+        versionCode 42
+        versionName "2.3.9"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -21611,11 +21991,11 @@ try {
 
 <file path="public/version.json">
 {
-  "versionCode": 40,
-  "versionName": "2.3.7",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.7",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.7/CaminosApp%20v2.3.7.apk",
-  "releaseNotes": "v2.3.7: Versión de Estabilidad Definitiva. Hardening Zero-Trust en la base de datos, privacidad de incidentes protegida, y corrección de flujos de registro de acceso real. Motor de notificaciones 100% operativo."
+  "versionCode": 42,
+  "versionName": "2.3.9",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.9",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.9/CaminosApp%20v2.3.9.apk",
+  "releaseNotes": "v2.3.9: Estabilización de notificaciones push vía Expo y mejoras en la barra de votación."
 }
 </file>
 
@@ -21623,7 +22003,7 @@ try {
 {
   "name": "caminos-app",
   "private": true,
-  "version": "2.3.8",
+  "version": "2.3.9",
   "type": "module",
   "engines": {
     "node": "24.x",

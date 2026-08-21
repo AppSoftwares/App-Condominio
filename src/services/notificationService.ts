@@ -14,21 +14,21 @@ export const notificationService = {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('expo_push_token')
+        .select('fcm_token')
         .eq('id', profileId)
         .single()
 
-      if (!profile?.expo_push_token) {
+      if (!profile?.fcm_token) {
         console.warn(`Usuario ${profileId} no tiene token de push registrado.`);
         return;
       }
 
       // Registro en la cola de envío real
-      console.log(`Encolando Push para ${profileId} (${profile.expo_push_token})`);
+      console.log(`Encolando Push para ${profileId} (${profile.fcm_token})`);
 
       // Registro en la cola de envío real
       await supabase.rpc('rpc_send_push', {
-        p_token: profile.expo_push_token,
+        p_token: profile.fcm_token,
         p_title: message.title,
         p_body: message.body,
         p_data: message.data
@@ -48,10 +48,10 @@ export const notificationService = {
 
       const { data: residents, error } = await supabase
         .from('profiles')
-        .select('id, expo_push_token')
+        .select('id, fcm_token')
         .ilike('residential_cluster', `%${cleanCluster}%`)
         .eq('role', 'resident')
-        .not('expo_push_token', 'is', null);
+        .not('fcm_token', 'is', null);
 
       if (error) throw error;
       if (!residents || residents.length === 0) {
@@ -64,7 +64,7 @@ export const notificationService = {
       // Encolar todas las notificaciones en paralelo
       await Promise.all(residents.map(r =>
         supabase.rpc('rpc_send_push', {
-          p_token: r.expo_push_token,
+          p_token: r.fcm_token,
           p_title: message.title,
           p_body: message.body,
           p_data: message.data
@@ -85,7 +85,7 @@ export const notificationService = {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, expo_push_token')
+        .select('id, fcm_token')
         .ilike('residential_cluster', `%${cleanCluster}%`)
         .eq('house_number', houseNumber)
         .maybeSingle();

@@ -4,6 +4,7 @@ src/config/access_keys/
 # Secretos y llaves
 .env
 android/key.properties
+android/app/google-services.json
 *.jks
 
 # IDEs
