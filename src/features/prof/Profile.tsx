@@ -24,12 +24,11 @@ export const Profile: React.FC = () => {
     if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return
     try {
       await signOut()
-      // Limpiar todo el estado local y recargar para asegurar limpieza
-      localStorage.clear()
-      window.location.href = '/'
+      // Redirección forzada al inicio para limpiar cualquier estado residual de React
+      window.location.replace('/')
     } catch (err) {
       console.error('Error during logout:', err)
-      navigate('/', { replace: true })
+      window.location.href = '/'
     }
   }
 

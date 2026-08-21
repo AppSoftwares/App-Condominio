@@ -125,11 +125,32 @@ export const useAuthStore = create<AuthState>()(
       },
       signOut: async () => {
         try {
+          // 1. Notificar a Supabase
           await supabase.auth.signOut()
+
+          // 2. Limpiar suscripción si existe
+          if (authListenerSubscription) {
+            authListenerSubscription.unsubscribe()
+            authListenerSubscription = null
+          }
+
+          // 3. Limpiar almacenamiento de Capacitor explicitly
+          await Preferences.clear()
+
+          // 4. Limpiar almacenamiento local (Web fallback)
+          localStorage.clear()
+          sessionStorage.clear()
+
         } catch (err) {
-          console.error('Error during Supabase signOut:', err)
+          console.error('Error during thorough signOut:', err)
         } finally {
-          set({ user: null })
+          // 5. Resetear estado de la memoria
+          set({
+            user: null,
+            authReady: true,
+            biometricsEnabled: false,
+            mfaRequired: false
+          })
         }
       },
       sync: async () => {
