@@ -8,3 +8,7 @@ alembic
 sentry-sdk
 pytest
 slowapi
+pandas
+fpdf
+openpyxl
+httpx
