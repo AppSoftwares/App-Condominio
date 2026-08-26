@@ -77,26 +77,5 @@
     "tailwindcss": "^3.4.1",
     "typescript": "5.2.2",
     "vite": "^5.1.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "sharp": "$sharp"
-    },
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild",
-      "core-js"
-    ],
-    "supportedArchitectures": {
-      "os": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "cpu": [
-        "x64",
-        "arm64"
-      ]
-    }
   }
 }
