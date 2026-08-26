@@ -44,6 +44,8 @@ export const Login: React.FC = () => {
     resolver: zodResolver(forgotPasswordSchema)
   })
 
+  const { sync: syncAuth } = useAuthStore()
+
   const iniciarGmail = async () => {
     setLoading(true)
     try {
@@ -127,33 +129,20 @@ export const Login: React.FC = () => {
       if (error) throw error
 
       if (data.user) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle()
+        // Delegar la obtención y validación del perfil al Store
+        // El Store ahora busca por Email si el ID no coincide y revisa la Whitelist
+        await syncAuth()
 
-        if (profileError) throw profileError
+        const currentUser = useAuthStore.getState().user
 
-        if (!profile) {
-          await supabase.auth.signOut()
-          alert(`Cuenta sin perfil: El usuario (${data.user.email}) existe pero no tiene un perfil vinculado. Por favor, regístrese nuevamente o contacte a soporte.`)
+        if (!currentUser) {
+          // El error ya fue notificado por el Store (getOrCreateProfile)
           setLoading(false)
           return
         }
 
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          first_name: profile.first_name,
-          last_name: profile.last_name,
-          role: profile.role as UserRole,
-          residential_cluster: profile.residential_cluster,
-          house_number: profile.house_number
-        })
-
-        if (profile.role === 'admin' || profile.role === 'superadmin') navigate('/admin')
-        else if (profile.role === 'guard') navigate('/guard')
+        if (currentUser.role === 'admin' || currentUser.role === 'superadmin') navigate('/admin')
+        else if (currentUser.role === 'guard') navigate('/guard')
         else navigate('/dashboard')
       }
     } catch (error: any) {
