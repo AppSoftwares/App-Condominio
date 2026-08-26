@@ -829,7 +829,7 @@ export const Admin: React.FC = () => {
                <div style={{ marginBottom: '30px' }}>
                  <p style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '15px', letterSpacing: '1px' }}>SOLICITUDES PENDIENTES ({pendingUsers.length})</p>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {pendingUsers.map(u => (
+                    {pendingUsers.map((u: any) => (
                       <div key={u.id} style={{ ...cardStyle, padding: '15px 20px', border: '1px solid var(--accent-gold)' }}>
                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
