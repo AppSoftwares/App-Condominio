@@ -93,81 +93,41 @@ async function checkMfaStatus(): Promise<boolean> {
 async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
   try {
     const userEmail = authUser.email?.toLowerCase().trim()
-    console.log('Intentando cargar perfil para:', userEmail, 'ID:', authUser.id)
 
-    // 1. INTENTO 1: Buscar por ID (Rápido y estándar)
+    // 1. INTENTO 1: Buscar por ID
     let { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
+      .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number')
       .eq('id', authUser.id)
       .maybeSingle()
 
-    // 2. INTENTO 2: Si no se encontró por ID, buscar por Email
+    // 2. INTENTO 2: Buscar por Email (Vinculación de OAuth)
     if (!profile && !error) {
-      console.log('No encontrado por ID, buscando por Email...')
       const { data: profileByEmail, error: emailError } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
+        .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number')
         .eq('email', userEmail)
         .maybeSingle()
 
-      profile = profileByEmail
-      error = emailError
-
-      if (profile) {
-        console.log('Perfil encontrado por Email. Vinculando nuevo ID...')
+      if (profileByEmail) {
+        profile = profileByEmail
+        // Vincular el ID de Google al perfil existente
         await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
       }
+      error = emailError
     }
 
     if (profile && !error) {
-      console.log('Perfil cargado exitosamente:', profile.role)
       return profile as UserProfile
     }
 
-    // 3. Fallback a Whitelist (Lista de invitados)
-    const state = useAuthStore.getState()
-    const whitelistedUser = state.whitelist?.find(u =>
-      (u.email || '').toString().toLowerCase().trim() === userEmail
-    )
-
-    if (whitelistedUser) {
-      console.log('Usuario en whitelist detectado. Creando perfil...')
-      const fullName = (whitelistedUser.name || 'Usuario').toString()
-      const nameParts = fullName.split(' ')
-      const newProfile: UserProfile = {
-        id: authUser.id,
-        email: userEmail,
-        first_name: nameParts[0] || 'Usuario',
-        last_name: nameParts.slice(1).join(' ') || '',
-        role: (whitelistedUser.role?.toUpperCase() === 'ADMINISTRADOR' ? 'admin' : (whitelistedUser.role?.toUpperCase() === 'VIGILANTE' ? 'guard' : 'resident')),
-        residential_cluster: whitelistedUser.conjunto || whitelistedUser.residential_cluster,
-        house_number: whitelistedUser.house_number,
-        etapa: whitelistedUser.etapa
-      }
-
-      await supabase.from('profiles').insert([newProfile])
-      return newProfile
-    }
-
-    // 4. Fallback final: Si el correo es el admin principal, permitir acceso básico
-    if (userEmail === 'admin@huertas.com' || userEmail === 'jess.pirela@gmail.com') {
-      console.warn('Admin detectado pero sin perfil en DB. Generando perfil de sistema...')
-      return {
-        id: authUser.id,
-        email: userEmail,
-        first_name: 'Administrador',
-        last_name: 'Caminos',
-        role: 'superadmin',
-        residential_cluster: 'ADMINISTRACIÓN'
-      }
-    }
-
+    // 3. RECHAZO ESTRICTO
+    console.error('Acceso denegado: Usuario no encontrado en la base de datos.')
     alert(`Acceso denegado: El correo ${userEmail} no está registrado en el sistema.`)
     await supabase.auth.signOut()
     return null
   } catch (err) {
-    console.error('Error crítico en getOrCreateProfile:', err)
+    console.error('Error en autenticación:', err)
     return null
   }
 }
