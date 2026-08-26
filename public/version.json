@@ -1,7 +1,7 @@
 {
-  "versionCode": 44,
-  "versionName": "2.4.1",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.4.1",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.4.1/CaminosApp%202.4.1.apk",
-  "releaseNotes": "v2.4.1: Corrección crítica en el flujo de autenticación de Google, vinculación automática de perfiles por email y optimización de políticas RLS en Supabase."
+  "versionCode": 45,
+  "versionName": "2.4.2",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.4.2",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.4.2/CaminosApp%202.4.2.apk",
+  "releaseNotes": "v2.4.2: Nueva pantalla de Información Legal con pestañas, mejora en seguridad de sesiones con detección de IP/Ubicación y corrección en la carga de avatar."
 }

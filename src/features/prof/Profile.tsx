@@ -102,7 +102,7 @@ export const Profile: React.FC = () => {
 
            <div style={cardStyle}>
               <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
-              <MenuItem onClick={() => navigate('/profile/legal')} icon={MdGavel} label="Términos y Condiciones" />
+              <MenuItem onClick={() => navigate('/profile/legal?type=terms')} icon={MdGavel} label="Términos y Condiciones" />
               <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>
