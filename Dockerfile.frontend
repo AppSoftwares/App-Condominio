@@ -9,6 +9,7 @@ RUN npm install -g pnpm@latest
 COPY package.json pnpm-lock.yaml .npmrc ./
 
 # Install dependencies
+ENV PNPM_AUDIT_CONFIG_MIN_RELEASE_AGE=0
 RUN pnpm install --frozen-lockfile
 
 # Copy source and build
