@@ -90,6 +90,34 @@ async function checkMfaStatus(): Promise<boolean> {
   }
 }
 
+async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
+  try {
+    // 1. Buscar perfil existente por ID o por Email (OAuth puede usar el mismo email que una cuenta manual)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
+      .or(`id.eq.${authUser.id},email.eq.${authUser.email}`)
+      .maybeSingle()
+
+    if (profile && !profileError) {
+      return profile as UserProfile
+    }
+
+    // 2. Si no existe el perfil, rechazar la solicitud
+    const errorMsg = `Acceso denegado: El correo ${authUser.email} no está registrado en el sistema de residentes.`
+    console.warn(errorMsg)
+    alert(errorMsg)
+
+    // Cerrar sesión automáticamente en Supabase para limpiar el estado
+    await supabase.auth.signOut()
+
+    return null
+  } catch (err) {
+    console.error('Error in getOrCreateProfile:', err)
+    return null
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -171,15 +199,11 @@ export const useAuthStore = create<AuthState>()(
           }
 
           if (session?.user) {
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
-              .eq('id', session.user.id)
-              .maybeSingle()
+            const profile = await getOrCreateProfile(session.user)
 
-            if (profile && !profileError) {
+            if (profile) {
               const mfaNeeded = await checkMfaStatus()
-              set({ user: profile as UserProfile, authReady: true, mfaRequired: mfaNeeded })
+              set({ user: profile, authReady: true, mfaRequired: mfaNeeded })
               if (!mfaNeeded) registerCurrentDevice() // Registrar solo si no está bloqueado por MFA
             } else {
               set({ authReady: true })
@@ -211,15 +235,11 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, authReady: true })
           } else if (session?.user) {
             try {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
-                .eq('id', session.user.id)
-                .maybeSingle()
+              const profile = await getOrCreateProfile(session.user)
 
               if (profile) {
                 const mfaNeeded = await checkMfaStatus()
-                set({ user: profile as UserProfile, authReady: true, mfaRequired: mfaNeeded })
+                set({ user: profile, authReady: true, mfaRequired: mfaNeeded })
                 if (event === 'SIGNED_IN' && !mfaNeeded) registerCurrentDevice()
               } else {
                 set({ authReady: true })

@@ -2,6 +2,9 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { FcGoogle } from 'react-icons/fc'
+import { Browser } from '@capacitor/browser'
+import { Capacitor } from '@capacitor/core'
 import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -40,6 +43,35 @@ export const Login: React.FC = () => {
   const { register: registerForgot, handleSubmit: handleSubmitForgot, formState: { errors: forgotErrors } } = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema)
   })
+
+  const iniciarGmail = async () => {
+    setLoading(true)
+    try {
+      const isNative = Capacitor.isNativePlatform()
+      const redirectTo = isNative
+        ? 'com.caminos.lagunita://login-callback'
+        : window.location.origin
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          skipBrowserRedirect: isNative
+        }
+      })
+
+      if (error) throw error
+
+      if (isNative && data?.url) {
+        await Browser.open({ url: data.url, windowName: '_self' })
+      }
+    } catch (error: any) {
+      console.error('Google Auth Error:', error)
+      alert('Error al iniciar con Google: ' + error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleLogin = async (values: LoginFormValues) => {
     setLoading(true)
@@ -244,6 +276,22 @@ export const Login: React.FC = () => {
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
+
+               <div style={{ display: 'flex', alignItems: 'center', margin: '10px 0' }}>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+                  <span style={{ padding: '0 10px', color: 'var(--text-sub)', fontSize: '13px' }}>o continúa con</span>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-color)' }}></div>
+               </div>
+
+               <button
+                  type="button"
+                  onClick={iniciarGmail}
+                  disabled={loading}
+                  style={googleBtnStyle}
+               >
+                  <FcGoogle size={20} />
+                  Google
+               </button>
             </form>
           ) : (
             <div style={{ textAlign: 'center' }}>
@@ -269,3 +317,4 @@ export const Login: React.FC = () => {
 const labelStyle = { display: 'block' as const, fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.2)' }
+const googleBtnStyle = { ...primaryBtnStyle, backgroundColor: 'white', color: '#444', border: '1px solid var(--border-color)', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginTop: '5px' }

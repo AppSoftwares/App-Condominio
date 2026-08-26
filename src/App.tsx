@@ -40,6 +40,7 @@ import { UpdateModal } from './components/UpdateModal'
 import { App as CapApp } from '@capacitor/app'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { isBiometricEnabled, verifyBiometric } from './lib/biometrics'
+import { supabase } from './lib/supabase'
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -106,9 +107,37 @@ function App() {
       }
     });
 
+    const urlOpenListener = CapApp.addListener('appUrlOpen', async (event: any) => {
+      // Para depuración en móvil
+      // alert('App abrió con URL: ' + event.url);
+
+      if (event.url.includes('login-callback') || event.url.includes('access_token=')) {
+        const hash = event.url.split('#')[1];
+        if (hash) {
+          const params = new URLSearchParams(hash);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token
+            });
+            if (error) {
+              console.error('Error setting session:', error.message);
+              alert('Error de sesión: ' + error.message);
+            } else {
+              await syncAuth();
+            }
+          }
+        }
+      }
+    });
+
     return () => {
       backButtonListener.then(l => l.remove());
       appStateListener.then(l => l.remove());
+      urlOpenListener.then(l => l.remove());
     };
   }, [syncAuth]);
 
