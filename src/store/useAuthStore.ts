@@ -92,25 +92,70 @@ async function checkMfaStatus(): Promise<boolean> {
 
 async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
   try {
-    // 1. Buscar perfil existente por ID o por Email (OAuth puede usar el mismo email que una cuenta manual)
+    const userEmail = authUser.email?.toLowerCase().trim()
+
+    // 1. Buscar perfil existente por ID o por Email
+    // Usamos .or() para intentar encontrar el perfil por cualquiera de los dos campos.
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number, etapa')
-      .or(`id.eq.${authUser.id},email.eq.${authUser.email}`)
+      .or(`id.eq.${authUser.id},email.eq.${userEmail}`)
       .maybeSingle()
 
     if (profile && !profileError) {
+      // Si el ID de Auth no coincide con el ID del perfil (ej. primer login con Google),
+      // intentamos actualizar el ID del perfil para vincularlos permanentemente.
+      if (profile.id !== authUser.id) {
+        console.log(`Vinculando perfil existente (${profile.email}) con nuevo ID de Auth: ${authUser.id}`)
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ id: authUser.id })
+          .eq('email', userEmail)
+
+        if (updateError) {
+          console.warn('No se pudo vincular el ID del perfil automáticamente debido a RLS. El usuario podrá entrar pero el ID seguirá desincronizado.', updateError.message)
+        }
+      }
       return profile as UserProfile
     }
 
-    // 2. Si no existe el perfil, rechazar la solicitud
-    const errorMsg = `Acceso denegado: El correo ${authUser.email} no está registrado en el sistema de residentes.`
+    // 2. Si no se encontró en la tabla 'profiles', revisar si está en la 'whitelist' (fallback)
+    // Nota: Esto permite que usuarios de Google OAuth que están en la lista de invitados
+    // pero no tienen perfil en la DB puedan entrar.
+    const state = useAuthStore.getState()
+    const whitelistedUser = state.whitelist?.find(u =>
+      (u.email || '').toString().toLowerCase().trim() === userEmail
+    )
+
+    if (whitelistedUser) {
+      console.log('Usuario encontrado en whitelist, creando perfil inicial...')
+      const fullName = (whitelistedUser.name || 'Usuario').toString()
+      const nameParts = fullName.split(' ')
+
+      const newProfile: UserProfile = {
+        id: authUser.id,
+        email: userEmail,
+        first_name: nameParts[0] || 'Usuario',
+        last_name: nameParts.slice(1).join(' ') || '',
+        role: (whitelistedUser.role === 'ADMINISTRADOR' ? 'admin' : (whitelistedUser.role === 'VIGILANTE' ? 'guard' : 'resident')),
+        residential_cluster: whitelistedUser.conjunto || whitelistedUser.residential_cluster,
+        house_number: whitelistedUser.house_number,
+        etapa: whitelistedUser.etapa
+      }
+
+      // Intentar insertar en la DB (esto puede fallar si no hay permisos de insert)
+      const { error: insertError } = await supabase.from('profiles').insert([newProfile])
+      if (insertError) console.error('Error al persistir perfil desde whitelist:', insertError.message)
+
+      return newProfile
+    }
+
+    // 3. Si no existe el perfil ni en DB ni en Whitelist, rechazar
+    const errorMsg = `Acceso denegado: El correo ${userEmail} no está registrado en el sistema de residentes.`
     console.warn(errorMsg)
     alert(errorMsg)
 
-    // Cerrar sesión automáticamente en Supabase para limpiar el estado
     await supabase.auth.signOut()
-
     return null
   } catch (err) {
     console.error('Error in getOrCreateProfile:', err)
