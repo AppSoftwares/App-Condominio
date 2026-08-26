@@ -94,40 +94,50 @@ async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
   try {
     const userEmail = authUser.email?.toLowerCase().trim()
 
-    // 1. INTENTO 1: Buscar por ID
+    // 1. Búsqueda de Perfil (Usamos * para evitar errores 400 por columnas faltantes)
     let { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number')
+      .select('*')
       .eq('id', authUser.id)
       .maybeSingle()
 
-    // 2. INTENTO 2: Buscar por Email (Vinculación de OAuth)
     if (!profile && !error) {
+      console.log('No encontrado por ID, buscando por Email...')
       const { data: profileByEmail, error: emailError } = await supabase
         .from('profiles')
-        .select('id, email, first_name, last_name, role, avatar_url, residential_cluster, house_number')
+        .select('*')
         .eq('email', userEmail)
         .maybeSingle()
 
-      if (profileByEmail) {
-        profile = profileByEmail
-        // Vincular el ID de Google al perfil existente
+      profile = profileByEmail
+      error = emailError
+
+      if (profile) {
+        console.log('Perfil encontrado por Email. Vinculando nuevo ID...')
         await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
       }
-      error = emailError
     }
 
     if (profile && !error) {
-      return profile as UserProfile
+      return {
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        role: profile.role,
+        avatar_url: profile.avatar_url,
+        residential_cluster: profile.residential_cluster || profile.conjunto,
+        house_number: profile.house_number || profile.casa_n
+      } as UserProfile
     }
 
-    // 3. RECHAZO ESTRICTO
-    console.error('Acceso denegado: Usuario no encontrado en la base de datos.')
+    // 2. RECHAZO ESTRICTO
+    console.error('Acceso denegado: El usuario no tiene un perfil registrado en la tabla profiles.')
     alert(`Acceso denegado: El correo ${userEmail} no está registrado en el sistema.`)
-    await supabase.auth.signOut()
+    await supabase.auth.signOut().catch(() => {})
     return null
   } catch (err) {
-    console.error('Error en autenticación:', err)
+    console.error('Error crítico en autenticación:', err)
     return null
   }
 }
