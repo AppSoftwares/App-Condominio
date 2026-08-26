@@ -94,33 +94,29 @@ async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
   try {
     const userEmail = authUser.email?.toLowerCase().trim()
 
-    // 1. Búsqueda de Perfil (Usamos * para evitar errores 400 por columnas faltantes)
-    let { data: profile, error } = await supabase
+    // 1. Búsqueda de Perfil
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', authUser.id)
+      .eq('email', userEmail)
       .maybeSingle()
 
-    if (!profile && !error) {
-      console.log('No encontrado por ID, buscando por Email...')
-      const { data: profileByEmail, error: emailError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', userEmail)
-        .maybeSingle()
-
-      profile = profileByEmail
-      error = emailError
-
-      if (profile) {
-        console.log('Perfil encontrado por Email. Vinculando nuevo ID...')
-        await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
-      }
+    if (error) {
+      console.error('Error de base de datos al buscar perfil:', error)
+      alert(`Error de base de datos: ${error.message}. Contacte a soporte técnico.`)
+      await supabase.auth.signOut().catch(() => {})
+      return null
     }
 
-    if (profile && !error) {
+    if (profile) {
+      // Si el ID de Google no coincide con el de la tabla, lo vinculamos
+      if (profile.id !== authUser.id) {
+        console.log('Vinculando ID de Auth con perfil existente...')
+        await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
+      }
+
       return {
-        id: profile.id,
+        id: authUser.id,
         email: profile.email,
         first_name: profile.first_name,
         last_name: profile.last_name,
