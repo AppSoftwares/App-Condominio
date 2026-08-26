@@ -76,21 +76,6 @@ export const AuthSplash: React.FC = () => {
               boxShadow: '0 8px 20px rgba(15,85,81,0.2)'
             }}
           >INGRESAR / INICIAR SESIÓN</button>
-
-          <button
-            onClick={() => navigate('/register')}
-            style={{
-              padding: '18px',
-              backgroundColor: 'transparent',
-              color: 'var(--accent-gold)',
-              border: '2px solid var(--accent-gold)',
-              borderRadius: '16px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              letterSpacing: '0.5px'
-            }}
-          >SOLICITAR ACCESO</button>
         </div>
       </main>
     </div>

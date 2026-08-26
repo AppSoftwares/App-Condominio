@@ -2,13 +2,14 @@
 
 🏢 Sistema Premium de Gestión Residencial para el **Condominio Conjunto 14 Las Huertas** (RIF: J-29900732-3).
 
-**Sitio Web:** [https://github.com/AppSoftwares/Proyecto-stitch-google-Caminos-de-la-Lagunita](https://github.com/AppSoftwares/Proyecto-stitch-google-Caminos-de-la-Lagunita)
+**Sitio Web:** [https://app-condominio-six.vercel.app/](https://github.com/AppSoftwares/Proyecto-stitch-google-Caminos-de-la-Lagunita)
 
 ## 🚀 Funcionalidades Clave
 - **Gestión de Nómina:** Cálculo automático de beneficios LOTTT y edición individual de salarios.
 - **Relación Mensual:** Generación de reportes profesionales en PDF y Excel con identidad corporativa oficial.
 - **Integración SEDEMAT:** Carga y procesamiento automático de comprobantes de pago de servicios municipales (Aseo y Gas).
 - **Portal del Residente:** Dashboard premium con transparencia total en el estado de cuenta y servicios de la comunidad.
+- **Flujo de Invitaciones:** Registro de residentes controlado por administrador (ver [README_INVITATION_FLOW.md](file:///C:/Users/admin/Documents/CaminosApp/README_INVITATION_FLOW.md)).
 - **Multi-plataforma:** Disponible para Web y dispositivos Android (APK) vía Capacitor.
 
 ## 🛠 Tech Stack

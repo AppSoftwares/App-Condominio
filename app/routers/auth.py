@@ -12,6 +12,16 @@ class LoginRequest(BaseModel):
     email: str
     password: str # En producción usaríamos hashing (bcrypt)
 
+class RegisterRequest(BaseModel):
+    email: str
+    first_name: str
+    last_name: str
+    role: str
+    password: str # En producción usaríamos hashing (bcrypt)
+    status: str = "active"
+    residential_cluster: str
+    house_number: str
+
 @router.post("/login")
 @limiter.limit("5/minute")
 def login(request: Request, data: LoginRequest, session: Session = Depends(get_session)):
@@ -34,3 +44,14 @@ def login(request: Request, data: LoginRequest, session: Session = Depends(get_s
             "email": user.email
         }
     }
+
+@router.post("/register")
+@limiter.limit("5/minute")
+def login(request: Request, data: RegisterRequest, session: Session = Depends(get_session)):
+    new_user = Resident(
+        nombre=data.nombre,
+        email=data.email,
+        password_hash=hash_password(data.password)
+    )
+    session.add(new_user)
+    session.commit()

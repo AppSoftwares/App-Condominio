@@ -3,28 +3,49 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useAuthStore, UserRole } from '../../store/useAuthStore'
 import { sanitizeString, isValidEmail } from '../../utils/security'
 import icono from '../../assets/icono.png'
 import { supabase } from '../../lib/supabase'
 
+const loginSchema = z.object({
+  email: z.string().email('Email inválido'),
+  password: z.string().min(1, 'Contraseña obligatoria')
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email('Email inválido')
+})
+
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+
 export const Login: React.FC = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { setUser, whitelist } = useAuthStore()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isForgot, setIsForgot] = useState(false)
   const [resetSent, setResetSent] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const { register: registerLogin, handleSubmit: handleSubmitLogin, formState: { errors: loginErrors } } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema)
+  })
+
+  const { register: registerForgot, handleSubmit: handleSubmitForgot, formState: { errors: forgotErrors } } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema)
+  })
+
+  const handleLogin = async (values: LoginFormValues) => {
     setLoading(true)
 
-    const cleanEmail = sanitizeString(email).trim().toLowerCase()
-    const cleanPassword = password.trim()
+    const cleanEmail = sanitizeString(values.email).trim().toLowerCase()
+    const cleanPassword = values.password.trim()
 
     // 1. Intentar validación con Whitelist (Excel de la imagen)
     const localUser = whitelist.find(u =>
@@ -68,7 +89,7 @@ export const Login: React.FC = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
-        password: password,
+        password: values.password,
       })
 
       if (error) throw error
@@ -116,19 +137,11 @@ export const Login: React.FC = () => {
     }
   }
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!isValidEmail(email)) {
-      alert('Por favor, ingrese un correo electrónico válido.')
-      return
-    }
-
+  const handleResetPassword = async (values: ForgotPasswordFormValues) => {
     setLoading(true)
     try {
-      const cleanEmail = sanitizeString(email).toLowerCase().trim()
+      const cleanEmail = sanitizeString(values.email).toLowerCase().trim()
 
-      // Para recuperación de contraseña en producción, el redirectTo debe ser la URL pública.
-      // Si aún no tienes dominio, se recomienda usar la URL de Vercel/Netlify.
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       })
@@ -169,30 +182,26 @@ export const Login: React.FC = () => {
           </div>
 
           {!isForgot ? (
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleSubmitLogin(handleLogin)} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                <div style={{ textAlign: 'left' }}>
                   <label style={labelStyle}>{t('auth.email')}</label>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
+                    {...registerLogin('email')}
                     placeholder="ejemplo@correo.com"
                     autoCapitalize="none"
                     autoCorrect="off"
                     spellCheck="false"
                     style={inputStyle}
                   />
+                  {loginErrors.email && <span style={{ color: '#ba1a1a', fontSize: '12px' }}>{loginErrors.email.message}</span>}
                </div>
 
                <div style={{ textAlign: 'left' }}>
                   <label style={labelStyle}>{t('auth.password')}</label>
                   <div style={{ position: 'relative' }}>
                     <input
+                      {...registerLogin('password')}
                       type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
                       placeholder="••••••••"
                       autoCapitalize="none"
                       autoCorrect="off"
@@ -221,6 +230,7 @@ export const Login: React.FC = () => {
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </button>
                   </div>
+                  {loginErrors.password && <span style={{ color: '#ba1a1a', fontSize: '12px' }}>{loginErrors.password.message}</span>}
                </div>
 
                <button type="submit" disabled={loading} style={primaryBtnStyle}>
@@ -236,21 +246,18 @@ export const Login: React.FC = () => {
                 </button>
             </form>
           ) : (
-            /* Forgot password UI unchanged */
             <div style={{ textAlign: 'center' }}>
-                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <form onSubmit={handleSubmitForgot(handleResetPassword)} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
+                    {...registerForgot('email')}
                     placeholder="su@email.com"
                     autoCorrect="off"
                     spellCheck="false"
                     style={inputStyle}
                   />
+                  {forgotErrors.email && <span style={{ color: '#ba1a1a', fontSize: '12px', textAlign: 'left' }}>{forgotErrors.email.message}</span>}
                   <button type="submit" disabled={loading} style={primaryBtnStyle}>Enviar Enlace</button>
-                  <button type="button" onClick={() => setIsForgot(false)} style={{ background: 'none', border: 'none' }}>Volver</button>
+                  <button type="button" onClick={() => setIsForgot(false)} style={{ background: 'none', border: 'none', color: 'var(--text-sub)', cursor: 'pointer' }}>Volver</button>
                 </form>
             </div>
           )}
@@ -258,6 +265,10 @@ export const Login: React.FC = () => {
     </div>
   )
 }
+
+const labelStyle = { display: 'block' as const, fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
+const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.2)' }
 
 const labelStyle = { display: 'block' as const, fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }

@@ -69,7 +69,6 @@ android/.gitignore
 android/app/.gitignore
 android/app/build.gradle
 android/app/capacitor.build.gradle
-android/app/google-services.json
 android/app/proguard-rules.pro
 android/app/src/androidTest/java/com/caminos/lagunita/ExampleInstrumentedTest.java
 android/app/src/main/AndroidManifest.xml
@@ -626,38 +625,6 @@ app/src/main/res/xml/config.xml
 <file path="android/app/.gitignore">
 /build/*
 !/build/.npmkeep
-</file>
-
-<file path="android/app/google-services.json">
-{
-  "project_info": {
-    "project_number": "428135309141",
-    "project_id": "caminos-de-la-lagunita",
-    "storage_bucket": "caminos-de-la-lagunita.firebasestorage.app"
-  },
-  "client": [
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:428135309141:android:7e58039a8f368ad7e7d9dc",
-        "android_client_info": {
-          "package_name": "com.caminos.lagunita"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCvksWQWsmSR5QE0_Kthk7UUyQF8nlPBjI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    }
-  ],
-  "configuration_version": "1"
-}
 </file>
 
 <file path="android/app/proguard-rules.pro">
@@ -9124,100 +9091,6 @@ Este plan detalla los pasos para sincronizar todos los componentes del proyecto 
   ```
 </file>
 
-<file path=".github/workflows/ci.yml">
-name: CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  backend-tests:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: caminos
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d caminos" --health-interval 10s --health-timeout 5s --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install httpx pytest
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-      - name: Run backend tests
-        env:
-          SECRET_KEY: "ci_test_secret_only"
-        run: |
-          python -m pytest -q
-
-  frontend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Install pnpm
-        run: npm install -g pnpm
-      - name: Install dependencies
-        run: pnpm install
-      - name: Build frontend
-        run: pnpm build
-</file>
-
-<file path=".github/workflows/deploy.yml">
-name: Build and Push Images
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push backend image
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}-backend:latest
-          file: ./app/Dockerfile
-          context: .
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v4
-        with:
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/${{ github.repository }}-frontend:latest
-          file: ./Dockerfile.frontend
-          context: .
-</file>
-
 <file path="alembic.ini">
 [alembic]
 script_location = alembic
@@ -10571,23 +10444,6 @@ CREATE TRIGGER tr_auto_cluster_reservations BEFORE INSERT ON public.reservations
 FOR EACH ROW EXECUTE FUNCTION public.auto_assign_cluster();
 </file>
 
-<file path="Dockerfile.frontend">
-# Build the frontend
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-# Serve with nginx
-FROM nginx:stable-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-</file>
-
 <file path="ios/App/App/AppDelegate.swift">
 import UIKit
 import Capacitor
@@ -10655,19 +10511,6 @@ CAPACITOR_DEBUG = true
 
 <file path="ios/release.xcconfig">
 #include "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"
-</file>
-
-<file path="requirements.txt">
-fastapi
-sqlmodel
-python-jose
-uvicorn
-python-multipart
-sqlalchemy
-alembic
-sentry-sdk
-pytest
-slowapi
 </file>
 
 <file path="sql/00_profiles_rls_MASTER.sql">
@@ -11069,6 +10912,139 @@ $$;
 
 -- 5. Otorgar permisos especificando la firma exacta
 GRANT EXECUTE ON FUNCTION public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb, text) TO authenticated;
+</file>
+
+<file path="sql/clean_and_fix_master.sql">
+-- SCRIPT MAESTRO DE LIMPIEZA Y REPARACIÓN (v2.1.4)
+-- Ejecuta este script para solucionar los errores de "function not unique" y "dependency"
+
+-- 1. LIMPIEZA DE FUNCIONES ANTERIORES
+-- Usamos CASCADE para borrar políticas dependientes automáticamente
+DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb) CASCADE;
+DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb, uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.rpc_insert_incident(text, text, text) CASCADE;
+DROP FUNCTION IF EXISTS public.check_debt_limit(uuid) CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
+DROP FUNCTION IF EXISTS public.is_admin_user() CASCADE;
+
+-- 2. REPARACIÓN DE TABLA DE PAGOS
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
+        CREATE TABLE public.payments (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    END IF;
+
+    -- Columnas de usuario
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
+        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
+    END IF;
+
+    -- Columnas de montos
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
+        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
+    END IF;
+
+    -- Otros campos
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
+        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
+        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
+        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
+        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
+        ALTER TABLE public.payments ADD COLUMN description TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
+        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
+    END IF;
+END $$;
+
+-- 3. RE-CREACIÓN DE FUNCIONES (Endurecidas)
+
+-- Función: is_admin
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin'));
+END;
+$$;
+
+-- Función: rpc_insert_payment (CORREGIDA CON IDEMPOTENCIA)
+CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
+  monto_bs numeric, monto_usd numeric, referencia text, banco_origen text,
+  evidencia_url text, description text, details jsonb,
+  idempotency_key text DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at, idempotency_key)
+  VALUES (auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now(), idempotency_key)
+  ON CONFLICT (idempotency_key) DO NOTHING;
+END;
+$$;
+
+-- Función: rpc_insert_incident
+CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
+  category text, location text, description text
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
+  INSERT INTO public.incidents(profile_id, category, location, description, status, created_at)
+  VALUES (auth.uid(), category, location, description, 'Pendiente', now());
+END;
+$$;
+
+-- 4. RE-CREACIÓN DE POLÍTICAS (Tras el CASCADE)
+DO $$
+BEGIN
+    -- Profiles Admin access
+    DROP POLICY IF EXISTS "admin_read" ON public.profiles;
+    CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin());
+
+    DROP POLICY IF EXISTS "admin_update" ON public.profiles;
+    CREATE POLICY "admin_update" ON public.profiles FOR UPDATE USING (public.is_admin());
+
+    -- Profiles Owner access (CORREGIDA)
+    DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
+    DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
+    DROP POLICY IF EXISTS "owner_access" ON public.profiles;
+    CREATE POLICY "owner_update_no_privesc" ON public.profiles
+      FOR ALL TO authenticated
+      USING (auth.uid() = id)
+      WITH CHECK (
+        auth.uid() = id
+        AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
+      );
+
+    -- Payments access (CORREGIDA - Solo Admin escribe, residentes via RPC)
+    DROP POLICY IF EXISTS "Payments access" ON public.payments;
+    CREATE POLICY "payments_select_own_or_admin" ON public.payments
+      FOR SELECT TO authenticated
+      USING (profile_id = auth.uid() OR public.is_admin());
+
+    CREATE POLICY "payments_admin_write" ON public.payments
+      FOR UPDATE TO authenticated
+      USING (public.is_admin())
+      WITH CHECK (public.is_admin());
+END $$;
+
+-- 5. PERMISOS
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
+GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
 </file>
 
 <file path="sql/final_stablity_fixes.sql">
@@ -13828,35 +13804,6 @@ I have implemented a series of stability and layout fixes to address Android cra
 > For the changes to take effect on physical devices, you must run the build and sync commands.
 </file>
 
-<file path=".gitignore">
-node_modules
-dist
-src/config/access_keys/
-# Secretos y llaves
-.env
-android/key.properties
-*.jks
-
-# IDEs
-.idea
-*.png
-*.jpg
-*.jpeg
-*.pdf
-*.xlsx
-!assets/*.png
-!src/assets/*.png
-!src/assets/*.jpg
-!src/assets/*.jpeg
-residents/
-!src/assets/logo_premium.png
-
-# Permitir íconos y splash nativos de iOS/Android
-!ios/App/App/Assets.xcassets/**/*.png
-!android/app/src/main/res/**/*.png
-!android/app/src/main/res/**/*.webp
-</file>
-
 <file path=".npmrc">
 node-linker=hoisted
 </file>
@@ -14018,6 +13965,32 @@ def get_voting_results(voting_id: int, session: Session = Depends(get_session)):
     favor = session.exec(select(func.count()).select_from(VoteRecord).where(VoteRecord.voting_id == voting_id, VoteRecord.opcion == "favor")).one()
     contra = session.exec(select(func.count()).select_from(VoteRecord).where(VoteRecord.voting_id == voting_id, VoteRecord.opcion == "contra")).one()
     return {"favor": favor, "contra": contra}
+</file>
+
+<file path="Dockerfile.frontend">
+# Build the frontend
+FROM node:18-alpine AS builder
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source and build
+COPY . .
+RUN pnpm run build
+
+# Serve with nginx
+FROM nginx:stable-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 </file>
 
 <file path="instrucciones_de_chat.md">
@@ -14259,208 +14232,208 @@ PGHOST=localhost PGPORT=5432 PGUSER=postgres PGPASSWORD=postgres PGDATABASE=cami
 - Si necesitas, puedo ayudarte a preparar scripts de despliegue más avanzados (Docker, CI/CD, migraciones).
 </file>
 
-<file path="sql/clean_and_fix_master.sql">
--- SCRIPT MAESTRO DE LIMPIEZA Y REPARACIÓN (v2.1.4)
--- Ejecuta este script para solucionar los errores de "function not unique" y "dependency"
-
--- 1. LIMPIEZA DE FUNCIONES ANTERIORES
--- Usamos CASCADE para borrar políticas dependientes automáticamente
-DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb) CASCADE;
-DROP FUNCTION IF EXISTS public.rpc_insert_payment(numeric, numeric, text, text, text, text, jsonb, uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.rpc_insert_incident(text, text, text) CASCADE;
-DROP FUNCTION IF EXISTS public.check_debt_limit(uuid) CASCADE;
-DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
-DROP FUNCTION IF EXISTS public.is_admin_user() CASCADE;
-
--- 2. REPARACIÓN DE TABLA DE PAGOS
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payments') THEN
-        CREATE TABLE public.payments (
-            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-        );
-    END IF;
-
-    -- Columnas de usuario
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'profile_id') THEN
-        ALTER TABLE public.payments ADD COLUMN profile_id UUID REFERENCES public.profiles(id);
-    END IF;
-
-    -- Columnas de montos
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_usd') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_usd NUMERIC;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'monto_bs') THEN
-        ALTER TABLE public.payments ADD COLUMN monto_bs NUMERIC;
-    END IF;
-
-    -- Otros campos
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'referencia') THEN
-        ALTER TABLE public.payments ADD COLUMN referencia TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'banco_origen') THEN
-        ALTER TABLE public.payments ADD COLUMN banco_origen TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'evidencia_url') THEN
-        ALTER TABLE public.payments ADD COLUMN evidencia_url TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'status') THEN
-        ALTER TABLE public.payments ADD COLUMN status TEXT DEFAULT 'pendiente';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'description') THEN
-        ALTER TABLE public.payments ADD COLUMN description TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'payments' AND column_name = 'details') THEN
-        ALTER TABLE public.payments ADD COLUMN details JSONB DEFAULT '{}'::jsonb;
-    END IF;
-END $$;
-
--- 3. RE-CREACIÓN DE FUNCIONES (Endurecidas)
-
--- Función: is_admin
-CREATE OR REPLACE FUNCTION public.is_admin()
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'superadmin'));
-END;
-$$;
-
--- Función: rpc_insert_payment (CORREGIDA CON IDEMPOTENCIA)
-CREATE OR REPLACE FUNCTION public.rpc_insert_payment(
-  monto_bs numeric, monto_usd numeric, referencia text, banco_origen text,
-  evidencia_url text, description text, details jsonb,
-  idempotency_key text DEFAULT NULL
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
-  INSERT INTO public.payments(profile_id, monto_bs, monto_usd, referencia, banco_origen, status, evidencia_url, description, details, created_at, idempotency_key)
-  VALUES (auth.uid(), monto_bs, monto_usd, referencia, banco_origen, 'pendiente', evidencia_url, description, details, now(), idempotency_key)
-  ON CONFLICT (idempotency_key) DO NOTHING;
-END;
-$$;
-
--- Función: rpc_insert_incident
-CREATE OR REPLACE FUNCTION public.rpc_insert_incident(
-  category text, location text, description text
-) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'No autorizado'; END IF;
-  INSERT INTO public.incidents(profile_id, category, location, description, status, created_at)
-  VALUES (auth.uid(), category, location, description, 'Pendiente', now());
-END;
-$$;
-
--- 4. RE-CREACIÓN DE POLÍTICAS (Tras el CASCADE)
-DO $$
-BEGIN
-    -- Profiles Admin access
-    DROP POLICY IF EXISTS "admin_read" ON public.profiles;
-    CREATE POLICY "admin_read" ON public.profiles FOR SELECT USING (public.is_admin());
-
-    DROP POLICY IF EXISTS "admin_update" ON public.profiles;
-    CREATE POLICY "admin_update" ON public.profiles FOR UPDATE USING (public.is_admin());
-
-    -- Profiles Owner access (CORREGIDA)
-    DROP POLICY IF EXISTS "Profiles owner access" ON public.profiles;
-    DROP POLICY IF EXISTS "allow_owner_all" ON public.profiles;
-    DROP POLICY IF EXISTS "owner_access" ON public.profiles;
-    CREATE POLICY "owner_update_no_privesc" ON public.profiles
-      FOR ALL TO authenticated
-      USING (auth.uid() = id)
-      WITH CHECK (
-        auth.uid() = id
-        AND role = (SELECT p.role FROM public.profiles p WHERE p.id = auth.uid())
-      );
-
-    -- Payments access (CORREGIDA - Solo Admin escribe, residentes via RPC)
-    DROP POLICY IF EXISTS "Payments access" ON public.payments;
-    CREATE POLICY "payments_select_own_or_admin" ON public.payments
-      FOR SELECT TO authenticated
-      USING (profile_id = auth.uid() OR public.is_admin());
-
-    CREATE POLICY "payments_admin_write" ON public.payments
-      FOR UPDATE TO authenticated
-      USING (public.is_admin())
-      WITH CHECK (public.is_admin());
-END $$;
-
--- 5. PERMISOS
-REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_payment TO authenticated;
-GRANT EXECUTE ON FUNCTION public.rpc_insert_incident TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
+<file path="requirements.txt">
+fastapi
+sqlmodel
+python-jose
+uvicorn
+python-multipart
+sqlalchemy
+alembic
+sentry-sdk
+pytest
+slowapi
+pandas
+fpdf
+openpyxl
+httpx
 </file>
 
-<file path="src/features/auth/ResetPassword.tsx">
-import React, { useState, useEffect } from 'react'
+<file path="src/features/dash/ResDash.tsx">
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePayments,
+  MdOutlineErrorOutline,
+  MdOutlineGroups,
+  MdOutlineVpnKey,
+  MdOutlineCalendarToday,
+  MdOutlineInventory2,
+  MdOutlineImage
+} from 'react-icons/md'
+import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
-import icono from '../../assets/icono.png'
 
-export const ResetPassword: React.FC = () => {
+export const ResDash: React.FC = () => {
+  const { t } = useTranslation()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
+  const [announcements, setAnnouncements] = React.useState<any[]>([])
+  const [totalDebt, setTotalDebt] = React.useState(0)
+  const [loading, setLoading] = React.useState(true)
 
-  useEffect(() => {
-    // Verificar si hay una sesión activa (Supabase la inyecta automáticamente desde el hash del link de recuperación)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-      if (event !== 'PASSWORD_RECOVERY') {
-        setMessage('Enlace inválido o expirado. Solicite uno nuevo desde Login.')
+  const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch Announcements
+        const { data: annData } = await supabase
+          .from('announcements')
+          .select('*')
+          .order('fecha_creacion', { ascending: false })
+          .limit(3)
+
+        setAnnouncements(annData || [])
+
+        // Fetch Total Debt logic
+        const { data: debtData } = await supabase
+          .from('debts')
+          .select('monto_pendiente')
+          .eq('residente_id', user?.id)
+          .eq('pagada', false)
+
+        // Fetch Condo Settings
+        const { data: settings } = await supabase
+          .from('condo_settings')
+          .select('*')
+          .eq('id', 1)
+          .maybeSingle()
+
+        if (debtData && debtData.length > 0) {
+          const total = debtData.reduce((acc, d) => acc + Number(d.monto_pendiente), 0)
+          setTotalDebt(total)
+        } else if (settings) {
+          // If no specific debt entries, calculate based on monthly settings
+          const today = new Date()
+          const currentDay = today.getDate()
+          const isProntoPago = currentDay <= settings.dias_pronto_pago
+          const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
+          setTotalDebt(Number(montoACobrar))
+        }
+
+      } catch (err) {
+        console.error("Error al cargar datos del dashboard:", err)
+      } finally {
+        setLoading(false)
       }
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (password.length < 6) return alert('La contraseña debe tener al menos 6 caracteres')
-
-    setLoading(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) throw error
-      alert('Contraseña actualizada con éxito. Inicie sesión con sus nuevas credenciales.')
-      navigate('/login')
-    } catch (err: any) {
-      alert('Error: ' + err.message)
-    } finally {
-      setLoading(false)
     }
-  }
+    fetchData()
+  }, [user?.id])
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', padding: '20px' }}>
-      <main style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--card-bg)', borderRadius: '32px', padding: '32px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
-        <img src={icono} alt="Logo" style={{ width: '80px', marginBottom: '20px' }} />
-        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', color: 'var(--primary-color)', marginBottom: '10px' }}>Nueva Contraseña</h1>
-        <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '30px' }}>{message || 'Ingrese su nueva clave de acceso.'}</p>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
 
-        {!message ? (
-          <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <input
-              type="password"
-              placeholder="Mínimo 6 caracteres"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
-            />
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
-              {loading ? 'Actualizando...' : 'ACTUALIZAR CONTRASEÑA'}
+      {/* AppBar Premium - Solo Avatar */}
+      <header style={headerStyle}>
+        <div
+          onClick={() => navigate('/profile')}
+          style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--accent-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        >
+          <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+      </header>
+
+      <main style={mainContentStyle}>
+
+        {/* Welcome Section */}
+        <section style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '38px', color: 'var(--primary-color)', margin: '0 0 8px 0', lineHeight: 1.1 }}>¡Bienvenido, {user?.first_name || 'Residente'}!</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-sub)', margin: 0, fontWeight: 500 }}>Conjunto {user?.residential_cluster || 'Punta de Piedra'}, Casa {user?.house_number || 'N/A'}</p>
+          <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '15px auto 0', borderRadius: '2px' }}></div>
+        </section>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Status Card */}
+          <div style={{ ...cardStyle, textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', letterSpacing: '1px' }}>{t('dashboard.pending_debts')}</span>
+              <span style={{ backgroundColor: totalDebt > 0 ? '#ba1a1a' : 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>
+                {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
+              </span>
+            </div>
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>
+                ${totalDebt.toFixed(2)}
+              </h3>
+              <p style={{ fontSize: '13px', color: totalDebt > 0 ? 'var(--text-sub)' : 'var(--success-color)', fontWeight: 600 }}>
+                {totalDebt > 0 ? 'Saldo actual a pagar' : '¡Excelente! No tienes deudas pendientes.'}
+              </p>
+            </div>
+            <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>
+              {totalDebt > 0 ? 'Pagar Ahora' : 'Ver Detalles'}
             </button>
-          </form>
-        ) : (
-          <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
-            VOLVER AL LOGIN
-          </button>
-        )}
+          </div>
+
+          {/* Quick Actions Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <ActionBtn icon={MdOutlinePayments} label="Pagos" onClick={() => navigate('/payments')} />
+            <ActionBtn icon={MdOutlineInventory2} label="Casillero" onClick={() => navigate('/packages')} />
+            <ActionBtn icon={MdOutlineGroups} label="Comunidad" onClick={() => navigate('/requests')} />
+            <ActionBtn icon={MdOutlineVpnKey} label="Invitados" onClick={() => navigate('/guests')} />
+            <ActionBtn icon={MdOutlineCalendarToday} label="Reservas" onClick={() => navigate('/reservations')} />
+            <ActionBtn icon={MdOutlineErrorOutline} label="Incidencias" onClick={() => navigate('/incidents')} />
+          </div>
+
+          {/* News Section */}
+          <section style={{ marginTop: '10px' }}>
+            <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '28px', color: 'var(--text-color)', marginBottom: '20px', textAlign: 'center' }}>Noticias y Avisos</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {loading ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>Cargando avisos...</p>
+              ) : announcements.length > 0 ? (
+                announcements.map(ann => (
+                  <NewsItem
+                    key={ann.id}
+                    title={ann.titulo}
+                    desc={ann.mensaje}
+                    tag={ann.tipo}
+                    color={ann.tipo === 'mantenimiento' ? '#ffdea6' : '#d3e8d0'}
+                  />
+                ))
+              ) : (
+                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay avisos recientes.</p>
+              )}
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   )
 }
+
+const ActionBtn = ({ icon: Icon, label, onClick }: any) => (
+  <div onClick={onClick} style={{ backgroundColor: 'var(--icon-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
+    <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', flexShrink: 0 }}>
+      <Icon size={28} style={{ display: 'block' }} />
+    </div>
+    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-color)' }}>{label}</span>
+  </div>
+)
+
+const NewsItem = ({ title, desc, tag, color, imageUrl }: any) => (
+  <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', transition: 'all 0.3s ease' }}>
+    <div style={{ height: '140px', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      {imageUrl ? (
+        <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <MdOutlineImage size={40} style={{ color: 'var(--text-sub)', opacity: 0.2 }} />
+      )}
+    </div>
+    <div style={{ padding: '20px' }}>
+      <span style={{ backgroundColor: color, color: '#1B1C1A', fontSize: '10px', padding: '4px 12px', borderRadius: '8px', fontWeight: 800 }}>{tag.toUpperCase()}</span>
+      <h4 style={{ margin: '12px 0 6px 0', fontSize: '18px', fontWeight: 700, color: 'var(--text-color)' }}>{title}</h4>
+      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-sub)', lineHeight: '1.5' }}>{desc}</p>
+    </div>
+  </div>
+)
+
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: 'calc(50px + env(safe-area-inset-top))', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, paddingTop: 'env(safe-area-inset-top)', boxSizing: 'border-box' as any }
+const mainContentStyle = { paddingTop: 'calc(60px + env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any }
+const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
+const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.15)' }
 </file>
 
 <file path="src/features/prof/Privacy.tsx">
@@ -14870,68 +14843,6 @@ const inputStyle = { flex: 1, padding: '12px 15px', borderRadius: '12px', border
 const primaryBtnStyleSmall = { display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 700, cursor: 'pointer' }
 </file>
 
-<file path="src/hooks/usePushNotifications.ts">
-import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { supabase } from '../lib/supabase';
-
-export const usePushNotifications = (userId: string | undefined) => {
-  useEffect(() => {
-    // Solo intentar si es un dispositivo nativo y hay usuario
-    if (userId && Capacitor.isNativePlatform()) {
-      initPush();
-    }
-  }, [userId]);
-
-  const initPush = async () => {
-    try {
-      // Importación dinámica para que Vite no se rompa en la web
-      const { PushNotifications } = await import('@capacitor/push-notifications');
-
-      let permStatus = await PushNotifications.checkPermissions();
-
-      if (permStatus.receive === 'prompt') {
-        permStatus = await PushNotifications.requestPermissions();
-      }
-
-      if (permStatus.receive !== 'granted') return;
-
-      await PushNotifications.register();
-
-      await PushNotifications.addListener('registration', async (token) => {
-        console.log('Push token:', token.value);
-        // Aseguramos que el token se guarde siempre, incluso si ya existe
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            expo_push_token: token.value,
-            last_token_update: new Date().toISOString()
-          })
-          .eq('id', userId);
-
-        if (error) console.error('Error guardando token en Supabase:', error);
-      });
-
-      await PushNotifications.addListener('registrationError', (err) => {
-        console.error('Error en registro Push:', err.error);
-      });
-
-      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('Push recibida:', notification);
-        // Podríamos disparar una notificación local o actualizar un estado global
-      });
-
-      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-        console.log('Push acción realizada:', notification.actionId);
-        // Redirigir según el tipo de notificación
-      });
-    } catch (error) {
-      console.warn('Capacitor Push Notifications no disponibles en este entorno');
-    }
-  };
-};
-</file>
-
 <file path=".artifacts/ccc369ed-fbd1-417e-8f94-6961831abce4/implementation_plan.artifact.md">
 # Implementation Plan - UI Refinement and Android Crash Fix
 
@@ -14990,6 +14901,141 @@ Revert certain height constraints that might be causing the "circular movement" 
     - `[ ]` Adjust container styles in `Admin.tsx`
     - `[ ]` Adjust container styles in `Payroll.tsx`
 - `[ ]` Build and Sync
+</file>
+
+<file path=".github/workflows/ci.yml">
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: caminos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d caminos" --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install httpx pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run backend tests
+        env:
+          SECRET_KEY: "ci_test_secret_only_long_enough_32_chars"
+        run: |
+          python -m pytest -q
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build frontend
+        run: pnpm build
+</file>
+
+<file path=".github/workflows/deploy.yml">
+name: Build and Push Images
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare image names
+        id: image_names
+        run: |
+          # Convert repository and owner to lowercase for Docker tags
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "backend=ghcr.io/$REPO_LOWER-backend:latest" >> $GITHUB_OUTPUT
+          echo "frontend=ghcr.io/$REPO_LOWER-frontend:latest" >> $GITHUB_OUTPUT
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.image_names.outputs.backend }}
+          file: ./app/Dockerfile
+          context: .
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          push: true
+          tags: ${{ steps.image_names.outputs.frontend }}
+          file: ./Dockerfile.frontend
+          context: .
+</file>
+
+<file path=".gitignore">
+node_modules
+dist
+src/config/access_keys/
+# Secretos y llaves
+.env
+android/key.properties
+android/app/google-services.json
+*.jks
+
+# IDEs
+.idea
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.xlsx
+!assets/*.png
+!src/assets/*.png
+!src/assets/*.jpg
+!src/assets/*.jpeg
+residents/
+!src/assets/logo_premium.png
+
+# Permitir íconos y splash nativos de iOS/Android
+!ios/App/App/Assets.xcassets/**/*.png
+!android/app/src/main/res/**/*.png
+!android/app/src/main/res/**/*.webp
 </file>
 
 <file path="src/features/admin/Payroll.tsx">
@@ -15442,322 +15488,197 @@ const totalNetoCardStyle = { backgroundColor: 'var(--primary-color)', color: 'wh
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer' }
 </file>
 
-<file path="src/features/dash/ResDash.tsx">
+<file path="src/features/auth/AuthSplash.tsx">
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  MdOutlinePayments,
-  MdOutlineErrorOutline,
-  MdOutlineGroups,
-  MdOutlineVpnKey,
-  MdOutlineCalendarToday,
-  MdOutlineInventory2,
-  MdOutlineImage
-} from 'react-icons/md'
-import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
+import icono from '../../assets/icono.png'
 
-export const ResDash: React.FC = () => {
-  const { t } = useTranslation()
-  const { user } = useAuthStore()
+import { version } from '../../../package.json'
+
+const APP_VERSION = version
+
+export const AuthSplash: React.FC = () => {
   const navigate = useNavigate()
-  const [announcements, setAnnouncements] = React.useState<any[]>([])
-  const [totalDebt, setTotalDebt] = React.useState(0)
-  const [loading, setLoading] = React.useState(true)
-
-  const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
-
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch Announcements
-        const { data: annData } = await supabase
-          .from('announcements')
-          .select('*')
-          .order('fecha_creacion', { ascending: false })
-          .limit(3)
-
-        setAnnouncements(annData || [])
-
-        // Fetch Total Debt logic
-        const { data: debtData } = await supabase
-          .from('debts')
-          .select('monto_pendiente')
-          .eq('residente_id', user?.id)
-          .eq('pagada', false)
-
-        // Fetch Condo Settings
-        const { data: settings } = await supabase
-          .from('condo_settings')
-          .select('*')
-          .eq('id', 1)
-          .maybeSingle()
-
-        if (debtData && debtData.length > 0) {
-          const total = debtData.reduce((acc, d) => acc + Number(d.monto_pendiente), 0)
-          setTotalDebt(total)
-        } else if (settings) {
-          // If no specific debt entries, calculate based on monthly settings
-          const today = new Date()
-          const currentDay = today.getDate()
-          const isProntoPago = currentDay <= settings.dias_pronto_pago
-          const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
-          setTotalDebt(Number(montoACobrar))
-        }
-
-      } catch (err) {
-        console.error("Error al cargar datos del dashboard:", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [user?.id])
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease' }}>
+    <div style={{
+      minHeight: '100vh',
+      width: '100%',
+      backgroundColor: 'var(--bg-color)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 'calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))',
+      boxSizing: 'border-box',
+      fontFamily: "'Inter', sans-serif",
+      position: 'relative',
+      overflowY: 'auto'
+    }}>
+      {/* Background elements to fill space gracefully */}
+      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'rgba(18, 184, 163, 0.05)', zIndex: 0 }}></div>
+      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '250px', height: '250px', borderRadius: '50%', backgroundColor: 'rgba(120, 89, 25, 0.05)', zIndex: 0 }}></div>
 
-      {/* AppBar Premium - Solo Avatar */}
-      <header style={headerStyle}>
-        <div
-          onClick={() => navigate('/profile')}
-          style={{ width: '44px', height: '44px', borderRadius: '50%', border: '2px solid var(--accent-gold)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-        >
-          <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      <main style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '400px',
+        gap: '20px',
+        textAlign: 'center',
+        zIndex: 1,
+        flex: 1,
+        justifyContent: 'center'
+      }}>
+        <img src={icono} alt="Logo" style={{ width: '140px', height: 'auto', marginBottom: '8px' }} />
+        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'rgba(15,85,81,0.72)', letterSpacing: '0.14em' }}>
+          versión {APP_VERSION}
+        </p>
+
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{
+            fontFamily: "'EB Garamond', serif",
+            color: 'var(--primary-color)',
+            fontSize: '28px',
+            margin: '0 0 12px 0',
+            fontWeight: 700,
+            lineHeight: 1.2
+          }}>Tu condominio en su versión más inteligente.</h1>
+          <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '0 auto 16px', borderRadius: '2px' }}></div>
+          <p style={{ color: 'var(--text-sub)', fontSize: '15px', margin: '0 auto', lineHeight: '1.5', fontWeight: 500 }}>
+            La plataforma integral que simplifica la administración, los pagos y la convivencia en cualquier conjunto, residencia o edificio.
+          </p>
         </div>
-      </header>
 
-      <main style={mainContentStyle}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              padding: '18px',
+              backgroundImage: 'linear-gradient(135deg, #12b8a3 0%, #0f5551 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '16px',
+              fontWeight: 700,
+              fontSize: '14px',
+              cursor: 'pointer',
+              letterSpacing: '0.5px',
+              boxShadow: '0 8px 20px rgba(15,85,81,0.2)'
+            }}
+          >INGRESAR / INICIAR SESIÓN</button>
 
-        {/* Welcome Section */}
-        <section style={{ marginBottom: '32px', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '38px', color: 'var(--primary-color)', margin: '0 0 8px 0', lineHeight: 1.1 }}>¡Bienvenido, {user?.first_name || 'Residente'}!</h2>
-          <p style={{ fontSize: '15px', color: 'var(--text-sub)', margin: 0, fontWeight: 500 }}>Conjunto {user?.residential_cluster || 'Punta de Piedra'}, Casa {user?.house_number || 'N/A'}</p>
-          <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '15px auto 0', borderRadius: '2px' }}></div>
-        </section>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-          {/* Status Card */}
-          <div style={{ ...cardStyle, textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-sub)', letterSpacing: '1px' }}>{t('dashboard.pending_debts')}</span>
-              <span style={{ backgroundColor: totalDebt > 0 ? '#ba1a1a' : 'var(--accent-gold)', color: 'white', padding: '5px 15px', borderRadius: '20px', fontSize: '10px', fontWeight: 800 }}>
-                {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
-              </span>
-            </div>
-            <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>
-                ${totalDebt.toFixed(2)}
-              </h3>
-              <p style={{ fontSize: '13px', color: totalDebt > 0 ? 'var(--text-sub)' : 'var(--success-color)', fontWeight: 600 }}>
-                {totalDebt > 0 ? 'Saldo actual a pagar' : '¡Excelente! No tienes deudas pendientes.'}
-              </p>
-            </div>
-            <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>
-              {totalDebt > 0 ? 'Pagar Ahora' : 'Ver Detalles'}
-            </button>
-          </div>
-
-          {/* Quick Actions Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <ActionBtn icon={MdOutlinePayments} label="Pagos" onClick={() => navigate('/payments')} />
-            <ActionBtn icon={MdOutlineInventory2} label="Casillero" onClick={() => navigate('/packages')} />
-            <ActionBtn icon={MdOutlineGroups} label="Comunidad" onClick={() => navigate('/requests')} />
-            <ActionBtn icon={MdOutlineVpnKey} label="Invitados" onClick={() => navigate('/guests')} />
-            <ActionBtn icon={MdOutlineCalendarToday} label="Reservas" onClick={() => navigate('/reservations')} />
-            <ActionBtn icon={MdOutlineErrorOutline} label="Incidencias" onClick={() => navigate('/incidents')} />
-          </div>
-
-          {/* News Section */}
-          <section style={{ marginTop: '10px' }}>
-            <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '28px', color: 'var(--text-color)', marginBottom: '20px', textAlign: 'center' }}>Noticias y Avisos</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {loading ? (
-                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>Cargando avisos...</p>
-              ) : announcements.length > 0 ? (
-                announcements.map(ann => (
-                  <NewsItem
-                    key={ann.id}
-                    title={ann.titulo}
-                    desc={ann.mensaje}
-                    tag={ann.tipo}
-                    color={ann.tipo === 'mantenimiento' ? '#ffdea6' : '#d3e8d0'}
-                  />
-                ))
-              ) : (
-                <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay avisos recientes.</p>
-              )}
-            </div>
-          </section>
+          <button
+            onClick={() => navigate('/register')}
+            style={{
+              padding: '18px',
+              backgroundColor: 'transparent',
+              color: 'var(--accent-gold)',
+              border: '2px solid var(--accent-gold)',
+              borderRadius: '16px',
+              fontWeight: 700,
+              fontSize: '14px',
+              cursor: 'pointer',
+              letterSpacing: '0.5px'
+            }}
+          >SOLICITAR ACCESO</button>
         </div>
       </main>
     </div>
   )
 }
-
-const ActionBtn = ({ icon: Icon, label, onClick }: any) => (
-  <div onClick={onClick} style={{ backgroundColor: 'var(--icon-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', cursor: 'pointer', transition: 'all 0.3s ease' }}>
-    <div style={{ width: '52px', height: '52px', borderRadius: '50%', backgroundColor: 'var(--card-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)', boxShadow: '0 4px 10px rgba(0,0,0,0.02)', flexShrink: 0 }}>
-      <Icon size={28} style={{ display: 'block' }} />
-    </div>
-    <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-color)' }}>{label}</span>
-  </div>
-)
-
-const NewsItem = ({ title, desc, tag, color, imageUrl }: any) => (
-  <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', overflow: 'hidden', transition: 'all 0.3s ease' }}>
-    <div style={{ height: '140px', backgroundColor: 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-      {imageUrl ? (
-        <img src={imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        <MdOutlineImage size={40} style={{ color: 'var(--text-sub)', opacity: 0.2 }} />
-      )}
-    </div>
-    <div style={{ padding: '20px' }}>
-      <span style={{ backgroundColor: color, color: '#1B1C1A', fontSize: '10px', padding: '4px 12px', borderRadius: '8px', fontWeight: 800 }}>{tag.toUpperCase()}</span>
-      <h4 style={{ margin: '12px 0 6px 0', fontSize: '18px', fontWeight: 700, color: 'var(--text-color)' }}>{title}</h4>
-      <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-sub)', lineHeight: '1.5' }}>{desc}</p>
-    </div>
-  </div>
-)
-
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: 'calc(50px + env(safe-area-inset-top))', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, paddingTop: 'env(safe-area-inset-top)', boxSizing: 'border-box' as any }
-const mainContentStyle = { paddingTop: 'calc(60px + env(safe-area-inset-top))', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any }
-const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }
-const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.15)' }
 </file>
 
-<file path="src/features/prof/Profile.tsx">
-import React, { useRef } from 'react'
+<file path="src/features/auth/ResetPassword.tsx">
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  MdOutlinePhotoCamera,
-  MdOutlinePerson,
-  MdOutlineLock,
-  MdOutlinePalette,
-  MdOutlineNotifications,
-  MdOutlineHelpOutline,
-  MdGavel,
-  MdOutlineLogout,
-  MdOutlineChevronRight,
-  MdOutlineEmergency
-} from 'react-icons/md'
-import { useAuthStore } from '../../store/useAuthStore'
 import { supabase } from '../../lib/supabase'
+import icono from '../../assets/icono.png'
 
-export const Profile: React.FC = () => {
+export const ResetPassword: React.FC = () => {
   const navigate = useNavigate()
-  const { user, signOut, updateAvatar } = useAuthStore()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState('')
 
-  const handleLogout = async () => {
-    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return
+  useEffect(() => {
+    let handled = false
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        handled = true
+        setMessage('')
+      }
+    })
+
+    // Si el evento ya se disparó antes de montar este componente, valida con getSession()
+    const checkExisting = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        handled = true
+        setMessage('')
+      } else if (!handled) {
+        // Pequeño retardo para dar tiempo al procesamiento del hash
+        setTimeout(async () => {
+          if (!handled) {
+            const { data: retry } = await supabase.auth.getSession()
+            if (retry.session) setMessage('')
+            else setMessage('Enlace inválido o expirado. Solicite uno nuevo desde Login.')
+          }
+        }, 1500)
+      }
+    }
+    checkExisting()
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (password.length < 6) return alert('La contraseña debe tener al menos 6 caracteres')
+
+    setLoading(true)
     try {
-      await signOut()
-      // Limpiar todo el estado local y recargar para asegurar limpieza
-      localStorage.clear()
-      window.location.href = '/'
-    } catch (err) {
-      console.error('Error during logout:', err)
-      navigate('/', { replace: true })
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) throw error
+      alert('Contraseña actualizada con éxito. Inicie sesión con sus nuevas credenciales.')
+      navigate('/login')
+    } catch (err: any) {
+      alert('Error: ' + err.message)
+    } finally {
+      setLoading(false)
     }
   }
-
-  const handleEditAvatar = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !user) return
-    try {
-      const ext = file.name.split('.').pop()
-      const path = `${user.id}/avatar_${Date.now()}.${ext}`
-
-      const { error: upErr } = await supabase.storage
-        .from('avatars')
-        .upload(path, file, { upsert: true, contentType: file.type })
-
-      if (upErr) throw upErr
-
-      const { data } = supabase.storage.from('avatars').getPublicUrl(path)
-      await updateAvatar(data.publicUrl)
-      alert('Foto de perfil actualizada con éxito')
-    } catch (err) {
-      console.error(err)
-      alert('No se pudo actualizar la foto de perfil. Intente de nuevo.')
-    }
-  }
-
-  const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', padding: '20px' }}>
+      <main style={{ width: '100%', maxWidth: '400px', backgroundColor: 'var(--card-bg)', borderRadius: '32px', padding: '32px', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+        <img src={icono} alt="Logo" style={{ width: '80px', marginBottom: '20px' }} />
+        <h1 style={{ fontFamily: "'EB Garamond', serif", fontSize: '24px', color: 'var(--primary-color)', marginBottom: '10px' }}>Nueva Contraseña</h1>
+        <p style={{ fontSize: '14px', color: 'var(--text-sub)', marginBottom: '30px' }}>{message || 'Ingrese su nueva clave de acceso.'}</p>
 
-      <main style={mainContentStyle}>
-
-        {/* Profile Avatar Large - Now at the top */}
-        <div style={{ position: 'relative', width: '160px', height: '160px', margin: '10px auto 30px' }}>
-          <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '5px solid var(--accent-gold)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(198,160,89,0.3)' }}>
-            <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <button onClick={handleEditAvatar} style={camBtnStyle}>
-            <MdOutlinePhotoCamera size={24} />
+        {!message ? (
+          <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <input
+              type="password"
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', padding: '16px', borderRadius: '16px', border: '1px solid var(--border-color)', outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }}
+            />
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
+              {loading ? 'Actualizando...' : 'ACTUALIZAR CONTRASEÑA'}
+            </button>
+          </form>
+        ) : (
+          <button onClick={() => navigate('/login')} style={{ width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, cursor: 'pointer' }}>
+            VOLVER AL LOGIN
           </button>
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-        </div>
-
-        <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '36px', margin: '0 0 8px 0', color: 'var(--primary-color)', fontWeight: 700 }}>{user?.first_name || 'Usuario'} {user?.last_name || ''}</h2>
-        <p style={{ fontSize: '15px', color: 'var(--text-sub)', marginBottom: '35px', fontWeight: 600, letterSpacing: '1px' }}>{user?.role?.toUpperCase()} • {user?.residential_cluster || 'Residente'}</p>
-
-        {/* Menu Groups */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
-           <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/account')} icon={MdOutlinePerson} label="Configuración de Cuenta" />
-              <MenuItem onClick={() => navigate('/profile/emergency')} icon={MdOutlineEmergency} label="Líneas de Emergencia" />
-              <MenuItem onClick={() => navigate('/profile/privacy')} icon={MdOutlineLock} label="Privacidad y Seguridad" />
-              <MenuItem onClick={() => navigate('/profile/appearance')} icon={MdOutlinePalette} label="Apariencia y Tema" />
-              <MenuItem onClick={() => navigate('/profile/notifications')} icon={MdOutlineNotifications} label="Notificaciones" last />
-           </div>
-
-           <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
-              <MenuItem onClick={() => navigate('/profile/legal')} icon={MdGavel} label="Términos y Condiciones" />
-              <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>
-                       <MdOutlineLogout size={24} />
-                    </div>
-                    <span style={{ fontWeight: 600, color: '#ba1a1a' }}>Cerrar Sesión</span>
-                 </div>
-              </div>
-           </div>
-        </div>
+        )}
       </main>
     </div>
   )
 }
-
-const MenuItem = ({ icon: Icon, label, last, onClick }: any) => (
-  <div onClick={onClick} style={{ ...menuItemStyle, borderBottom: last ? 'none' : '1px solid var(--border-color)' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-      <div style={iconBoxStyle}>
-        <Icon size={24} />
-      </div>
-      <span style={{ fontWeight: 600, fontSize: '15px' }}>{label}</span>
-    </div>
-    <MdOutlineChevronRight size={20} style={{ color: 'var(--text-sub)' }} />
-  </div>
-)
-
-const headerStyle = { width: '100%', maxWidth: '560px', borderRadius: '32px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px 22px', marginTop: '20px', boxShadow: '0 18px 35px rgba(0,0,0,0.08)' }
-const mainContentStyle = { paddingTop: '40px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any, textAlign: 'center' as any }
-const cardStyle = { backgroundColor: 'var(--card-bg)', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }
-const menuItemStyle = { padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }
-const iconBoxStyle = { width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'var(--icon-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
-const camBtnStyle = { position: 'absolute' as any, bottom: '5px', right: '5px', backgroundColor: 'var(--accent-gold)', color: 'white', borderRadius: '50%', width: '48px', height: '48px', border: '4px solid var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 6px 15px rgba(0,0,0,0.15)' }
 </file>
 
 <file path="src/features/res/Reservations.tsx">
@@ -15992,6 +15913,68 @@ const AreaCard = ({ title, desc, img, onReserve }: any) => (
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', marginBottom: '8px', textTransform: 'uppercase' as const, letterSpacing: '1px' }
 const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as const, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
 const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 700, fontSize: '16px', cursor: 'pointer', boxShadow: '0 8px 20px rgba(15,85,81,0.15)' }
+</file>
+
+<file path="src/hooks/usePushNotifications.ts">
+import { useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { supabase } from '../lib/supabase';
+
+export const usePushNotifications = (userId: string | undefined) => {
+  useEffect(() => {
+    // Solo intentar si es un dispositivo nativo y hay usuario
+    if (userId && Capacitor.isNativePlatform()) {
+      initPush();
+    }
+  }, [userId]);
+
+  const initPush = async () => {
+    try {
+      // Importación dinámica para que Vite no se rompa en la web
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+
+      let permStatus = await PushNotifications.checkPermissions();
+
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') return;
+
+      await PushNotifications.register();
+
+      await PushNotifications.addListener('registration', async (token) => {
+        console.log('Push token:', token.value);
+        // Aseguramos que el token se guarde siempre, incluso si ya existe
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            fcm_token: token.value,
+            last_token_update: new Date().toISOString()
+          })
+          .eq('id', userId);
+
+        if (error) console.error('Error guardando token en Supabase:', error);
+      });
+
+      await PushNotifications.addListener('registrationError', (err) => {
+        console.error('Error en registro Push:', err.error);
+      });
+
+      await PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('Push recibida:', notification);
+        // Podríamos disparar una notificación local o actualizar un estado global
+      });
+
+      await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('Push acción realizada:', notification.actionId);
+        // Redirigir según el tipo de notificación
+      });
+    } catch (error) {
+      console.warn('Capacitor Push Notifications no disponibles en este entorno');
+    }
+  };
+};
 </file>
 
 <file path="src/lib/api.ts">
@@ -16336,107 +16319,6 @@ def get_stats(session: Session = Depends(get_session)):
         "total_unidades": session.exec(select(func.count(Unit.id))).one(),
         "total_residentes": session.exec(select(func.count(Resident.id))).one()
     }
-</file>
-
-<file path="src/features/auth/AuthSplash.tsx">
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
-import icono from '../../assets/icono.png'
-
-import { version } from '../../../package.json'
-
-const APP_VERSION = version
-
-export const AuthSplash: React.FC = () => {
-  const navigate = useNavigate()
-
-  return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100%',
-      backgroundColor: 'var(--bg-color)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 'calc(24px + env(safe-area-inset-top)) 24px calc(24px + env(safe-area-inset-bottom))',
-      boxSizing: 'border-box',
-      fontFamily: "'Inter', sans-serif",
-      position: 'relative',
-      overflowY: 'auto'
-    }}>
-      {/* Background elements to fill space gracefully */}
-      <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'rgba(18, 184, 163, 0.05)', zIndex: 0 }}></div>
-      <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '250px', height: '250px', borderRadius: '50%', backgroundColor: 'rgba(120, 89, 25, 0.05)', zIndex: 0 }}></div>
-
-      <main style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: '400px',
-        gap: '20px',
-        textAlign: 'center',
-        zIndex: 1,
-        flex: 1,
-        justifyContent: 'center'
-      }}>
-        <img src={icono} alt="Logo" style={{ width: '140px', height: 'auto', marginBottom: '8px' }} />
-        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'rgba(15,85,81,0.72)', letterSpacing: '0.14em' }}>
-          versión {APP_VERSION}
-        </p>
-
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{
-            fontFamily: "'EB Garamond', serif",
-            color: 'var(--primary-color)',
-            fontSize: '28px',
-            margin: '0 0 12px 0',
-            fontWeight: 700,
-            lineHeight: 1.2
-          }}>Tu condominio en su versión más inteligente.</h1>
-          <div style={{ width: '40px', height: '3px', backgroundColor: 'var(--accent-gold)', margin: '0 auto 16px', borderRadius: '2px' }}></div>
-          <p style={{ color: 'var(--text-sub)', fontSize: '15px', margin: '0 auto', lineHeight: '1.5', fontWeight: 500 }}>
-            La plataforma integral que simplifica la administración, los pagos y la convivencia en cualquier conjunto, residencia o edificio.
-          </p>
-        </div>
-
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-          <button
-            onClick={() => navigate('/login')}
-            style={{
-              padding: '18px',
-              backgroundImage: 'linear-gradient(135deg, #12b8a3 0%, #0f5551 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '16px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              letterSpacing: '0.5px',
-              boxShadow: '0 8px 20px rgba(15,85,81,0.2)'
-            }}
-          >INGRESAR / INICIAR SESIÓN</button>
-
-          <button
-            onClick={() => navigate('/register')}
-            style={{
-              padding: '18px',
-              backgroundColor: 'transparent',
-              color: 'var(--accent-gold)',
-              border: '2px solid var(--accent-gold)',
-              borderRadius: '16px',
-              fontWeight: 700,
-              fontSize: '14px',
-              cursor: 'pointer',
-              letterSpacing: '0.5px'
-            }}
-          >SOLICITAR ACCESO</button>
-        </div>
-      </main>
-    </div>
-  )
-}
 </file>
 
 <file path="src/features/auth/Register.tsx">
@@ -16883,58 +16765,975 @@ export const useUpdateCheck = () => {
 };
 </file>
 
-<file path="supabase/functions/send-push/index.ts">
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+<file path="src/App.tsx">
+// Creado por Jesús Pirela.
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { Layout } from './layouts/Main'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { AuthSplash } from './features/auth/AuthSplash'
+import { Login } from './features/auth/Login'
+import { Register } from './features/auth/Register'
+import { ResetPassword } from './features/auth/ResetPassword'
+import { MfaChallenge } from './features/auth/MfaChallenge'
 
-serve(async (req) => {
-  // 1. Verificación de Secreto (Seguridad de invocación)
-  const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
-  if (req.headers.get('x-webhook-secret') !== webhookSecret) {
-    return new Response('Unauthorized', { status: 401 })
+const ResDash = lazy(() => import('./features/dash/ResDash').then(m => ({ default: m.ResDash })))
+const Profile = lazy(() => import('./features/prof/Profile').then(m => ({ default: m.Profile })))
+const Account = lazy(() => import('./features/prof/Account').then(m => ({ default: m.Account })))
+const Appearance = lazy(() => import('./features/prof/Appearance').then(m => ({ default: m.Appearance })))
+const Privacy = lazy(() => import('./features/prof/Privacy').then(m => ({ default: m.Privacy })))
+const Notifications = lazy(() => import('./features/prof/Notifications').then(m => ({ default: m.Notifications })))
+const InviteFriend = lazy(() => import('./features/prof/InviteFriend').then(m => ({ default: m.InviteFriend })))
+const Support = lazy(() => import('./features/prof/Support').then(m => ({ default: m.Support })))
+const HelpCenter = lazy(() => import('./features/prof/HelpCenter').then(m => ({ default: m.HelpCenter })))
+const LegalDocument = lazy(() => import('./features/prof/LegalDocument').then(m => ({ default: m.LegalDocument })))
+const EmergencyLines = lazy(() => import('./features/prof/EmergencyLines').then(m => ({ default: m.EmergencyLines })))
+const Admin = lazy(() => import('./features/admin/Admin').then(m => ({ default: m.Admin })))
+const IncidentsAdmin = lazy(() => import('./features/admin/IncidentsAdmin').then(m => ({ default: m.IncidentsAdmin })))
+const Payroll = lazy(() => import('./features/admin/Payroll').then(m => ({ default: m.Payroll })))
+const GuardPortal = lazy(() => import('./features/guard/GuardPortal').then(m => ({ default: m.GuardPortal })))
+const Payments = lazy(() => import('./features/res/Payments').then(m => ({ default: m.Payments })))
+const Requests = lazy(() => import('./features/res/Requests').then(m => ({ default: m.Requests })))
+const Guests = lazy(() => import('./features/res/Guests').then(m => ({ default: m.Guests })))
+const Reservations = lazy(() => import('./features/res/Reservations').then(m => ({ default: m.Reservations })))
+const Incidents = lazy(() => import('./features/res/Incidents').then(m => ({ default: m.Incidents })))
+const PackageLocker = lazy(() => import('./features/res/PackageLocker').then(m => ({ default: m.PackageLocker })))
+import { useAuthStore, UserRole } from './store/useAuthStore'
+import { usePushNotifications } from './hooks/usePushNotifications'
+import { useCurrencyStore } from './store/useCurrencyStore'
+import { useThemeStore } from './store/useThemeStore'
+import { ScrollToTop } from './components/ScrollToTop'
+import { useUpdateCheck } from './hooks/useUpdateCheck'
+import { UpdateModal } from './components/UpdateModal'
+import { App as CapApp } from '@capacitor/app'
+import { SplashScreen } from '@capacitor/splash-screen'
+import { isBiometricEnabled, verifyBiometric } from './lib/biometrics'
+
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
+  const user = useAuthStore(state => state.user)
+
+  if (!user) return <Navigate to="/login" />
+  if (!allowedRoles.includes(user.role)) {
+    if (user.role === 'admin' || user.role === 'superadmin') return <Navigate to="/admin" />
+    if (user.role === 'guard') return <Navigate to="/guard" />
+    return <Navigate to="/dashboard" />
   }
 
-  try {
-    const { record } = await req.json()
+  return <>{children}</>
+}
 
-    // 2. Cliente administrativo
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+function App() {
+  const user = useAuthStore(state => state.user)
+  const authReady = useAuthStore(state => state.authReady)
+  const mfaRequired = useAuthStore(state => state.mfaRequired)
+  const setMfaRequired = useAuthStore(state => state.setMfaRequired)
+  const initializeAuth = useAuthStore(state => state.initialize)
+  const syncAuth = useAuthStore(state => state.sync)
+  const fetchRate = useCurrencyStore(state => state.fetchRate)
+  const isDarkMode = useThemeStore(state => state.isDarkMode)
 
-    const payload = {
-      to: record.token,
-      title: record.title,
-      body: record.body,
-      data: record.data,
-      sound: "default",
-      priority: "high",
+  const [isLocked, setIsLocked] = useState(false)
+
+  // Inicializar Notificaciones Push
+  usePushNotifications(user?.id)
+
+  const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
+  const [showUpdateModal, setShowUpdateModal] = useState(false)
+
+  useEffect(() => {
+    const checkLock = async () => {
+      if (user) {
+        const enabled = await isBiometricEnabled()
+        if (enabled) {
+          setIsLocked(true)
+          const success = await verifyBiometric()
+          if (success) setIsLocked(false)
+        }
+      }
+    }
+    checkLock()
+  }, [user])
+
+  useEffect(() => {
+    // Manejar eventos de la app
+    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+      const path = window.location.pathname;
+      if (path === '/dashboard' || path === '/admin' || path === '/guard' || path === '/login' || path === '/') {
+        CapApp.exitApp();
+      } else if (!canGoBack) {
+        CapApp.exitApp();
+      } else {
+        window.history.back();
+      }
+    });
+
+    const appStateListener = CapApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        // Re-sincronizar sesión al volver a la app
+        syncAuth().catch(() => {});
+      }
+    });
+
+    return () => {
+      backButtonListener.then(l => l.remove());
+      appStateListener.then(l => l.remove());
+    };
+  }, [syncAuth]);
+
+  useEffect(() => {
+    if (isUpdateAvailable) {
+      setShowUpdateModal(true)
+    }
+  }, [isUpdateAvailable])
+
+  useEffect(() => {
+    return initializeAuth()
+  }, [initializeAuth])
+
+  useEffect(() => {
+    const hideSplash = async () => {
+      try {
+        await SplashScreen.hide()
+      } catch (e) {
+        // Ignorar si falla
+      }
     }
 
-    // 3. Envío real a Expo (Servicio gratuito y universal)
-    const res = await fetch("https://exp.host/--/api/v2/push/send", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload),
+    if (authReady) {
+      hideSplash()
+    } else {
+      const timer = setTimeout(hideSplash, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [authReady])
+
+  useEffect(() => {
+    fetchRate()
+  }, [fetchRate])
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+      document.body.classList.add('dark-mode')
+    } else {
+      document.documentElement.classList.remove('dark')
+      document.body.classList.remove('dark-mode')
+    }
+  }, [isDarkMode])
+
+  return (
+    <ErrorBoundary>
+      <Router>
+        <ScrollToTop />
+        {updateInfo && (
+          <UpdateModal
+            isOpen={showUpdateModal}
+            versionName={updateInfo.versionName}
+            onUpdate={performUpdate}
+            onClose={() => setShowUpdateModal(false)}
+          />
+        )}
+        <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
+          {isLocked ? (
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', padding: '20px', textAlign: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '64px', color: 'var(--primary-color)', marginBottom: '20px' }}>lock</span>
+                <h2 style={{ fontFamily: "'Cinzel', serif", marginBottom: '10px' }}>App Bloqueada</h2>
+                <p style={{ color: 'var(--text-sub)', marginBottom: '30px' }}>Usa tu huella o Face ID para continuar</p>
+                <button
+                    onClick={async () => {
+                        const success = await verifyBiometric()
+                        if (success) setIsLocked(false)
+                    }}
+                    style={{ padding: '15px 30px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                    Desbloquear
+                </button>
+            </div>
+          ) : mfaRequired ? (
+            <MfaChallenge onVerified={() => setMfaRequired(false)} />
+          ) : !authReady && !user ? (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <p>Iniciando sesión...</p>
+            </div>
+          ) : (
+            <Routes>
+              <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
+              <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
+              <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
+              <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />
+                <Route path="/payments" element={<ProtectedRoute allowedRoles={["resident"]}><Payments /></ProtectedRoute>} />
+                <Route path="/requests" element={<ProtectedRoute allowedRoles={["resident"]}><Requests /></ProtectedRoute>} />
+                <Route path="/guests" element={<ProtectedRoute allowedRoles={["resident"]}><Guests /></ProtectedRoute>} />
+                <Route path="/reservations" element={<ProtectedRoute allowedRoles={["resident"]}><Reservations /></ProtectedRoute>} />
+                <Route path="/incidents" element={<ProtectedRoute allowedRoles={["resident"]}><Incidents /></ProtectedRoute>} />
+                <Route path="/packages" element={<ProtectedRoute allowedRoles={["resident"]}><PackageLocker /></ProtectedRoute>} />
+
+                <Route path="/profile" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Profile /></ProtectedRoute>} />
+                <Route path="/profile/account" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Account /></ProtectedRoute>} />
+                <Route path="/profile/privacy" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Privacy /></ProtectedRoute>} />
+                <Route path="/profile/appearance" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Appearance /></ProtectedRoute>} />
+                <Route path="/profile/notifications" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Notifications /></ProtectedRoute>} />
+                <Route path="/profile/invite" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><InviteFriend /></ProtectedRoute>} />
+                <Route path="/profile/support" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Support /></ProtectedRoute>} />
+                <Route path="/profile/help" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><HelpCenter /></ProtectedRoute>} />
+                <Route path="/profile/legal" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalDocument /></ProtectedRoute>} />
+                <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
+
+                <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Admin /></ProtectedRoute>} />
+                <Route path="/admin/incidents" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><IncidentsAdmin /></ProtectedRoute>} />
+                <Route path="/admin/payroll" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Payroll /></ProtectedRoute>} />
+
+                <Route path="/guard" element={<ProtectedRoute allowedRoles={["guard"]}><GuardPortal /></ProtectedRoute>} />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          )}
+        </Suspense>
+      </Router>
+    </ErrorBoundary>
+  )
+}
+
+const RoleRedirect = ({ role }: { role: string }) => {
+  if (role === 'admin' || role === 'superadmin') return <Navigate to="/admin" />
+  if (role === 'guard') return <Navigate to="/guard" />
+  return <Navigate to="/dashboard" />
+}
+
+export default App
+</file>
+
+<file path="src/features/prof/Profile.tsx">
+import React, { useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  MdOutlinePhotoCamera,
+  MdOutlinePerson,
+  MdOutlineLock,
+  MdOutlinePalette,
+  MdOutlineNotifications,
+  MdOutlineHelpOutline,
+  MdGavel,
+  MdOutlineLogout,
+  MdOutlineChevronRight,
+  MdOutlineEmergency
+} from 'react-icons/md'
+import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
+
+export const Profile: React.FC = () => {
+  const navigate = useNavigate()
+  const { user, signOut, updateAvatar } = useAuthStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleLogout = async () => {
+    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return
+    try {
+      await signOut()
+      // Redirección forzada al inicio para limpiar cualquier estado residual de React
+      window.location.replace('/')
+    } catch (err) {
+      console.error('Error during logout:', err)
+      window.location.href = '/'
+    }
+  }
+
+  const handleEditAvatar = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/avatar_${Date.now()}.${ext}`
+
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+
+      if (upErr) throw upErr
+
+      // Limpiar avatares anteriores del usuario (deja solo el nuevo)
+      const { data: existing } = await supabase.storage.from('avatars').list(user.id)
+      if (existing) {
+        const toDelete = existing
+          .filter(f => `${user.id}/${f.name}` !== path)
+          .map(f => `${user.id}/${f.name}`)
+        if (toDelete.length > 0) {
+          await supabase.storage.from('avatars').remove(toDelete)
+        }
+      }
+
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(path)
+      await updateAvatar(publicData.publicUrl)
+      alert('Foto de perfil actualizada con éxito')
+    } catch (err) {
+      console.error(err)
+      alert('No se pudo actualizar la foto de perfil. Intente de nuevo.')
+    }
+  }
+
+  const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
+
+  return (
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', minHeight: '100vh' }}>
+
+      <main style={mainContentStyle}>
+
+        {/* Profile Avatar Large - Now at the top */}
+        <div style={{ position: 'relative', width: '160px', height: '160px', margin: '10px auto 30px' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '5px solid var(--accent-gold)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(198,160,89,0.3)' }}>
+            <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <button onClick={handleEditAvatar} style={camBtnStyle}>
+            <MdOutlinePhotoCamera size={24} />
+          </button>
+          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
+        </div>
+
+        <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '36px', margin: '0 0 8px 0', color: 'var(--primary-color)', fontWeight: 700 }}>{user?.first_name || 'Usuario'} {user?.last_name || ''}</h2>
+        <p style={{ fontSize: '15px', color: 'var(--text-sub)', marginBottom: '35px', fontWeight: 600, letterSpacing: '1px' }}>{user?.role?.toUpperCase()} • {user?.residential_cluster || 'Residente'}</p>
+
+        {/* Menu Groups */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', textAlign: 'left' }}>
+           <div style={cardStyle}>
+              <MenuItem onClick={() => navigate('/profile/account')} icon={MdOutlinePerson} label="Configuración de Cuenta" />
+              <MenuItem onClick={() => navigate('/profile/emergency')} icon={MdOutlineEmergency} label="Líneas de Emergencia" />
+              <MenuItem onClick={() => navigate('/profile/privacy')} icon={MdOutlineLock} label="Privacidad y Seguridad" />
+              <MenuItem onClick={() => navigate('/profile/appearance')} icon={MdOutlinePalette} label="Apariencia y Tema" />
+              <MenuItem onClick={() => navigate('/profile/notifications')} icon={MdOutlineNotifications} label="Notificaciones" last />
+           </div>
+
+           <div style={cardStyle}>
+              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
+              <MenuItem onClick={() => navigate('/profile/legal')} icon={MdGavel} label="Términos y Condiciones" />
+              <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>
+                       <MdOutlineLogout size={24} />
+                    </div>
+                    <span style={{ fontWeight: 600, color: '#ba1a1a' }}>Cerrar Sesión</span>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+const MenuItem = ({ icon: Icon, label, last, onClick }: any) => (
+  <div onClick={onClick} style={{ ...menuItemStyle, borderBottom: last ? 'none' : '1px solid var(--border-color)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+      <div style={iconBoxStyle}>
+        <Icon size={24} />
+      </div>
+      <span style={{ fontWeight: 600, fontSize: '15px' }}>{label}</span>
+    </div>
+    <MdOutlineChevronRight size={20} style={{ color: 'var(--text-sub)' }} />
+  </div>
+)
+
+const headerStyle = { width: '100%', maxWidth: '560px', borderRadius: '32px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '18px 22px', marginTop: '20px', boxShadow: '0 18px 35px rgba(0,0,0,0.08)' }
+const mainContentStyle = { paddingTop: '40px', paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '500px', margin: '0 auto', boxSizing: 'border-box' as any, textAlign: 'center' as any }
+const cardStyle = { backgroundColor: 'var(--card-bg)', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }
+const menuItemStyle = { padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }
+const iconBoxStyle = { width: '44px', height: '44px', borderRadius: '14px', backgroundColor: 'var(--icon-bg)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+const camBtnStyle = { position: 'absolute' as any, bottom: '5px', right: '5px', backgroundColor: 'var(--accent-gold)', color: 'white', borderRadius: '50%', width: '48px', height: '48px', border: '4px solid var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 6px 15px rgba(0,0,0,0.15)' }
+</file>
+
+<file path="src/features/res/Payments.tsx">
+import React, { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  MdArrowBack,
+  MdOutlineSmartphone,
+  MdOutlinePayments,
+  MdOutlineAccountBalance,
+  MdOutlineSync,
+  MdOutlineCheckCircle,
+  MdOutlineCloudUpload,
+  MdOutlineChevronRight
+} from 'react-icons/md'
+import { formatBs, formatUSD } from '../../utils/currency'
+import { useCurrencyStore } from '../../store/useCurrencyStore'
+import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../lib/supabase'
+import { sanitizeString } from '../../utils/security'
+import { Network } from '@capacitor/network'
+import { enqueueAction } from '../../lib/offlineQueue'
+import { clusterService, ClusterInfo } from '../../services/clusterService'
+import { paymentService } from '../../services/paymentService'
+
+const THEME = {
+  colors: {
+    primary: '#0f5551',
+    accentGold: '#785919',
+    bg: '#F4F7F6',
+    white: '#ffffff',
+    text: '#1b1c1a',
+    textSub: '#5f6b69',
+    border: '#E2E8E7',
+    success: '#27ae60',
+  },
+  shadow: '0px 10px 30px rgba(0,0,0,0.05)',
+  radius: '24px'
+}
+
+export const Payments: React.FC = () => {
+  const navigate = useNavigate()
+  const { user } = useAuthStore()
+  const bcvRate = useCurrencyStore(state => state.bcvRate)
+  type DebtItem = {
+    id: string
+    monto_pendiente: number
+    concepto?: string
+    fecha_vencimiento?: string
+    tipo?: string
+    descripcion?: string
+  }
+
+  const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
+  const [fileAttached, setFileAttached] = useState<File | null>(null)
+  const [senderName, setSenderName] = useState('')
+  const [reference, setReference] = useState('')
+  const [originBank, setOriginBank] = useState('')
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
+  const [description, setDescription] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+  const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
+  const [debtItems, setDebtItems] = useState<DebtItem[]>([])
+  const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
+  const [loadingDebts, setLoadingDebts] = useState(true)
+  const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const selectedDebtTotal = debtItems.length > 0
+    ? selectedDebtIds.length > 0
+      ? debtItems.filter(debt => selectedDebtIds.includes(debt.id)).reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
+      : 0
+    : totalDebt
+
+  const allDebtSelected = debtItems.length > 0 && selectedDebtIds.length === debtItems.length
+
+  useEffect(() => {
+    if (user?.id) {
+      setSessionUserId(user.id)
+      fetchDebts()
+    }
+
+    if (user?.residential_cluster) {
+      clusterService.getInfo(user.residential_cluster).then(setClusterInfo)
+    }
+
+    // sync session user id to avoid RLS mismatches
+    const sync = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const id = data?.session?.user?.id ?? user?.id ?? null
+        setSessionUserId(id)
+      } catch (err) {
+        console.error('Error obteniendo sesión Supabase:', err)
+        setSessionUserId(user?.id ?? null)
+      }
+    }
+
+    sync()
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const id = session?.user?.id ?? user?.id ?? null
+      setSessionUserId(id)
     })
 
-    const result = await res.json()
-    const expoError = result?.data?.status === 'error' ? result.data.message : null
+    return () => {
+      try { sub?.subscription?.unsubscribe?.() } catch (e) {}
+    }
+  }, [user?.id, user?.residential_cluster])
 
-    // 4. Actualización del historial (Éxito o error de Expo)
-    await supabaseAdmin.from('push_notifications').update({
-      status: expoError ? 'error' : 'sent',
-      error_message: expoError,
-      sent_at: new Date().toISOString()
-    }).eq('id', record.id)
+  const fetchDebts = async () => {
+    try {
+      // 1. Intentar obtener deudas específicas
+      const { data: debtData, error } = await supabase
+        .from('debts')
+        .select('*')
+        .eq('residente_id', user?.id)
+        .eq('pagada', false)
 
-    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } })
+      if (error) throw error
 
-  } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
+      // 2. Obtener configuración global (cuota mensual)
+      const { data: settings } = await supabase
+        .from('condo_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle()
+
+      if (debtData && debtData.length > 0) {
+        const total = debtData.reduce((acc: number, d: any) => acc + Number(d.monto_pendiente), 0)
+        setDebtItems(debtData)
+        setSelectedDebtIds(debtData.map((debt: any) => debt.id))
+        setTotalDebt(total || 20)
+      } else if (settings) {
+        const today = new Date()
+        const currentDay = today.getDate()
+        const isProntoPago = currentDay <= settings.dias_pronto_pago
+        const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
+        setTotalDebt(Number(montoACobrar) || 20)
+      } else {
+        setTotalDebt(20) // Forzar los 20 si no hay nada en DB
+      }
+    } catch (err) {
+      console.error("Error al cargar deudas:", err)
+      setTotalDebt(20) // Fallback de seguridad
+    } finally {
+      setLoadingDebts(false)
+    }
   }
-})
+
+  const handleAttachCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.type === 'application/pdf') {
+      setFileAttached(file)
+      alert(`Archivo PDF "${file.name}" cargado.`)
+      return
+    }
+
+    // Compresión para imágenes
+    setCompressing(true)
+    try {
+      const compressed = await compressImage(file)
+      setFileAttached(compressed)
+      alert(`Imagen optimizada y cargada con éxito.`)
+    } catch (err) {
+      console.error('Error al comprimir:', err)
+      setFileAttached(file) // Fallback al original
+    } finally {
+      setCompressing(false)
+    }
+  }
+
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_WIDTH = 1200
+          const MAX_HEIGHT = 1200
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width
+              width = MAX_WIDTH
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height
+              height = MAX_HEIGHT
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              })
+              resolve(compressedFile)
+            } else {
+              reject(new Error('Canvas blob is null'))
+            }
+          }, 'image/jpeg', 0.7) // 70% calidad
+        }
+      }
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
+  const handleRegisterPayment = async () => {
+    if ((selectedMethod !== 'main') && !fileAttached) {
+      alert("Por favor adjunte el capture del comprobante para continuar.")
+      return
+    }
+
+    setLoading(true)
+    try {
+      let screenshotUrl = ''
+
+      if (fileAttached) {
+        const fileExt = fileAttached.name.split('.').pop()
+        const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`
+        const filePath = `payments/${fileName}`
+
+        console.log('Iniciando subida de comprobante...')
+        const { error: uploadError } = await supabase.storage
+          .from('payment-captures')
+          .upload(filePath, fileAttached)
+
+        if (uploadError) {
+          console.error('Error subiendo comprobante:', uploadError)
+          throw new Error('No se pudo subir la imagen del comprobante. Verifique su conexión.')
+        }
+        console.log('Comprobante subido con éxito.')
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('payment-captures')
+          .getPublicUrl(filePath)
+
+        screenshotUrl = publicUrl
+      }
+
+      const cleanReference = sanitizeString(reference)
+      const cleanBank = sanitizeString(originBank)
+      const selectedDescription = selectedDebtIds.length > 0
+        ? `Cuotas seleccionadas: ${selectedDebtIds.join(', ')}`
+        : ''
+      const cleanDescription = sanitizeString(`${description} ${selectedDescription}`.trim())
+      const cleanSender = sanitizeString(senderName)
+      const amountUSD = selectedDebtIds.length > 0 ? selectedDebtTotal : totalDebt
+      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
+
+      const payload = {
+        monto_bs: amountUSD * bcvRate,
+        monto_usd: amountUSD,
+        referencia: cleanReference,
+        banco_origen: cleanBank,
+        evidencia_url: screenshotUrl,
+        description: cleanDescription,
+        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
+        idempotency_key: idempotencyKey
+      }
+
+      const netStatus = await Network.getStatus();
+      if (!netStatus.connected) {
+          await enqueueAction({
+              tipo: 'payment',
+              payload,
+              idempotencyKey
+          });
+          alert("¡Pago guardado offline! Se enviará automáticamente cuando recuperes la conexión.");
+          navigate('/dashboard');
+          return;
+      }
+
+      await paymentService.registerPayment(payload)
+
+      alert("¡Pago registrado con éxito! Su comprobante será validado por la administración en breve.")
+      navigate('/dashboard')
+    } catch (err: any) {
+      alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (selectedMethod !== 'main') {
+    const isPM = selectedMethod === 'pagomovil'
+    const isZelle = selectedMethod === 'zelle'
+
+    return (
+      <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
+        <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
+          <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
+          <div style={cardStyle}>
+            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(198,160,89,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
+                {isPM ? <MdOutlineSmartphone size={32} color="var(--accent-gold)" /> : isZelle ? <MdOutlinePayments size={32} color="var(--accent-gold)" /> : <MdOutlineAccountBalance size={32} color="var(--accent-gold)" />}
+              </div>
+              <h2 style={{ fontSize: '20px', color: 'var(--primary-color)', margin: 0, fontWeight: 700 }}>Datos del Pago</h2>
+            </div>
+
+            <div style={infoGridStyle}>
+              {isZelle ? (
+                <>
+                  <InfoRow label="EMAIL ZELLE" value={clusterInfo?.zelle_email || "CONDOMINIOLASHUERTAS@GMAIL.COM"} />
+                  <InfoRow label="CONCEPTO" value={`Pago casa ${user?.house_number || 'N/A'}`} />
+                  <div style={{ marginTop: '10px' }}>
+                    <label style={labelStyle}>NOMBRE DEL TITULAR (QUIEN ENVÍA)</label>
+                    <input
+                      type="text"
+                      placeholder="Nombre y Apellido"
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      style={inputStyle}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <InfoRow label="BANCO RECEPTOR" value={clusterInfo?.bank_name || "Banco Nacional de Crédito (0191)"} />
+                  <InfoRow label="RIF" value={clusterInfo?.rif || "J-299007323"} />
+                  {!isPM && <InfoRow label="CUENTA" value={clusterInfo?.bank_account || "0191-0000-00-0000000000"} />}
+                  <InfoRow label="NOMBRE" value={clusterInfo?.cluster_name ? `Adm. Conj. ${clusterInfo.cluster_name}` : "Adm. Conj. Las Huertas"} />
+
+                  <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                    <label style={labelStyle}>DATOS DE TU PAGO</label>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>BANCO DE ORIGEN</label>
+                      <input
+                        type="text"
+                        placeholder="Ej: Banesco, Mercantil..."
+                        value={originBank}
+                        onChange={(e) => setOriginBank(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        placeholder="000000"
+                        maxLength={6}
+                        value={reference}
+                        onChange={(e) => setReference(e.target.value.replace(/[^0-9]/g, ''))}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>FECHA DEL PAGO</label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '15px' }}>
+                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
+                      <textarea
+                        placeholder="Ej: Pago de condominio Octubre y cuota extra de bomba"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        style={{ ...inputStyle, height: '80px', resize: 'none' }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div style={{ ...infoRowStyle, border: 'none', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>MONTO A ENVIAR</span>
+                  {!isZelle && (
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
+                      (Tasa BCV: {bcvRate.toFixed(2)} Bs/$)
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(selectedDebtTotal)}</span>
+                  {!isZelle && (
+                    <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-color)' }}>
+                      {formatBs(selectedDebtTotal, bcvRate)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '30px' }}>
+              <label style={labelStyle}>ADJUNTAR COMPROBANTE</label>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={compressing}
+                style={{
+                  width: '100%', padding: '15px', border: '2px dashed var(--border-color)', borderRadius: '12px',
+                  backgroundColor: fileAttached ? 'rgba(198,160,89,0.15)' : 'var(--icon-bg)', color: 'var(--text-color)',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  opacity: compressing ? 0.6 : 1
+                }}
+              >
+                {compressing ? <MdOutlineSync className="animate-spin" size={24} /> : fileAttached ? <MdOutlineCheckCircle size={24} /> : <MdOutlineCloudUpload size={24} />}
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>
+                  {compressing ? 'Optimizando imagen...' : fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}
+                </span>
+              </button>
+              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
+            </div>
+
+                    <button
+                onClick={handleRegisterPayment}
+                disabled={loading || (debtItems.length > 0 && selectedDebtIds.length === 0)}
+                style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: (loading || (debtItems.length > 0 && selectedDebtIds.length === 0)) ? 0.7 : 1 }}
+              >
+              {loading ? 'Procesando...' : debtItems.length > 0 && selectedDebtIds.length === 0 ? 'Seleccione al menos una cuota' : 'Registrar Pago'}
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ ...containerStyle, minHeight: 'auto' }}>
+      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '520px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
+        <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '24px' }}>Pagos de Condominio</h1>
+
+        {loadingDebts ? (
+          <div style={{ padding: '24px', borderRadius: '24px', backgroundColor: 'var(--card-bg)', boxShadow: THEME.shadow, marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>Cargando deudas pendientes...</p>
+          </div>
+        ) : debtItems.length > 0 ? (
+          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: 'var(--text-sub)', letterSpacing: '1px' }}>DEUDAS PENDIENTES</p>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{debtItems.length} cuota{debtItems.length === 1 ? '' : 's'} encontradas</h2>
+              </div>
+              <button onClick={() => setSelectedDebtIds(allDebtSelected ? [] : debtItems.map(d => d.id))} style={{ padding: '12px 16px', borderRadius: '14px', border: `1px solid ${allDebtSelected ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: allDebtSelected ? 'var(--primary-color)' : 'var(--card-bg)', color: allDebtSelected ? 'white' : 'var(--text-sub)', cursor: 'pointer', fontWeight: 700 }}>
+                {allDebtSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
+              </button>
+            </div>
+            <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', boxShadow: THEME.shadow, overflow: 'hidden' }}>
+              {debtItems.map((debt) => {
+                const isSelected = selectedDebtIds.includes(debt.id)
+                const subtitle = debt.tipo || debt.concepto || 'Cuota pendiente'
+                const dueDate = debt.fecha_vencimiento ? new Date(debt.fecha_vencimiento).toLocaleDateString('es-VE') : null
+
+                return (
+                  <button
+                    key={debt.id}
+                    onClick={() => {
+                      setSelectedDebtIds(prev => prev.includes(debt.id) ? prev.filter(id => id !== debt.id) : [...prev, debt.id])
+                    }}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '18px 20px',
+                      borderBottom: '1px solid var(--border-color)',
+                      backgroundColor: isSelected ? 'rgba(15,85,81,0.08)' : 'var(--card-bg)',
+                      cursor: 'pointer',
+                      color: 'var(--text-color)',
+                      textAlign: 'left',
+                      border: 'none'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? '2px solid var(--primary-color)' : '2px solid var(--border-color)', backgroundColor: isSelected ? 'var(--primary-color)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 800 }}>✓</span>}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: 700 }}>{subtitle}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{dueDate ? `Vence ${dueDate}` : 'Sin fecha'}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(Number(debt.monto_pendiente))}</span>
+                      <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{formatBs(Number(debt.monto_pendiente), bcvRate)}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', padding: '24px', boxShadow: THEME.shadow, marginBottom: '24px' }}>
+            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>No se encontraron deudas específicas.</p>
+            <p style={{ margin: '10px 0 0 0', color: 'var(--text-sub)' }}>Se mostrará el monto pendiente estándar para pago.</p>
+          </div>
+        )}
+
+        <div style={{ backgroundColor: 'var(--primary-color)', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}>
+           <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO SELECCIONADO</p>
+           <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(selectedDebtTotal)}</h2>
+           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: 'var(--accent-gold)' }}>Equivalente a: {formatBs(selectedDebtTotal, bcvRate)}</p>
+           <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
+           <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {bcvRate.toFixed(2)} Bs/$</p>
+        </div>
+
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}>
+           <PaymentOption
+              icon={MdOutlineSync}
+              label="Domiciliación Digital (Venflow)"
+              sublabel="Cobra y concilia automáticamente"
+              highlight
+           />
+           <PaymentOption
+              icon={MdOutlineSmartphone}
+              label="Pago Móvil"
+              sublabel="Validación manual en 24h"
+              onClick={() => setSelectedStep('pagomovil')}
+           />
+           <PaymentOption
+              icon={MdOutlineAccountBalance}
+              label="Transferencia Bancaria"
+              sublabel="Datos BNC y adjuntar capture"
+              onClick={() => setSelectedStep('transferencia')}
+           />
+           <PaymentOption
+              icon={MdOutlinePayments}
+              label="Zelle"
+              sublabel="CONDOMINIOLAS HUERTAS@GMAIL.COM"
+              onClick={() => setSelectedStep('zelle')}
+           />
+        </div>
+      </main>
+    </div>
+  )
+}
+
+const InfoRow = ({ label, value }: any) => (
+  <div style={infoRowStyle}>
+      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>{label}</span>
+      <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)' }}>{value}</span>
+  </div>
+)
+
+const PaymentOption = ({ icon: Icon, label, sublabel, highlight, onClick }: any) => (
+  <div onClick={onClick} style={{ backgroundColor: highlight ? 'rgba(198,160,89,0.12)' : 'var(--card-bg)', border: highlight ? '2px solid var(--accent-gold)' : '1px solid var(--border-color)', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', boxSizing: 'border-box' }}>
+     <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: highlight ? 'var(--accent-gold)' : 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: highlight ? 'white' : 'var(--primary-color)', flexShrink: 0 }}>
+        <Icon size={24} />
+     </div>
+     <div style={{ flex: 1 }}>
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', display: 'block' }}>{label}</span>
+        {sublabel && <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>{sublabel}</span>}
+     </div>
+     <MdOutlineChevronRight size={24} style={{ color: highlight ? 'var(--accent-gold)' : 'var(--border-color)' }} />
+  </div>
+)
+
+const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
+const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
+const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: 'var(--primary-color)' }
+const titleStyle = { fontSize: '18px', color: 'var(--primary-color)', fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
+const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px' }
+const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '30px', boxShadow: THEME.shadow }
+const infoGridStyle = { display: 'flex', flexDirection: 'column' as any, gap: '15px' }
+const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }
+const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 900, color: 'var(--text-sub)', marginBottom: '12px', letterSpacing: '1px' }
+const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as any, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
+const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }
 </file>
 
 <file path="src/layouts/Main.tsx">
@@ -17186,6 +17985,96 @@ const NavIcon = ({ icon: Icon, active, onClick, badge }: any) => (
 )
 </file>
 
+<file path="supabase/functions/send-push/index.ts">
+// supabase/functions/send-push/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { GoogleAuth } from "https://esm.sh/google-auth-library@9"
+
+serve(async (req) => {
+  // 1. Verificación de Secreto (Seguridad de invocación)
+  const webhookSecret = Deno.env.get('WEBHOOK_SECRET')
+  if (req.headers.get('x-webhook-secret') !== webhookSecret) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  try {
+    const { record } = await req.json()
+
+    // 2. Cliente administrativo para actualizar el estado
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+
+    // 3. Autenticación con Google FCM v1
+    const saJson = JSON.parse(Deno.env.get('FCM_SERVICE_ACCOUNT_JSON')!)
+    const auth = new GoogleAuth({
+      credentials: saJson,
+      scopes: ['https://www.googleapis.com/auth/firebase.messaging'],
+    })
+    const client = await auth.getClient()
+    const accessToken = (await client.getAccessToken()).token
+
+    // 4. Envío real a FCM v1
+    const fcmRes = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${Deno.env.get('FCM_PROJECT_ID')}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            token: record.token,
+            notification: {
+              title: record.title,
+              body: record.body
+            },
+            data: record.data ? Object.fromEntries(
+              Object.entries(record.data).map(([k, v]) => [k, String(v)])
+            ) : undefined,
+            android: {
+              priority: "high",
+              notification: {
+                sound: "default",
+                channel_id: "default"
+              }
+            },
+            apns: {
+              headers: {
+                "apns-priority": "10"
+              },
+              payload: {
+                aps: {
+                  sound: "default"
+                }
+              }
+            },
+          },
+        }),
+      }
+    )
+
+    const result = await fcmRes.json()
+    const fcmError = !fcmRes.ok ? (result?.error?.message ?? 'FCM error') : null
+
+    // 5. Actualización del historial
+    await supabaseAdmin.from('push_notifications').update({
+      status: fcmError ? 'error' : 'sent',
+      error_message: fcmError,
+      sent_at: new Date().toISOString()
+    }).eq('id', record.id)
+
+    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } })
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), { status: 500 })
+  }
+})
+</file>
+
 <file path="android/build.gradle">
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
@@ -17223,249 +18112,6 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-</file>
-
-<file path="src/App.tsx">
-// Creado por Jesús Pirela.
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense, useEffect, useState } from 'react'
-import { Layout } from './layouts/Main'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { AuthSplash } from './features/auth/AuthSplash'
-import { Login } from './features/auth/Login'
-import { Register } from './features/auth/Register'
-import { ResetPassword } from './features/auth/ResetPassword'
-import { MfaChallenge } from './features/auth/MfaChallenge'
-
-const ResDash = lazy(() => import('./features/dash/ResDash').then(m => ({ default: m.ResDash })))
-const Profile = lazy(() => import('./features/prof/Profile').then(m => ({ default: m.Profile })))
-const Account = lazy(() => import('./features/prof/Account').then(m => ({ default: m.Account })))
-const Appearance = lazy(() => import('./features/prof/Appearance').then(m => ({ default: m.Appearance })))
-const Privacy = lazy(() => import('./features/prof/Privacy').then(m => ({ default: m.Privacy })))
-const Notifications = lazy(() => import('./features/prof/Notifications').then(m => ({ default: m.Notifications })))
-const InviteFriend = lazy(() => import('./features/prof/InviteFriend').then(m => ({ default: m.InviteFriend })))
-const Support = lazy(() => import('./features/prof/Support').then(m => ({ default: m.Support })))
-const HelpCenter = lazy(() => import('./features/prof/HelpCenter').then(m => ({ default: m.HelpCenter })))
-const LegalDocument = lazy(() => import('./features/prof/LegalDocument').then(m => ({ default: m.LegalDocument })))
-const EmergencyLines = lazy(() => import('./features/prof/EmergencyLines').then(m => ({ default: m.EmergencyLines })))
-const Admin = lazy(() => import('./features/admin/Admin').then(m => ({ default: m.Admin })))
-const IncidentsAdmin = lazy(() => import('./features/admin/IncidentsAdmin').then(m => ({ default: m.IncidentsAdmin })))
-const Payroll = lazy(() => import('./features/admin/Payroll').then(m => ({ default: m.Payroll })))
-const GuardPortal = lazy(() => import('./features/guard/GuardPortal').then(m => ({ default: m.GuardPortal })))
-const Payments = lazy(() => import('./features/res/Payments').then(m => ({ default: m.Payments })))
-const Requests = lazy(() => import('./features/res/Requests').then(m => ({ default: m.Requests })))
-const Guests = lazy(() => import('./features/res/Guests').then(m => ({ default: m.Guests })))
-const Reservations = lazy(() => import('./features/res/Reservations').then(m => ({ default: m.Reservations })))
-const Incidents = lazy(() => import('./features/res/Incidents').then(m => ({ default: m.Incidents })))
-const PackageLocker = lazy(() => import('./features/res/PackageLocker').then(m => ({ default: m.PackageLocker })))
-import { useAuthStore, UserRole } from './store/useAuthStore'
-import { usePushNotifications } from './hooks/usePushNotifications'
-import { useCurrencyStore } from './store/useCurrencyStore'
-import { useThemeStore } from './store/useThemeStore'
-import { ScrollToTop } from './components/ScrollToTop'
-import { useUpdateCheck } from './hooks/useUpdateCheck'
-import { UpdateModal } from './components/UpdateModal'
-import { App as CapApp } from '@capacitor/app'
-import { SplashScreen } from '@capacitor/splash-screen'
-import { isBiometricEnabled, verifyBiometric } from './lib/biometrics'
-
-const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
-  const user = useAuthStore(state => state.user)
-
-  if (!user) return <Navigate to="/login" />
-  if (!allowedRoles.includes(user.role)) {
-    if (user.role === 'admin' || user.role === 'superadmin') return <Navigate to="/admin" />
-    if (user.role === 'guard') return <Navigate to="/guard" />
-    return <Navigate to="/dashboard" />
-  }
-
-  return <>{children}</>
-}
-
-function App() {
-  const user = useAuthStore(state => state.user)
-  const authReady = useAuthStore(state => state.authReady)
-  const mfaRequired = useAuthStore(state => state.mfaRequired)
-  const setMfaRequired = useAuthStore(state => state.setMfaRequired)
-  const initializeAuth = useAuthStore(state => state.initialize)
-  const syncAuth = useAuthStore(state => state.sync)
-  const fetchRate = useCurrencyStore(state => state.fetchRate)
-  const isDarkMode = useThemeStore(state => state.isDarkMode)
-
-  const [isLocked, setIsLocked] = useState(false)
-
-  // Inicializar Notificaciones Push
-  usePushNotifications(user?.id)
-
-  const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck()
-  const [showUpdateModal, setShowUpdateModal] = useState(false)
-
-  useEffect(() => {
-    const checkLock = async () => {
-      if (user) {
-        const enabled = await isBiometricEnabled()
-        if (enabled) {
-          setIsLocked(true)
-          const success = await verifyBiometric()
-          if (success) setIsLocked(false)
-        }
-      }
-    }
-    checkLock()
-  }, [user])
-
-  useEffect(() => {
-    // Manejar eventos de la app
-    const backButtonListener = CapApp.addListener('backButton', ({ canGoBack }) => {
-      const path = window.location.pathname;
-      if (path === '/dashboard' || path === '/admin' || path === '/guard' || path === '/login' || path === '/') {
-        CapApp.exitApp();
-      } else if (!canGoBack) {
-        CapApp.exitApp();
-      } else {
-        window.history.back();
-      }
-    });
-
-    const appStateListener = CapApp.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) {
-        // Re-sincronizar sesión al volver a la app
-        syncAuth().catch(() => {});
-      }
-    });
-
-    return () => {
-      backButtonListener.then(l => l.remove());
-      appStateListener.then(l => l.remove());
-    };
-  }, [syncAuth]);
-
-  useEffect(() => {
-    if (isUpdateAvailable) {
-      setShowUpdateModal(true)
-    }
-  }, [isUpdateAvailable])
-
-  useEffect(() => {
-    return initializeAuth()
-  }, [initializeAuth])
-
-  useEffect(() => {
-    const hideSplash = async () => {
-      try {
-        await SplashScreen.hide()
-      } catch (e) {
-        // Ignorar si falla
-      }
-    }
-
-    if (authReady) {
-      hideSplash()
-    } else {
-      const timer = setTimeout(hideSplash, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [authReady])
-
-  useEffect(() => {
-    fetchRate()
-  }, [fetchRate])
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-      document.body.classList.add('dark-mode')
-    } else {
-      document.documentElement.classList.remove('dark')
-      document.body.classList.remove('dark-mode')
-    }
-  }, [isDarkMode])
-
-  return (
-    <ErrorBoundary>
-      <Router>
-        <ScrollToTop />
-        {updateInfo && (
-          <UpdateModal
-            isOpen={showUpdateModal}
-            versionName={updateInfo.versionName}
-            onUpdate={performUpdate}
-            onClose={() => setShowUpdateModal(false)}
-          />
-        )}
-        <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
-          {isLocked ? (
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', padding: '20px', textAlign: 'center' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '64px', color: 'var(--primary-color)', marginBottom: '20px' }}>lock</span>
-                <h2 style={{ fontFamily: "'Cinzel', serif", marginBottom: '10px' }}>App Bloqueada</h2>
-                <p style={{ color: 'var(--text-sub)', marginBottom: '30px' }}>Usa tu huella o Face ID para continuar</p>
-                <button
-                    onClick={async () => {
-                        const success = await verifyBiometric()
-                        if (success) setIsLocked(false)
-                    }}
-                    style={{ padding: '15px 30px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }}
-                >
-                    Desbloquear
-                </button>
-            </div>
-          ) : mfaRequired ? (
-            <MfaChallenge onVerified={() => setMfaRequired(false)} />
-          ) : !authReady && !user ? (
-            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p>Iniciando sesión...</p>
-            </div>
-          ) : (
-            <Routes>
-              <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
-              <Route path="/auth" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
-              <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
-              <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-
-              <Route element={<Layout />}>
-                <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />
-                <Route path="/payments" element={<ProtectedRoute allowedRoles={["resident"]}><Payments /></ProtectedRoute>} />
-                <Route path="/requests" element={<ProtectedRoute allowedRoles={["resident"]}><Requests /></ProtectedRoute>} />
-                <Route path="/guests" element={<ProtectedRoute allowedRoles={["resident"]}><Guests /></ProtectedRoute>} />
-                <Route path="/reservations" element={<ProtectedRoute allowedRoles={["resident"]}><Reservations /></ProtectedRoute>} />
-                <Route path="/incidents" element={<ProtectedRoute allowedRoles={["resident"]}><Incidents /></ProtectedRoute>} />
-                <Route path="/packages" element={<ProtectedRoute allowedRoles={["resident"]}><PackageLocker /></ProtectedRoute>} />
-
-                <Route path="/profile" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Profile /></ProtectedRoute>} />
-                <Route path="/profile/account" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Account /></ProtectedRoute>} />
-                <Route path="/profile/privacy" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Privacy /></ProtectedRoute>} />
-                <Route path="/profile/appearance" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Appearance /></ProtectedRoute>} />
-                <Route path="/profile/notifications" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Notifications /></ProtectedRoute>} />
-                <Route path="/profile/invite" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><InviteFriend /></ProtectedRoute>} />
-                <Route path="/profile/support" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Support /></ProtectedRoute>} />
-                <Route path="/profile/help" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><HelpCenter /></ProtectedRoute>} />
-                <Route path="/profile/legal" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalDocument /></ProtectedRoute>} />
-                <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
-
-                <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Admin /></ProtectedRoute>} />
-                <Route path="/admin/incidents" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><IncidentsAdmin /></ProtectedRoute>} />
-                <Route path="/admin/payroll" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Payroll /></ProtectedRoute>} />
-
-                <Route path="/guard" element={<ProtectedRoute allowedRoles={["guard"]}><GuardPortal /></ProtectedRoute>} />
-              </Route>
-
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          )}
-        </Suspense>
-      </Router>
-    </ErrorBoundary>
-  )
-}
-
-const RoleRedirect = ({ role }: { role: string }) => {
-  if (role === 'admin' || role === 'superadmin') return <Navigate to="/admin" />
-  if (role === 'guard') return <Navigate to="/guard" />
-  return <Navigate to="/dashboard" />
-}
-
-export default App
 </file>
 
 <file path="src/features/res/Guests.tsx">
@@ -18104,593 +18750,6 @@ const incidentCardStyle = { backgroundColor: 'var(--card-bg)', border: '1px soli
 const incTagStyle = { backgroundColor: 'rgba(198, 160, 89, 0.1)', color: 'var(--accent-gold)', padding: '4px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase' as any }
 </file>
 
-<file path="src/features/res/Payments.tsx">
-import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  MdArrowBack,
-  MdOutlineSmartphone,
-  MdOutlinePayments,
-  MdOutlineAccountBalance,
-  MdOutlineSync,
-  MdOutlineCheckCircle,
-  MdOutlineCloudUpload,
-  MdOutlineChevronRight
-} from 'react-icons/md'
-import { formatBs, formatUSD } from '../../utils/currency'
-import { useCurrencyStore } from '../../store/useCurrencyStore'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
-import { sanitizeString } from '../../utils/security'
-import { Network } from '@capacitor/network'
-import { enqueueAction } from '../../lib/offlineQueue'
-import { clusterService, ClusterInfo } from '../../services/clusterService'
-import { paymentService } from '../../services/paymentService'
-
-const THEME = {
-  colors: {
-    primary: '#0f5551',
-    accentGold: '#785919',
-    bg: '#F4F7F6',
-    white: '#ffffff',
-    text: '#1b1c1a',
-    textSub: '#5f6b69',
-    border: '#E2E8E7',
-    success: '#27ae60',
-  },
-  shadow: '0px 10px 30px rgba(0,0,0,0.05)',
-  radius: '24px'
-}
-
-export const Payments: React.FC = () => {
-  const navigate = useNavigate()
-  const { user } = useAuthStore()
-  const bcvRate = useCurrencyStore(state => state.bcvRate)
-  type DebtItem = {
-    id: string
-    monto_pendiente: number
-    concepto?: string
-    fecha_vencimiento?: string
-    tipo?: string
-    descripcion?: string
-  }
-
-  const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
-  const [fileAttached, setFileAttached] = useState<File | null>(null)
-  const [senderName, setSenderName] = useState('')
-  const [reference, setReference] = useState('')
-  const [originBank, setOriginBank] = useState('')
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0])
-  const [description, setDescription] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [compressing, setCompressing] = useState(false)
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
-  const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
-  const [debtItems, setDebtItems] = useState<DebtItem[]>([])
-  const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
-  const [loadingDebts, setLoadingDebts] = useState(true)
-  const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const selectedDebtTotal = debtItems.length > 0
-    ? selectedDebtIds.length > 0
-      ? debtItems.filter(debt => selectedDebtIds.includes(debt.id)).reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
-      : 0
-    : totalDebt
-
-  const allDebtSelected = debtItems.length > 0 && selectedDebtIds.length === debtItems.length
-
-  useEffect(() => {
-    if (user?.id) {
-      setSessionUserId(user.id)
-      fetchDebts()
-    }
-
-    if (user?.residential_cluster) {
-      clusterService.getInfo(user.residential_cluster).then(setClusterInfo)
-    }
-
-    // sync session user id to avoid RLS mismatches
-    const sync = async () => {
-      try {
-        const { data } = await supabase.auth.getSession()
-        const id = data?.session?.user?.id ?? user?.id ?? null
-        setSessionUserId(id)
-      } catch (err) {
-        console.error('Error obteniendo sesión Supabase:', err)
-        setSessionUserId(user?.id ?? null)
-      }
-    }
-
-    sync()
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const id = session?.user?.id ?? user?.id ?? null
-      setSessionUserId(id)
-    })
-
-    return () => {
-      try { sub?.subscription?.unsubscribe?.() } catch (e) {}
-    }
-  }, [user?.id, user?.residential_cluster])
-
-  const fetchDebts = async () => {
-    try {
-      // 1. Intentar obtener deudas específicas
-      const { data: debtData, error } = await supabase
-        .from('debts')
-        .select('*')
-        .eq('residente_id', user?.id)
-        .eq('pagada', false)
-
-      if (error) throw error
-
-      // 2. Obtener configuración global (cuota mensual)
-      const { data: settings } = await supabase
-        .from('condo_settings')
-        .select('*')
-        .eq('id', 1)
-        .maybeSingle()
-
-      if (debtData && debtData.length > 0) {
-        const total = debtData.reduce((acc: number, d: any) => acc + Number(d.monto_pendiente), 0)
-        setDebtItems(debtData)
-        setSelectedDebtIds(debtData.map((debt: any) => debt.id))
-        setTotalDebt(total || 20)
-      } else if (settings) {
-        const today = new Date()
-        const currentDay = today.getDate()
-        const isProntoPago = currentDay <= settings.dias_pronto_pago
-        const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
-        setTotalDebt(Number(montoACobrar) || 20)
-      } else {
-        setTotalDebt(20) // Forzar los 20 si no hay nada en DB
-      }
-    } catch (err) {
-      console.error("Error al cargar deudas:", err)
-      setTotalDebt(20) // Fallback de seguridad
-    } finally {
-      setLoadingDebts(false)
-    }
-  }
-
-  const handleAttachCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (file.type === 'application/pdf') {
-      setFileAttached(file)
-      alert(`Archivo PDF "${file.name}" cargado.`)
-      return
-    }
-
-    // Compresión para imágenes
-    setCompressing(true)
-    try {
-      const compressed = await compressImage(file)
-      setFileAttached(compressed)
-      alert(`Imagen optimizada y cargada con éxito.`)
-    } catch (err) {
-      console.error('Error al comprimir:', err)
-      setFileAttached(file) // Fallback al original
-    } finally {
-      setCompressing(false)
-    }
-  }
-
-  const compressImage = (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = (event) => {
-        const img = new Image()
-        img.src = event.target?.result as string
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const MAX_WIDTH = 1200
-          const MAX_HEIGHT = 1200
-          let width = img.width
-          let height = img.height
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width
-              width = MAX_WIDTH
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height
-              height = MAX_HEIGHT
-            }
-          }
-
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          ctx?.drawImage(img, 0, 0, width, height)
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const compressedFile = new File([blob], file.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              })
-              resolve(compressedFile)
-            } else {
-              reject(new Error('Canvas blob is null'))
-            }
-          }, 'image/jpeg', 0.7) // 70% calidad
-        }
-      }
-      reader.onerror = (error) => reject(error)
-    })
-  }
-
-  const handleRegisterPayment = async () => {
-    if ((selectedMethod !== 'main') && !fileAttached) {
-      alert("Por favor adjunte el capture del comprobante para continuar.")
-      return
-    }
-
-    setLoading(true)
-    try {
-      let screenshotUrl = ''
-
-      if (fileAttached) {
-        const fileExt = fileAttached.name.split('.').pop()
-        const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`
-        const filePath = `payments/${fileName}`
-
-        console.log('Iniciando subida de comprobante...')
-        const { error: uploadError } = await supabase.storage
-          .from('payment-captures')
-          .upload(filePath, fileAttached)
-
-        if (uploadError) {
-          console.error('Error subiendo comprobante:', uploadError)
-          throw new Error('No se pudo subir la imagen del comprobante. Verifique su conexión.')
-        }
-        console.log('Comprobante subido con éxito.')
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('payment-captures')
-          .getPublicUrl(filePath)
-
-        screenshotUrl = publicUrl
-      }
-
-      const cleanReference = sanitizeString(reference)
-      const cleanBank = sanitizeString(originBank)
-      const selectedDescription = selectedDebtIds.length > 0
-        ? `Cuotas seleccionadas: ${selectedDebtIds.join(', ')}`
-        : ''
-      const cleanDescription = sanitizeString(`${description} ${selectedDescription}`.trim())
-      const cleanSender = sanitizeString(senderName)
-      const amountUSD = selectedDebtIds.length > 0 ? selectedDebtTotal : totalDebt
-      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
-
-      const payload = {
-        monto_bs: amountUSD * bcvRate,
-        monto_usd: amountUSD,
-        referencia: cleanReference,
-        banco_origen: cleanBank,
-        evidencia_url: screenshotUrl,
-        description: cleanDescription,
-        details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
-        idempotency_key: idempotencyKey
-      }
-
-      const netStatus = await Network.getStatus();
-      if (!netStatus.connected) {
-          await enqueueAction({
-              tipo: 'payment',
-              payload,
-              idempotencyKey
-          });
-          alert("¡Pago guardado offline! Se enviará automáticamente cuando recuperes la conexión.");
-          navigate('/dashboard');
-          return;
-      }
-
-      await paymentService.registerPayment(payload)
-
-      alert("¡Pago registrado con éxito! Su comprobante será validado por la administración en breve.")
-      navigate('/dashboard')
-    } catch (err: any) {
-      alert('Error al registrar pago: ' + (err.message || 'Error desconocido'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (selectedMethod !== 'main') {
-    const isPM = selectedMethod === 'pagomovil'
-    const isZelle = selectedMethod === 'zelle'
-
-    return (
-      <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
-        <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
-          <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '30px' }}>{isPM ? 'Pago Móvil' : isZelle ? 'Zelle' : 'Transferencia'}</h1>
-          <div style={cardStyle}>
-            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(198,160,89,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px' }}>
-                {isPM ? <MdOutlineSmartphone size={32} color="var(--accent-gold)" /> : isZelle ? <MdOutlinePayments size={32} color="var(--accent-gold)" /> : <MdOutlineAccountBalance size={32} color="var(--accent-gold)" />}
-              </div>
-              <h2 style={{ fontSize: '20px', color: 'var(--primary-color)', margin: 0, fontWeight: 700 }}>Datos del Pago</h2>
-            </div>
-
-            <div style={infoGridStyle}>
-              {isZelle ? (
-                <>
-                  <InfoRow label="EMAIL ZELLE" value={clusterInfo?.zelle_email || "CONDOMINIOLASHUERTAS@GMAIL.COM"} />
-                  <InfoRow label="CONCEPTO" value={`Pago casa ${user?.house_number || 'N/A'}`} />
-                  <div style={{ marginTop: '10px' }}>
-                    <label style={labelStyle}>NOMBRE DEL TITULAR (QUIEN ENVÍA)</label>
-                    <input
-                      type="text"
-                      placeholder="Nombre y Apellido"
-                      value={senderName}
-                      onChange={(e) => setSenderName(e.target.value)}
-                      style={inputStyle}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <InfoRow label="BANCO RECEPTOR" value={clusterInfo?.bank_name || "Banco Nacional de Crédito (0191)"} />
-                  <InfoRow label="RIF" value={clusterInfo?.rif || "J-299007323"} />
-                  {!isPM && <InfoRow label="CUENTA" value={clusterInfo?.bank_account || "0191-0000-00-0000000000"} />}
-                  <InfoRow label="NOMBRE" value={clusterInfo?.cluster_name ? `Adm. Conj. ${clusterInfo.cluster_name}` : "Adm. Conj. Las Huertas"} />
-
-                  <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                    <label style={labelStyle}>DATOS DE TU PAGO</label>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>BANCO DE ORIGEN</label>
-                      <input
-                        type="text"
-                        placeholder="Ej: Banesco, Mercantil..."
-                        value={originBank}
-                        onChange={(e) => setOriginBank(e.target.value)}
-                        style={inputStyle}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>NÚMERO DE REFERENCIA (ÚLTIMOS 6 DÍGITOS)</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        placeholder="000000"
-                        maxLength={6}
-                        value={reference}
-                        onChange={(e) => setReference(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={inputStyle}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>FECHA DEL PAGO</label>
-                      <input
-                        type="date"
-                        value={paymentDate}
-                        onChange={(e) => setPaymentDate(e.target.value)}
-                        style={inputStyle}
-                      />
-                    </div>
-
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
-                      <textarea
-                        placeholder="Ej: Pago de condominio Octubre y cuota extra de bomba"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        style={{ ...inputStyle, height: '80px', resize: 'none' }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div style={{ ...infoRowStyle, border: 'none', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>MONTO A ENVIAR</span>
-                  {!isZelle && (
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                      (Tasa BCV: {bcvRate.toFixed(2)} Bs/$)
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(selectedDebtTotal)}</span>
-                  {!isZelle && (
-                    <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-color)' }}>
-                      {formatBs(selectedDebtTotal, bcvRate)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '30px' }}>
-              <label style={labelStyle}>ADJUNTAR COMPROBANTE</label>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={compressing}
-                style={{
-                  width: '100%', padding: '15px', border: '2px dashed var(--border-color)', borderRadius: '12px',
-                  backgroundColor: fileAttached ? 'rgba(198,160,89,0.15)' : 'var(--icon-bg)', color: 'var(--text-color)',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                  opacity: compressing ? 0.6 : 1
-                }}
-              >
-                {compressing ? <MdOutlineSync className="animate-spin" size={24} /> : fileAttached ? <MdOutlineCheckCircle size={24} /> : <MdOutlineCloudUpload size={24} />}
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>
-                  {compressing ? 'Optimizando imagen...' : fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}
-                </span>
-              </button>
-              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
-            </div>
-
-                    <button
-                onClick={handleRegisterPayment}
-                disabled={loading || (debtItems.length > 0 && selectedDebtIds.length === 0)}
-                style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: (loading || (debtItems.length > 0 && selectedDebtIds.length === 0)) ? 0.7 : 1 }}
-              >
-              {loading ? 'Procesando...' : debtItems.length > 0 && selectedDebtIds.length === 0 ? 'Seleccione al menos una cuota' : 'Registrar Pago'}
-            </button>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ ...containerStyle, minHeight: 'auto' }}>
-      <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '520px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px', paddingTop: '10px' }}>
-        <h1 style={{ fontSize: '32px', color: 'var(--primary-color)', fontWeight: 800, textAlign: 'center', marginBottom: '24px' }}>Pagos de Condominio</h1>
-
-        {loadingDebts ? (
-          <div style={{ padding: '24px', borderRadius: '24px', backgroundColor: 'var(--card-bg)', boxShadow: THEME.shadow, marginBottom: '24px', border: '1px solid var(--border-color)' }}>
-            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>Cargando deudas pendientes...</p>
-          </div>
-        ) : debtItems.length > 0 ? (
-          <div style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-              <div>
-                <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 700, color: 'var(--text-sub)', letterSpacing: '1px' }}>DEUDAS PENDIENTES</p>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{debtItems.length} cuota{debtItems.length === 1 ? '' : 's'} encontradas</h2>
-              </div>
-              <button onClick={() => setSelectedDebtIds(allDebtSelected ? [] : debtItems.map(d => d.id))} style={{ padding: '12px 16px', borderRadius: '14px', border: `1px solid ${allDebtSelected ? 'var(--primary-color)' : 'var(--border-color)'}`, backgroundColor: allDebtSelected ? 'var(--primary-color)' : 'var(--card-bg)', color: allDebtSelected ? 'white' : 'var(--text-sub)', cursor: 'pointer', fontWeight: 700 }}>
-                {allDebtSelected ? 'Deseleccionar todo' : 'Seleccionar todo'}
-              </button>
-            </div>
-            <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', boxShadow: THEME.shadow, overflow: 'hidden' }}>
-              {debtItems.map((debt) => {
-                const isSelected = selectedDebtIds.includes(debt.id)
-                const subtitle = debt.tipo || debt.concepto || 'Cuota pendiente'
-                const dueDate = debt.fecha_vencimiento ? new Date(debt.fecha_vencimiento).toLocaleDateString('es-VE') : null
-
-                return (
-                  <button
-                    key={debt.id}
-                    onClick={() => {
-                      setSelectedDebtIds(prev => prev.includes(debt.id) ? prev.filter(id => id !== debt.id) : [...prev, debt.id])
-                    }}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '18px 20px',
-                      borderBottom: '1px solid var(--border-color)',
-                      backgroundColor: isSelected ? 'rgba(15,85,81,0.08)' : 'var(--card-bg)',
-                      cursor: 'pointer',
-                      color: 'var(--text-color)',
-                      textAlign: 'left',
-                      border: 'none'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? '2px solid var(--primary-color)' : '2px solid var(--border-color)', backgroundColor: isSelected ? 'var(--primary-color)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 800 }}>✓</span>}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: 700 }}>{subtitle}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{dueDate ? `Vence ${dueDate}` : 'Sin fecha'}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(Number(debt.monto_pendiente))}</span>
-                      <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{formatBs(Number(debt.monto_pendiente), bcvRate)}</span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        ) : (
-          <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', padding: '24px', boxShadow: THEME.shadow, marginBottom: '24px' }}>
-            <p style={{ margin: 0, color: 'var(--text-sub)', fontWeight: 700 }}>No se encontraron deudas específicas.</p>
-            <p style={{ margin: '10px 0 0 0', color: 'var(--text-sub)' }}>Se mostrará el monto pendiente estándar para pago.</p>
-          </div>
-        )}
-
-        <div style={{ backgroundColor: 'var(--primary-color)', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}>
-           <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO SELECCIONADO</p>
-           <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(selectedDebtTotal)}</h2>
-           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: 'var(--accent-gold)' }}>Equivalente a: {formatBs(selectedDebtTotal, bcvRate)}</p>
-           <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
-           <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {bcvRate.toFixed(2)} Bs/$</p>
-        </div>
-
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}>
-           <PaymentOption
-              icon={MdOutlineSync}
-              label="Domiciliación Digital (Venflow)"
-              sublabel="Cobra y concilia automáticamente"
-              highlight
-           />
-           <PaymentOption
-              icon={MdOutlineSmartphone}
-              label="Pago Móvil"
-              sublabel="Validación manual en 24h"
-              onClick={() => setSelectedStep('pagomovil')}
-           />
-           <PaymentOption
-              icon={MdOutlineAccountBalance}
-              label="Transferencia Bancaria"
-              sublabel="Datos BNC y adjuntar capture"
-              onClick={() => setSelectedStep('transferencia')}
-           />
-           <PaymentOption
-              icon={MdOutlinePayments}
-              label="Zelle"
-              sublabel="CONDOMINIOLAS HUERTAS@GMAIL.COM"
-              onClick={() => setSelectedStep('zelle')}
-           />
-        </div>
-      </main>
-    </div>
-  )
-}
-
-const InfoRow = ({ label, value }: any) => (
-  <div style={infoRowStyle}>
-      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>{label}</span>
-      <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-color)' }}>{value}</span>
-  </div>
-)
-
-const PaymentOption = ({ icon: Icon, label, sublabel, highlight, onClick }: any) => (
-  <div onClick={onClick} style={{ backgroundColor: highlight ? 'rgba(198,160,89,0.12)' : 'var(--card-bg)', border: highlight ? '2px solid var(--accent-gold)' : '1px solid var(--border-color)', borderRadius: '18px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', boxSizing: 'border-box' }}>
-     <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: highlight ? 'var(--accent-gold)' : 'var(--icon-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: highlight ? 'white' : 'var(--primary-color)', flexShrink: 0 }}>
-        <Icon size={24} />
-     </div>
-     <div style={{ flex: 1 }}>
-        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-color)', display: 'block' }}>{label}</span>
-        {sublabel && <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: 600 }}>{sublabel}</span>}
-     </div>
-     <MdOutlineChevronRight size={24} style={{ color: highlight ? 'var(--accent-gold)' : 'var(--border-color)' }} />
-  </div>
-)
-
-const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
-const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: 'var(--primary-color)' }
-const titleStyle = { fontSize: '18px', color: 'var(--primary-color)', fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
-const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px' }
-const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '30px', boxShadow: THEME.shadow }
-const infoGridStyle = { display: 'flex', flexDirection: 'column' as any, gap: '15px' }
-const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }
-const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 900, color: 'var(--text-sub)', marginBottom: '12px', letterSpacing: '1px' }
-const inputStyle = { width: '100%', padding: '16px', borderRadius: '14px', border: '1px solid var(--border-color)', fontSize: '16px', boxSizing: 'border-box' as any, outline: 'none', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)' }
-const primaryBtnStyle = { width: '100%', padding: '18px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: THEME.shadow, letterSpacing: '1px' }
-</file>
-
 <file path="src/services/notificationService.ts">
 import { supabase } from '../lib/supabase'
 
@@ -18708,21 +18767,21 @@ export const notificationService = {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('expo_push_token')
+        .select('fcm_token')
         .eq('id', profileId)
         .single()
 
-      if (!profile?.expo_push_token) {
+      if (!profile?.fcm_token) {
         console.warn(`Usuario ${profileId} no tiene token de push registrado.`);
         return;
       }
 
       // Registro en la cola de envío real
-      console.log(`Encolando Push para ${profileId} (${profile.expo_push_token})`);
+      console.log(`Encolando Push para ${profileId} (${profile.fcm_token})`);
 
       // Registro en la cola de envío real
       await supabase.rpc('rpc_send_push', {
-        p_token: profile.expo_push_token,
+        p_token: profile.fcm_token,
         p_title: message.title,
         p_body: message.body,
         p_data: message.data
@@ -18742,10 +18801,10 @@ export const notificationService = {
 
       const { data: residents, error } = await supabase
         .from('profiles')
-        .select('id, expo_push_token')
+        .select('id, fcm_token')
         .ilike('residential_cluster', `%${cleanCluster}%`)
         .eq('role', 'resident')
-        .not('expo_push_token', 'is', null);
+        .not('fcm_token', 'is', null);
 
       if (error) throw error;
       if (!residents || residents.length === 0) {
@@ -18758,7 +18817,7 @@ export const notificationService = {
       // Encolar todas las notificaciones en paralelo
       await Promise.all(residents.map(r =>
         supabase.rpc('rpc_send_push', {
-          p_token: r.expo_push_token,
+          p_token: r.fcm_token,
           p_title: message.title,
           p_body: message.body,
           p_data: message.data
@@ -18779,7 +18838,7 @@ export const notificationService = {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, expo_push_token')
+        .select('id, fcm_token')
         .ilike('residential_cluster', `%${cleanCluster}%`)
         .eq('house_number', houseNumber)
         .maybeSingle();
@@ -20145,11 +20204,32 @@ export const useAuthStore = create<AuthState>()(
       },
       signOut: async () => {
         try {
+          // 1. Notificar a Supabase
           await supabase.auth.signOut()
+
+          // 2. Limpiar suscripción si existe
+          if (authListenerSubscription) {
+            authListenerSubscription.unsubscribe()
+            authListenerSubscription = null
+          }
+
+          // 3. Limpiar almacenamiento de Capacitor explicitly
+          await Preferences.clear()
+
+          // 4. Limpiar almacenamiento local (Web fallback)
+          localStorage.clear()
+          sessionStorage.clear()
+
         } catch (err) {
-          console.error('Error during Supabase signOut:', err)
+          console.error('Error during thorough signOut:', err)
         } finally {
-          set({ user: null })
+          // 5. Resetear estado de la memoria
+          set({
+            user: null,
+            authReady: true,
+            biometricsEnabled: false,
+            mfaRequired: false
+          })
         }
       },
       sync: async () => {
@@ -20264,6 +20344,94 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 )
+</file>
+
+<file path="src/components/UpdateModal.tsx">
+import React from 'react';
+
+interface UpdateModalProps {
+  isOpen: boolean;
+  versionName: string;
+  onUpdate: () => void;
+  onClose: () => void;
+}
+
+export const UpdateModal: React.FC<UpdateModalProps> = ({
+  isOpen,
+  versionName,
+  onUpdate,
+  onClose
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999999,
+        padding: '24px',
+        backdropFilter: 'blur(2px)'
+      }}
+    >
+      <div
+        style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '4px',
+          width: '100%',
+          maxWidth: '300px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+          padding: '24px',
+          boxSizing: 'border-box'
+        }}
+      >
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '19px', fontWeight: 600, color: '#212121', fontFamily: 'sans-serif' }}>
+          ¡Actualización Disponible!
+        </h3>
+        <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#616161', lineHeight: '1.5', fontFamily: 'sans-serif' }}>
+          ¡Buenas noticias! Hay disponible una nueva versión <span style={{fontWeight:700, color:'#000'}}>v{versionName}</span> de la App.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '10px 12px',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#00796B',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
+            }}
+          >
+            MÁS TARDE
+          </button>
+          <button
+            onClick={onUpdate}
+            style={{
+              padding: '10px 12px',
+              fontSize: '14px',
+              fontWeight: 700,
+              color: '#00796B',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              textTransform: 'uppercase'
+            }}
+          >
+            ACTUALIZAR
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 </file>
 
 <file path="src/features/res/Requests.tsx">
@@ -20552,94 +20720,6 @@ const historyCardStyle = { backgroundColor: 'var(--primary-color)', color: 'whit
 const annCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px' }
 const annIconStyle = { width: '44px', height: '44px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }
 const primaryBtnStyle = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }
-</file>
-
-<file path="src/components/UpdateModal.tsx">
-import React from 'react';
-
-interface UpdateModalProps {
-  isOpen: boolean;
-  versionName: string;
-  onUpdate: () => void;
-  onClose: () => void;
-}
-
-export const UpdateModal: React.FC<UpdateModalProps> = ({
-  isOpen,
-  versionName,
-  onUpdate,
-  onClose
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 999999,
-        padding: '24px',
-        backdropFilter: 'blur(2px)'
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '4px',
-          width: '100%',
-          maxWidth: '300px',
-          boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
-          padding: '24px',
-          boxSizing: 'border-box'
-        }}
-      >
-        <h3 style={{ margin: '0 0 12px 0', fontSize: '19px', fontWeight: 600, color: '#212121', fontFamily: 'sans-serif' }}>
-          ¡Actualización Disponible!
-        </h3>
-        <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#616161', lineHeight: '1.5', fontFamily: 'sans-serif' }}>
-          ¡Buenas noticias! Hay disponible una nueva versión <span style={{fontWeight:700, color:'#000'}}>v{versionName}</span> de la App.
-        </p>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button
-            onClick={onClose}
-            style={{
-              padding: '10px 12px',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#00796B',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            MÁS TARDE
-          </button>
-          <button
-            onClick={onUpdate}
-            style={{
-              padding: '10px 12px',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#00796B',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              textTransform: 'uppercase'
-            }}
-          >
-            ACTUALIZAR
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 </file>
 
 <file path="ios/App/Podfile">

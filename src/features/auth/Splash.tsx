@@ -28,14 +28,6 @@ export const Splash: React.FC = () => {
              >
                 INICIAR SESIÓN
              </button>
-             <button
-              onClick={() => navigate('/register')}
-              style={{
-                padding: '18px', backgroundColor: 'transparent', color: 'var(--primary-color)', border: '2px solid var(--primary-color)', borderRadius: '15px', fontWeight: 700, fontSize: '16px', cursor: 'pointer'
-              }}
-             >
-                SOLICITAR ACCESO
-             </button>
           </div>
        </main>
 

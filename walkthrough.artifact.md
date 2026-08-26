@@ -1,29 +1,33 @@
-# Walkthrough: Estabilización de Notificaciones, Auth y Mejoras en Votaciones
+# Implementación del Flujo de Invitaciones
 
-Se han implementado todas las mejoras técnicas y visuales solicitadas para asegurar el correcto funcionamiento de las notificaciones push, el registro de usuarios y la experiencia de votación.
+Se ha reemplazado el sistema de autoregistro por un flujo de invitaciones gestionado por administradores, mejorando la seguridad y el control del acceso al condominio.
 
 ## Cambios Realizados
 
-### 1. Notificaciones Push y Modo Doze
-- **Edge Function Reforzada:** Se actualizó `supabase/functions/send-push/index.ts` para incluir `priority: high` y parámetros de expiración, lo que permite despertar dispositivos en modo ahorro de energía (Doze).
-- **Cola de Notificaciones:** Se creó la tabla `push_notifications` y el RPC `rpc_send_push` en [fix_fcm_bridge.sql](file:///C:/Users/admin/Documents/CaminosApp/supabase/fix_fcm_bridge.sql) para gestionar el envío asíncrono y registrar fallos.
+### Backend (Supabase Edge Function)
+- **Nueva Función**: [invite-resident](file:///C:/Users/admin/Documents/CaminosApp/supabase/functions/invite-resident/index.ts)
+  - Verifica privilegios de administrador/superadmin.
+  - Usa la API administrativa de Supabase para invitar usuarios por correo.
+  - Crea automáticamente el perfil en la tabla `profiles` con estado `active`.
+  - Configura metadatos iniciales (`password_set: false`).
 
-### 2. Autenticación y Registro
-- **Corrección en `Register.tsx`:** Se mejoró el manejo de errores para detectar límites de envío de correos (Rate Limit) y se ajustó la URL de redirección para que funcione correctamente tanto en desarrollo como en producción (Vercel).
+### Frontend (Administración)
+- **Panel de Control**: Se añadió un modal de invitación en [Admin.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/admin/Admin.tsx).
+  - Permite ingresar correo, nombre, apellido, número de casa y rol.
+  - Invocación segura a la Edge Function mediante `supabase.functions.invoke`.
 
-### 3. Persistencia de Fotos de Perfil
-- **Políticas de Storage:** Se crearon las reglas RLS en [setup_avatar_storage.sql](file:///C:/Users/admin/Documents/CaminosApp/supabase/setup_avatar_storage.sql) para el bucket `avatars`. Ahora las fotos se guardan permanentemente y solo el usuario dueño puede modificarlas/borrarlas, garantizando que no se pierdan.
+### Frontend (Autenticación)
+- **Definición de Contraseña**: Mejora en [ResetPassword.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/ResetPassword.tsx).
+  - Detecta si es la primera vez que el usuario accede (invitación).
+  - Actualiza metadatos para marcar que la contraseña ha sido establecida.
+- **Acceso Restringido**: Se ocultaron los botones de "Solicitar Acceso" en [AuthSplash.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/AuthSplash.tsx) y [Splash.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/auth/Splash.tsx) para priorizar el flujo de invitación.
 
-### 4. Nueva Barra de Porcentaje en Votaciones
-- **Rediseño Visual:** Se modificó el componente `VotingCard` en [Requests.tsx](file:///C:/Users/admin/Documents/CaminosApp/src/features/res/Requests.tsx). Ahora, tras votar, el residente verá una única barra bicolor (Verde para "A Favor", Rojo para "En Contra") con los porcentajes integrados, similar a la referencia proporcionada.
-
-## Instrucciones para el Administrador (Supabase Dashboard)
-
-Para que todo funcione al 100%, debes realizar lo siguiente en tu panel de Supabase:
-
-1.  **SQL Editor:** Ejecuta los archivos `.sql` creados en la carpeta `supabase/` (especialmente `setup_avatar_storage.sql` y `fix_fcm_bridge.sql`).
-2.  **SMTP:** Ve a `Project Settings > Auth` y configura un proveedor de correo (SendGrid, Mailgun, etc.) para evitar los errores de validación de usuarios.
-3.  **Webhook:** Asegúrate de tener un Webhook en `Database > Webhooks` que dispare la función `send-push` cada vez que se inserte una fila en `push_notifications`.
+## Guía de Configuración Manual
+Consulta el archivo [README_INVITATION_FLOW.md](file:///C:/Users/admin/Documents/CaminosApp/README_INVITATION_FLOW.md) para los pasos necesarios en el Dashboard de Supabase:
+1. Configurar URLs de redirección.
+2. Personalizar plantillas de correo.
+3. Configurar SMTP y Secrets (`APP_URL`).
 
 ## Verificación
-Puedes realizar una votación de prueba desde el panel de Administrador. Los residentes deberían recibir la notificación y, al votar, verán el nuevo diseño de resultados.
+1. **Administrador**: Acceder a la pestaña "Usuarios", pulsar "Invitar Residente", completar datos y enviar.
+2. **Residente**: Recibir correo, pulsar enlace, ser redirigido a la app, establecer contraseña y entrar al Dashboard.
