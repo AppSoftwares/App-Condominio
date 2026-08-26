@@ -1,7 +1,7 @@
 {
-  "versionCode": 42,
-  "versionName": "2.3.9",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.3.9",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.3.9/CaminosApp%20v2.3.9.apk",
-  "releaseNotes": "v2.3.9: Estabilización de notificaciones push vía Expo y mejoras en la barra de votación."
+  "versionCode": 43,
+  "versionName": "2.4.0",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.4.0",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.4.0/CaminosApp%202.4.0.apk",
+  "releaseNotes": "v2.4.0: Migración a TanStack Query y React Hook Form, botón de visibilidad en comprobantes de pago y mejoras en estabilidad general."
 }
