@@ -421,7 +421,6 @@ export const Admin: React.FC = () => {
           password: row['CONTRASEÑA']
         })).filter(u => u.email);
 
-        setUsers(prev => [...prev, ...mappedUsers]);
         setWhitelist(mappedUsers);
         alert(`¡Éxito! Se han importado ${mappedUsers.length} registros del archivo ${file.name}.`);
       };
@@ -509,7 +508,7 @@ export const Admin: React.FC = () => {
 
   const deleteUser = (id: number, name: string) => {
     if (window.confirm(`¿Está seguro de que desea eliminar a ${name}?`)) {
-      setUsers(users.filter(u => u.id !== id));
+      alert("Acción de eliminación no disponible en modo demostración local.");
     }
   }
 
@@ -536,18 +535,8 @@ export const Admin: React.FC = () => {
     const cluster = prompt("Conjunto residencial (Copiar exacto o dejar vacío para usar el seleccionado):", selectedCluster);
 
     if (name && email && role) {
-      setUsers([...users, {
-        id: Date.now(),
-        name,
-        email,
-        role,
-        status: "Activo",
-        phone: "",
-        house_number: "",
-        residential_cluster: cluster || selectedCluster,
-        etapa: getEtapaForCluster(cluster || selectedCluster),
-        debt: 0
-      }]);
+      console.log("Añadir usuario (local):", { name, email, role, cluster });
+      alert("Usuario añadido localmente (Simulación).");
     }
   }
 
