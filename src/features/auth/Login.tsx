@@ -50,9 +50,9 @@ export const Login: React.FC = () => {
     setLoading(true)
     try {
       const isNative = Capacitor.isNativePlatform()
-      const redirectTo = isNative
-        ? 'com.caminos.lagunita://login-callback'
-        : window.location.origin
+      // Usar la URL de producción para App Links / Universal Links
+      // Esto permite que el SO detecte si debe abrir la App o el Navegador
+      const redirectTo = 'https://app-condominio.vercel.app/login-callback'
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

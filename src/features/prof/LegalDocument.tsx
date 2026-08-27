@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MdArrowBack, MdGavel, MdOutlinePrivacyTip } from 'react-icons/md';
+import { useSearchParams } from 'react-router-dom';
+import { MdGavel, MdOutlinePrivacyTip } from 'react-icons/md';
+import { TERMS_AND_CONDITIONS, PRIVACY_POLICY } from './LegalContent';
 
 export const LegalDocument = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'terms' | 'privacy'>('terms');
 
@@ -13,139 +13,154 @@ export const LegalDocument = () => {
     else if (type === 'terms') setActiveTab('terms');
   }, [searchParams]);
 
+  const currentContent = activeTab === 'terms' ? TERMS_AND_CONDITIONS : PRIVACY_POLICY;
+
   return (
-    <div className="min-h-screen p-6 pt-24" style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
-      <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 font-bold" style={{ color: 'var(--primary-color)' }}>
-        <MdArrowBack /> Volver
-      </button>
-
-      <h1 className="text-3xl font-bold mb-8" style={{ color: 'var(--text-color)', fontFamily: "'EB Garamond', serif" }}>
-        Información Legal
-      </h1>
-
-      {/* Tabs Selector */}
-      <div className="flex p-1 mb-8 rounded-2xl" style={{ backgroundColor: 'var(--icon-bg)', border: '1px solid var(--border-color)' }}>
-        <button
-          onClick={() => setActiveTab('terms')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-sm ${activeTab === 'terms' ? 'bg-white shadow-sm' : ''}`}
-          style={{
-            backgroundColor: activeTab === 'terms' ? 'var(--card-bg)' : 'transparent',
-            color: activeTab === 'terms' ? 'var(--primary-color)' : 'var(--text-sub)'
-          }}
+    <div
+      className="min-h-screen p-6 pb-24 animate-fadeIn"
+      style={{ backgroundColor: '#F5F1E8', color: '#2E2E2E', fontFamily: "'Inter', sans-serif" }}
+    >
+      <div className="max-w-2xl mx-auto">
+        <h1
+          className="text-4xl font-bold mb-10 text-center"
+          style={{ color: '#1B4B4A', fontFamily: "'EB Garamond', serif" }}
         >
-          <MdGavel size={18} />
-          Términos y Condiciones
-        </button>
-        <button
-          onClick={() => setActiveTab('privacy')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl transition-all duration-300 font-bold text-sm ${activeTab === 'privacy' ? 'bg-white shadow-sm' : ''}`}
-          style={{
-            backgroundColor: activeTab === 'privacy' ? 'var(--card-bg)' : 'transparent',
-            color: activeTab === 'privacy' ? 'var(--primary-color)' : 'var(--text-sub)'
-          }}
+          Información Legal
+        </h1>
+
+        {/* Tabs Selector - Segmented Control / Pill Style */}
+        <div
+          className="flex p-1.5 mb-12 rounded-2xl shadow-inner"
+          style={{ backgroundColor: '#EAE5D8', border: '1px solid rgba(27, 75, 74, 0.08)' }}
         >
-          <MdOutlinePrivacyTip size={18} />
-          Privacidad
-        </button>
+          <button
+            onClick={() => setActiveTab('terms')}
+            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl transition-all duration-500 font-bold text-sm`}
+            style={{
+              backgroundColor: activeTab === 'terms' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'terms' ? '#1B4B4A' : 'rgba(46, 46, 46, 0.5)',
+              boxShadow: activeTab === 'terms' ? '0 8px 20px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            <MdGavel size={20} />
+            Términos y Condiciones
+          </button>
+          <button
+            onClick={() => setActiveTab('privacy')}
+            className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-xl transition-all duration-500 font-bold text-sm`}
+            style={{
+              backgroundColor: activeTab === 'privacy' ? '#FFFFFF' : 'transparent',
+              color: activeTab === 'privacy' ? '#1B4B4A' : 'rgba(46, 46, 46, 0.5)',
+              boxShadow: activeTab === 'privacy' ? '0 8px 20px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            <MdOutlinePrivacyTip size={20} />
+            Privacidad
+          </button>
+        </div>
+
+        <div
+          className="transition-opacity duration-500"
+          key={activeTab}
+          style={{ animation: 'contentFadeIn 0.6s ease-out' }}
+        >
+          <header className="mb-10 border-b pb-8" style={{ borderColor: 'rgba(27, 75, 74, 0.12)' }}>
+            <h2 className="text-3xl font-bold mb-3" style={{ color: '#1B4B4A', fontFamily: "'EB Garamond', serif", lineHeight: 1.2 }}>
+              {currentContent.title}
+            </h2>
+            <div className="flex items-center gap-2 opacity-60">
+              <span className="w-8 h-px bg-current"></span>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                Última actualización: {currentContent.lastUpdate}
+              </p>
+            </div>
+          </header>
+
+          <div className="space-y-12">
+            {/* Intro */}
+            <p className="leading-relaxed text-lg text-[#4A4A4A] italic border-l-4 pl-6" style={{ borderColor: '#1B4B4A' }}>
+              {currentContent.intro}
+            </p>
+
+            {/* Sections */}
+            {currentContent.sections.map((section, idx) => (
+              <div key={idx} className="legal-section">
+                <h3
+                  className="text-2xl font-bold mb-5 leading-tight"
+                  style={{ color: '#1B4B4A', fontFamily: "'EB Garamond', serif" }}
+                >
+                  {section.title}
+                </h3>
+                <div className="text-[#2E2E2E] text-[16px] leading-[1.6] space-y-4">
+                  {formatLegalBody(section.body)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer Info */}
+          <footer className="mt-20 pt-12 border-t" style={{ borderColor: 'rgba(27, 75, 74, 0.12)' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+              <div className="p-6 rounded-3xl" style={{ backgroundColor: '#EAE5D8', border: '1px solid rgba(27, 75, 74, 0.05)' }}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-[#1B4B4A] opacity-60">Atención al Cliente</p>
+                <p className="text-sm font-bold text-[#1B4B4A]">{currentContent.footer.contactEmail}</p>
+              </div>
+              <div className="p-6 rounded-3xl" style={{ backgroundColor: '#EAE5D8', border: '1px solid rgba(27, 75, 74, 0.05)' }}>
+                <p className="text-[10px] font-black uppercase tracking-widest mb-2 text-[#1B4B4A] opacity-60">Portal Oficial</p>
+                <p className="text-sm font-bold text-[#1B4B4A] truncate">{currentContent.footer.webPortal}</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-2">
+              <p className="text-[11px] font-medium opacity-60">
+                {currentContent.footer.location}
+              </p>
+              <p className="text-[10px] font-black tracking-[0.15em] text-[#1B4B4A] uppercase opacity-40">
+                {currentContent.footer.copy}
+              </p>
+            </div>
+          </footer>
+        </div>
       </div>
 
-      <div className="animate-fadeIn">
-        {activeTab === 'terms' ? (
-          <section className="space-y-6 leading-relaxed text-sm md:text-base" style={{ color: 'var(--text-sub)' }}>
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>1. Aceptación de los términos</h2>
-              <p>Al descargar e ingresar a la aplicación Caminos de la Lagunita, aceptas cumplir con estos términos y condiciones de uso.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>2. Descripción del servicio</h2>
-              <p>La plataforma ofrece herramientas integrales para la gestión digital del condominio, incluyendo control de acceso inteligente, registro de pagos, reservaciones de áreas comunes y reportes de incidentes.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>3. Uso de la plataforma</h2>
-              <ul className="list-disc ml-5 space-y-2">
-                <li>El acceso es personal e intransferible para residentes y personal autorizado.</li>
-                <li>El usuario es estrictamente responsable de mantener la confidencialidad de sus credenciales de acceso.</li>
-                <li>Queda prohibido el uso de la plataforma para actividades ilegales o que perturben la sana convivencia del condominio.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>4. Gestión de pagos</h2>
-              <p>La aplicación facilita el registro de pagos, pero la validación final queda a cargo de la administración. Es responsabilidad del residente adjuntar comprobantes legítimos y veraces.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>5. Limitación de responsabilidad</h2>
-              <p>Caminos de la Lagunita no se hace responsable por:</p>
-              <ul className="list-disc ml-5 space-y-2 mt-2">
-                <li>Fallas en la conexión a internet o fallas técnicas del dispositivo del usuario.</li>
-                <li>Pérdida de dispositivos con sesiones abiertas.</li>
-                <li>Acciones de terceros que resulten del mal uso de las credenciales del usuario o códigos QR de acceso.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>6. Modificaciones</h2>
-              <p>Nos reservamos el derecho de modificar estos términos en cualquier momento para mejorar el servicio. Los cambios significativos serán notificados a través de la aplicación.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>7. Jurisdicción</h2>
-              <p>Cualquier controversia derivada del uso de la plataforma será resuelta bajo las leyes de la República Bolivariana de Venezuela.</p>
-            </div>
-          </section>
-        ) : (
-          <section className="space-y-6 leading-relaxed text-sm md:text-base" style={{ color: 'var(--text-sub)' }}>
-            <p>En Caminos de la Lagunita, valoramos tu privacidad. Esta política describe cómo manejamos tu información personal para garantizar transparencia y seguridad.</p>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>1. Información que recopilamos</h2>
-              <p className="font-bold mb-1" style={{ color: 'var(--text-color)' }}>• Datos proporcionados por el usuario:</p>
-              <p className="mb-3">Nombre, correo electrónico, número de teléfono, número de casa y datos bancarios para registro de pagos.</p>
-
-              <p className="font-bold mb-1" style={{ color: 'var(--text-color)' }}>• Información recopilada automáticamente:</p>
-              <p>Dirección IP, tipo de dispositivo (modelo, fabricante), sistema operativo y navegador. Registramos las fechas y horas exactas de acceso a la plataforma por motivos de auditoría y seguridad.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>2. Uso de la información</h2>
-              <p>Utilizamos tus datos exclusivamente para:</p>
-              <ul className="list-disc ml-5 space-y-2 mt-2">
-                <li>Gestionar el acceso y fortalecer la seguridad del condominio.</li>
-                <li>Procesar, validar y mantener un historial de pagos de mantenimiento.</li>
-                <li>Enviar notificaciones importantes, alertas de seguridad y anuncios de la administración.</li>
-                <li>Mejorar la funcionalidad y estabilidad técnica de nuestra plataforma.</li>
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>3. Seguridad de los datos</h2>
-              <p>Implementamos rigurosas medidas de seguridad técnicas como encriptación SSL de grado bancario y Row Level Security (RLS) en nuestra infraestructura de Supabase para proteger tu información contra cualquier acceso no autorizado.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>4. Compartir información</h2>
-              <p>No vendemos, alquilamos ni comercializamos tus datos con terceros. Solo compartimos la información necesaria con la administración del condominio para fines estrictamente operativos.</p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold uppercase mb-2" style={{ color: 'var(--primary-color)' }}>5. Derechos del usuario</h2>
-              <p>Tienes derecho a acceder, rectificar o solicitar la eliminación de tus datos personales enviando una solicitud formal a la administración a través de la sección de Soporte en la App.</p>
-            </div>
-
-            <div className="pt-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--icon-bg)' }}>
-              <p className="text-xs font-bold uppercase mb-1" style={{ color: 'var(--accent-gold)' }}>Plataforma Oficial</p>
-              <p className="text-xs truncate">https://app-condominio-six.vercel.app/</p>
-            </div>
-          </section>
-        )}
-      </div>
-
-      <footer className="mt-12 pt-6 border-t text-xs text-center" style={{ color: 'var(--text-sub)', borderColor: 'var(--border-color)' }}>
-        © 2024 Caminos de la Lagunita - Gestión Digital de Condominios
-      </footer>
+      <style>{`
+        @keyframes contentFadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .legal-section { animation: sectionSlideUp 0.8s ease-out both; }
+        @keyframes sectionSlideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
+};
+
+const formatLegalBody = (body: string) => {
+  return body.split('\n').map((line, i) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('•')) {
+      return (
+        <div key={i} className="flex gap-3 ml-2 mb-4 group">
+          <span className="text-[#1B4B4A] font-bold mt-0.5">•</span>
+          <p className="flex-1 text-[#444444] leading-relaxed">
+            {trimmed.substring(1).trim()}
+          </p>
+        </div>
+      );
+    }
+    // Handle sub-numbering (e.g. 1. 2. 3.)
+    if (/^[0-9]+\./.test(trimmed)) {
+      return (
+        <div key={i} className="pl-4 mb-4">
+          <p className="font-bold text-[#1B4B4A] mb-1">{trimmed.split(' ')[0]}</p>
+          <p className="text-[#2E2E2E]">{trimmed.split(' ').slice(1).join(' ')}</p>
+        </div>
+      );
+    }
+    if (trimmed.length === 0) return null;
+    return <p key={i} className="mb-4 leading-relaxed text-[#2E2E2E]">{trimmed}</p>;
+  }).filter(Boolean);
 };
