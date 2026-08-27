@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MdTrendingUp, MdTrendingDown, MdAccountBalanceWallet, MdGroups } from 'react-icons/md';
-import { formatUSD } from '../../utils/currency';
+import { formatUSD } from '../../shared/utils/currency';
 
 interface TransparencyData {
     mes: number;

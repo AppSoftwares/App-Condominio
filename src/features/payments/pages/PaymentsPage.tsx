@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  MdArrowBack,
   MdOutlineSmartphone,
   MdOutlinePayments,
   MdOutlineAccountBalance,
@@ -10,15 +9,15 @@ import {
   MdOutlineCloudUpload,
   MdOutlineChevronRight
 } from 'react-icons/md'
-import { formatBs, formatUSD } from '../../utils/currency'
-import { useCurrencyStore } from '../../store/useCurrencyStore'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
-import { sanitizeString } from '../../utils/security'
+import { formatBs, formatUSD } from '../../../shared/utils/currency'
+import { useCurrencyStore } from '../../../app/store/useCurrencyStore'
+import { useAuthStore } from '../../../app/store/useAuthStore'
+import { supabase } from '../../../shared/lib/supabase'
+import { sanitizeString } from '../../../shared/utils/security'
 import { Network } from '@capacitor/network'
-import { enqueueAction } from '../../lib/offlineQueue'
-import { clusterService, ClusterInfo } from '../../services/clusterService'
-import { paymentService } from '../../services/paymentService'
+import { enqueueAction } from '../../../shared/lib/offlineQueue'
+import { clusterService, ClusterInfo } from '../../../shared/api/services/clusterService'
+import { paymentService } from '../../../shared/api/services/paymentService'
 
 const THEME = {
   colors: {
@@ -35,7 +34,7 @@ const THEME = {
   radius: '24px'
 }
 
-export const Payments: React.FC = () => {
+export const PaymentsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
@@ -57,7 +56,6 @@ export const Payments: React.FC = () => {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [compressing, setCompressing] = useState(false)
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
   const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
   const [debtItems, setDebtItems] = useState<DebtItem[]>([])
   const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
@@ -75,7 +73,6 @@ export const Payments: React.FC = () => {
 
   useEffect(() => {
     if (user?.id) {
-      setSessionUserId(user.id)
       fetchDebts()
     }
 
@@ -83,23 +80,8 @@ export const Payments: React.FC = () => {
       clusterService.getInfo(user.residential_cluster).then(setClusterInfo)
     }
 
-    // sync session user id to avoid RLS mismatches
-    const sync = async () => {
-      try {
-        const { data } = await supabase.auth.getSession()
-        const id = data?.session?.user?.id ?? user?.id ?? null
-        setSessionUserId(id)
-      } catch (err) {
-        console.error('Error obteniendo sesión Supabase:', err)
-        setSessionUserId(user?.id ?? null)
-      }
-    }
-
-    sync()
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const id = session?.user?.id ?? user?.id ?? null
-      setSessionUserId(id)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Re-fetch if needed
     })
 
     return () => {
@@ -572,10 +554,6 @@ const PaymentOption = ({ icon: Icon, label, sublabel, highlight, onClick }: any)
 )
 
 const containerStyle = { backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any, minHeight: '100vh' }
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', padding: '0 20px', zIndex: 100, boxSizing: 'border-box' as any }
-const backBtnStyle = { background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', color: 'var(--primary-color)' }
-const titleStyle = { fontSize: '18px', color: 'var(--primary-color)', fontWeight: 800, margin: '0 0 0 15px', letterSpacing: '0.5px' }
-const mainContentStyle = { paddingTop: '84px', paddingLeft: '20px', paddingRight: '20px', maxWidth: '480px', margin: '0 auto', width: '100%', boxSizing: 'border-box' as any, paddingBottom: '40px' }
 const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '30px', boxShadow: THEME.shadow }
 const infoGridStyle = { display: 'flex', flexDirection: 'column' as any, gap: '15px' }
 const infoRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }

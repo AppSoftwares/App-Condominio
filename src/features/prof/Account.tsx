@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/useAuthStore'
+import { useAuthStore } from '../../app/store/useAuthStore'
 import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 
 export const Account: React.FC = () => {
   const navigate = useNavigate()

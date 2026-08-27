@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useThemeStore } from '../../store/useThemeStore'
+import { useThemeStore } from '../../app/store/useThemeStore'
 
 export const Appearance: React.FC = () => {
   const navigate = useNavigate()

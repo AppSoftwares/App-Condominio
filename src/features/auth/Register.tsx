@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/useAuthStore'
+import { useAuthStore } from '../../app/store/useAuthStore'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
 
 export const Register: React.FC = () => {

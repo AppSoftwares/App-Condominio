@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MdArrowBack, MdCheckCircle, MdBlock } from 'react-icons/md'
+import { MdCheckCircle, MdBlock } from 'react-icons/md'
 import html2canvas from 'html2canvas'
-import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../../shared/lib/supabase'
+import { useAuthStore } from '../../../app/store/useAuthStore'
 
-export const Guests: React.FC = () => {
+export const GuestsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const [guestName, setGuestName] = useState('')
@@ -104,7 +104,6 @@ export const Guests: React.FC = () => {
 
   const handleShareWA = async () => {
     const clusterName = user?.residential_cluster || "Caminos de la Lagunita";
-    const areasStr = allowedAreas.map(a => a.charAt(0).toUpperCase() + a.slice(1)).join(', ');
     const msg = `Hola ${guestName}, aquí tienes tu pase QR de acceso digital para el conjunto residencial ${clusterName}. Áreas permitidas: Residencia.`;
 
     if (qrRef.current) {
@@ -172,7 +171,7 @@ export const Guests: React.FC = () => {
             <p style={{ fontSize: '14px', color: '#742a2a', lineHeight: 1.5 }}>
               Detectamos una deuda pendiente de 3 o más meses en su cuenta. La generación de pases QR está bloqueada hasta que regularice su situación.
             </p>
-            <button onClick={() => navigate('/res/payments')} style={{ ...primaryBtnStyle, marginTop: '20px', backgroundColor: '#e53e3e' }}>Ver Mis Pagos</button>
+            <button onClick={() => navigate('/payments')} style={{ ...primaryBtnStyle, marginTop: '20px', backgroundColor: '#e53e3e' }}>Ver Mis Pagos</button>
           </div>
         ) : (
           <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', padding: '32px', marginBottom: '30px', boxShadow: '0 10px 30px rgba(0,0,0,0.03)' }}>

@@ -1,7 +1,7 @@
 {
-  "versionCode": 46,
-  "versionName": "2.4.3",
-  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.4.3",
-  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.4.3/CaminosApp%202.4.3.apk",
-  "releaseNotes": "v2.4.3: Mejoras en la visualización de dispositivos activos con IP y ubicación, gestión legal unificada y estabilidad en el flujo de construcción de pnpm."
+  "versionCode": 47,
+  "versionName": "2.4.4",
+  "url": "https://github.com/AppSoftwares/App-Condominio/releases/tag/v2.4.4",
+  "url_android": "https://github.com/AppSoftwares/App-Condominio/releases/download/v2.4.4/CaminosApp%202.4.4.apk",
+  "releaseNotes": "v2.4.4: Refactorización arquitectónica a modelo Híbrido Modular por Features para mayor escalabilidad. Mejoras en la claridad visual del panel administrativo con alternancia de visibilidad de comprobantes."
 }

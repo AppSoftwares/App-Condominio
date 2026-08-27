@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 import { QRCodeSVG } from 'qrcode.react'
 
 interface Props {

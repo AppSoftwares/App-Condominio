@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
-import api from '../../lib/api'
+import { useAuthStore } from '../../app/store/useAuthStore'
+import { supabase } from '../../shared/lib/supabase'
+import api from '../../shared/lib/api'
 import { Device } from '@capacitor/device'
 import {
   isBiometricEnabled,
   isBiometricAvailable,
   enableBiometric,
   disableBiometric
-} from '../../lib/biometrics'
+} from '../../shared/lib/biometrics'
 import { TwoFactorSetup } from './TwoFactorSetup'
 
 export const Privacy: React.FC = () => {

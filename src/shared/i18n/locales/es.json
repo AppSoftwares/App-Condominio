@@ -1,0 +1,24 @@
+{
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "logout": "Cerrar Sesión",
+    "welcome": "¡Bienvenido de nuevo!"
+  },
+  "dashboard": {
+    "pending_debts": "DEUDAS PENDIENTES",
+    "quick_actions": "Acciones Rápidas",
+    "no_announcements": "No hay avisos recientes."
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "view": "Ver"
+  }
+}

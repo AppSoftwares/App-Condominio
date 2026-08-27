@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../../store/useAuthStore';
+import { supabase } from '../../../shared/lib/supabase';
+import { useAuthStore } from '../../../app/store/useAuthStore';
 import { QRCodeSVG } from 'qrcode.react';
 import { Package, CheckCircle, Clock } from 'lucide-react';
 
@@ -13,7 +13,7 @@ interface PackageItem {
   liberation_token: string;
 }
 
-export const PackageLocker = () => {
+export const PackageLockerPage = () => {
   const user = useAuthStore(state => state.user);
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [loading, setLoading] = useState(true);

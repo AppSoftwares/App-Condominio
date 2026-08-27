@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  MdArrowBack,
   MdVolumeOff,
   MdPets,
   MdDeck,
   MdDirectionsCar
 } from 'react-icons/md'
 import { jsPDF } from 'jspdf'
-import { useAuthStore } from '../../store/useAuthStore'
-import { sanitizeString } from '../../utils/security'
-import { supabase } from '../../lib/supabase'
-import { notificationService } from '../../services/notificationService'
+import { useAuthStore } from '../../../app/store/useAuthStore'
+import { sanitizeString } from '../../../shared/utils/security'
+import { supabase } from '../../../shared/lib/supabase'
+import { notificationService } from '../../../shared/api/services/notificationService'
 
-export const Incidents: React.FC = () => {
+export const IncidentsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
@@ -22,7 +21,6 @@ export const Incidents: React.FC = () => {
   const [location, setLocation] = useState('')
   const [description, setDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
   const [myIncidents, setMyIncidents] = useState<any[]>([])
 
   useEffect(() => {
@@ -91,24 +89,18 @@ export const Incidents: React.FC = () => {
   }
 
   useEffect(() => {
-    if (user?.id) {
-      setSessionUserId(user.id)
-    }
-
     const sync = async () => {
       try {
-        const { data } = await supabase.auth.getSession()
-        setSessionUserId(data?.session?.user?.id ?? user?.id ?? null)
+        await supabase.auth.getSession()
       } catch (err) {
         console.error('Error sincronizando sesión:', err)
-        setSessionUserId(user?.id ?? null)
       }
     }
 
     sync()
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionUserId(session?.user?.id ?? user?.id ?? null)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, _session) => {
+      // Logic handled by store usually
     })
 
     return () => { try { sub?.subscription?.unsubscribe?.() } catch (e) {} }
@@ -336,7 +328,6 @@ const RuleCard = ({ icon: Icon, title, desc, color }: any) => (
   </div>
 )
 
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
 const cardStyle = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '24px', padding: '25px', width: '100%', boxSizing: 'border-box' as any }
 const labelStyle = { display: 'block', fontSize: '11px', fontWeight: 800, color: 'var(--primary-color)', marginBottom: '8px', textTransform: 'uppercase' as any }
 const inputStyle = { width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)', color: 'var(--text-color)', fontSize: '14px', outline: 'none' }

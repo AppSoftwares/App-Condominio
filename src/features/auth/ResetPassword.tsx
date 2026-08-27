@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 import icono from '../../assets/icono.png'
 
 const resetSchema = z.object({

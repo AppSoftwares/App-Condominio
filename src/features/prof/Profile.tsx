@@ -12,8 +12,8 @@ import {
   MdOutlineChevronRight,
   MdOutlineEmergency
 } from 'react-icons/md'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../app/store/useAuthStore'
+import { supabase } from '../../shared/lib/supabase'
 
 export const Profile: React.FC = () => {
   const navigate = useNavigate()

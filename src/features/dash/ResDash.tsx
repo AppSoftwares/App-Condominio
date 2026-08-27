@@ -10,8 +10,8 @@ import {
   MdOutlineImage
 } from 'react-icons/md'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
+import { useAuthStore } from '../../app/store/useAuthStore'
+import { supabase } from '../../shared/lib/supabase'
 
 export const ResDash: React.FC = () => {
   const { t } = useTranslation()

@@ -3,25 +3,23 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useAuthStore, UserRole } from '../../store/useAuthStore'
-import { formatBs, formatUSD } from '../../utils/currency'
-import { useCurrencyStore } from '../../store/useCurrencyStore'
-import { supabase } from '../../lib/supabase'
-import { createVoting, VotingDTO, listVotings } from '../../lib/votingsApi'
-import { createAnnouncement } from '../../lib/announcementsApi'
+import { useAuthStore, UserRole } from '../../../app/store/useAuthStore'
+import { formatBs, formatUSD } from '../../../shared/utils/currency'
+import { useCurrencyStore } from '../../../app/store/useCurrencyStore'
+import { supabase } from '../../../shared/lib/supabase'
+import { createAnnouncement } from '../../../shared/api/announcementsApi'
 import { IncidentsAdmin } from './IncidentsAdmin'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
-import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../config/clusters'
+import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../../config/clusters'
 import { Browser } from '@capacitor/browser'
-import { votingService, Voting } from '../../services/votingService'
-import { paymentService } from '../../services/paymentService'
-import { notificationService } from '../../services/notificationService'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useProfiles, useApproveUser, useInviteResident } from '../../queries/useProfiles'
-import { useVotings, useCreateVoting, useDeleteVoting, useVotingResults } from '../../queries/useVotings'
-import { usePaymentsAdmin, useValidatePayment } from '../../queries/usePaymentsAdmin'
+import { votingService, Voting } from '../../../shared/api/services/votingService'
+import { notificationService } from '../../../shared/api/services/notificationService'
+import { useQueryClient } from '@tanstack/react-query'
+import { useProfiles, useApproveUser, useInviteResident } from '../../../shared/api/queries/useProfiles'
+import { useVotings, useCreateVoting, useDeleteVoting, useVotingResults } from '../../../shared/api/queries/useVotings'
+import { usePaymentsAdmin, useValidatePayment } from '../../../shared/api/queries/usePaymentsAdmin'
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -33,32 +31,7 @@ const inviteSchema = z.object({
 
 type InviteFormValues = z.infer<typeof inviteSchema>
 
-const TabItem = ({ active, label, icon, onClick }: any) => (
-  <button
-    onClick={onClick}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-      padding: '8px 14px',
-      borderRadius: '20px',
-      border: 'none',
-      backgroundColor: active ? 'var(--primary-color)' : 'var(--card-bg)',
-      color: active ? 'white' : 'var(--text-sub)',
-      fontSize: '12px',
-      fontWeight: 700,
-      cursor: 'pointer',
-      whiteSpace: 'nowrap',
-      transition: 'all 0.3s ease',
-      boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
-    }}
-  >
-    <span className="material-symbols-outlined" style={{ fontSize: '18px', width: 'auto', height: 'auto', overflow: 'visible' }}>{icon}</span>
-    {label}
-  </button>
-)
-
-export const Admin: React.FC = () => {
+export const AdminPage: React.FC = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, setWhitelist } = useAuthStore()
@@ -77,17 +50,13 @@ export const Admin: React.FC = () => {
     }
   }, [searchParams])
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab as any)
-    setSearchParams({ tab })
-  }
   const [sedematData, setSedematData] = useState<{ aseoBs: number, gasBs: number, aseoUsd: number, gasUsd: number } | null>(null)
   const [sedematAseoBs, setSedematAseoBs] = useState('')
   const [sedematGasBs, setSedematGasBs] = useState('')
   const [visibleProofs, setVisibleProofs] = useState<Record<string, boolean>>({})
 
   // Queries & Mutations
-  const { data: allUsers = [], isLoading: isLoadingUsers, refetch: refetchUsers } = useProfiles(user?.residential_cluster, isSuperAdmin)
+  const { data: allUsers = [], isLoading: isLoadingUsers } = useProfiles(user?.residential_cluster, isSuperAdmin)
   const users = allUsers.filter((u: any) => u.status === 'active' || !u.status)
   const pendingUsers = allUsers.filter((u: any) => u.status === 'pending')
 
@@ -233,15 +202,6 @@ export const Admin: React.FC = () => {
     }
   }
 
-  const handleCreateAnnouncement = async (titulo: string, mensaje: string) => {
-    try {
-      await createAnnouncement({ titulo, mensaje, tipo: 'general' })
-      alert('¡Anuncio publicado!')
-    } catch (err) {
-      alert('Error al publicar anuncio')
-    }
-  }
-
   const handleImportDebts = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -249,9 +209,7 @@ export const Admin: React.FC = () => {
       formData.append('file', file);
 
       try {
-        // Ajustar la URL según el entorno (dev/prod)
         const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:8000';
-
         const response = await fetch(`${API_BASE}/api/v1/accounting/migrate-excel`, {
           method: 'POST',
           body: formData,
@@ -264,7 +222,6 @@ export const Admin: React.FC = () => {
 
         const result = await response.json();
         alert(`¡Migración Completada!\nProcesados: ${result.processed} registros.`);
-        console.table(result.details);
       } catch (err: any) {
         console.error('Error migrating debts:', err);
         alert('Error al migrar deudas: ' + err.message);
@@ -273,16 +230,11 @@ export const Admin: React.FC = () => {
   }
 
   const toggleConvenio = (userId: number) => {
-    // Note: Local toggle might not persist without a mutation.
-    // The original code used setUsers(users.map(...)).
-    // I'll keep the alert for now as it seems to be a placeholder UI action in the original.
     alert("Estado de convenio actualizado para el propietario (Acción local en UI).");
   }
 
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new();
-
-    // Header Info
     const header = [
       [financialData.condominio],
       [`RIF: ${financialData.rif}`],
@@ -290,23 +242,17 @@ export const Admin: React.FC = () => {
       [`TASA BCV: ${bcvRate.toFixed(2)} Bs/$`],
       []
     ];
-
-    // Ordinarios
     const ordinariosRows = [
       ["GASTOS ORDINARIOS"],
       ["CONCEPTO", "MONTO BS", "MONTO USD"],
       ...financialData.gastos_ordinarios.map(g => [g.concepto, g.bs, g.usd])
     ];
-
-    // Sobrevenidos
     const sobrevenidosRows = [
       [],
       ["GASTOS SOBREVENIDOS"],
       ["CONCEPTO", "MONTO BS", "MONTO USD"],
       ...financialData.gastos_sobrevenidos.map(g => [g.concepto, g.bs, g.usd])
     ];
-
-    // SEDEMAT if exists
     let sedematRows: any[] = [];
     if (sedematData) {
       sedematRows = [
@@ -318,13 +264,9 @@ export const Admin: React.FC = () => {
         ["TOTAL MUNICIPAL", sedematData.aseoBs + sedematData.gasBs, sedematData.aseoUsd + sedematData.gasUsd]
       ];
     }
-
     const wsData = [...header, ...ordinariosRows, ...sobrevenidosRows, ...sedematRows];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Apply some basic column widths
     ws['!cols'] = [{ wch: 40 }, { wch: 20 }, { wch: 20 }];
-
     XLSX.utils.book_append_sheet(wb, ws, "Relacion Mensual");
     XLSX.writeFile(wb, `Relacion_${financialData.mes_relacion.replace(' ', '_')}.xlsx`);
   }
@@ -332,7 +274,6 @@ export const Admin: React.FC = () => {
   const handleExportPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
     const html = `
       <html>
         <head>
@@ -355,7 +296,6 @@ export const Admin: React.FC = () => {
             <p style="margin: 5px 0; font-weight: bold; letter-spacing: 1px;">RELACIÓN DE GASTOS Y CUOTAS DE MANTENIMIENTO</p>
             <p style="margin: 5px 0;">MES: ${financialData.mes_relacion} | TASA BCV: ${bcvRate.toFixed(2)} Bs/$</p>
           </div>
-
           <h2 style="font-size: 16px; margin-top: 20px; border-bottom: 1px solid #000; padding-bottom: 5px;">GASTOS ORDINARIOS</h2>
           <table>
             <thead><tr><th>CONCEPTO</th><th class="monto">MONTO BS</th><th class="monto">MONTO USD</th></tr></thead>
@@ -363,7 +303,6 @@ export const Admin: React.FC = () => {
               ${financialData.gastos_ordinarios.map(g => `<tr><td>${g.concepto}</td><td class="monto">${g.bs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</td><td class="monto">$${g.usd.toFixed(2)}</td></tr>`).join('')}
             </tbody>
           </table>
-
           <h2>GASTOS SOBREVENIDOS</h2>
           <table>
             <thead><tr><th>CONCEPTO</th><th class="monto">MONTO BS</th><th class="monto">MONTO USD</th></tr></thead>
@@ -371,7 +310,6 @@ export const Admin: React.FC = () => {
               ${financialData.gastos_sobrevenidos.map(g => `<tr><td>${g.concepto}</td><td class="monto">${g.bs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</td><td class="monto">$${g.usd.toFixed(2)}</td></tr>`).join('')}
             </tbody>
           </table>
-
           ${sedematData ? `
             <div style="margin-top: 30px; border: 1px solid #000; padding: 15px;">
               <h2 style="margin-top: 0; border: none;">DETALLE RECIBO SEDEMAT (PROCESADO)</h2>
@@ -391,7 +329,6 @@ export const Admin: React.FC = () => {
     }, 500);
   }
 
-
   const handleImportResidents = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -401,12 +338,7 @@ export const Admin: React.FC = () => {
         const wb = XLSX.read(bstr, { type: 'binary' });
         const wsname = wb.SheetNames[0];
         const ws = wb.Sheets[wsname];
-
-        // El archivo tiene encabezados en la fila 4 (índice 3)
-        // Usamos sheet_to_json con range: 4 para empezar a leer desde los datos (fila 5)
-        // o range: 3 para leer desde los encabezados.
         const rawData: any[] = XLSX.utils.sheet_to_json(ws, { range: 3 });
-
         const mappedUsers = rawData.map((row: any, index: number) => ({
           id: (Date.now() + index).toString(),
           name: `${row['NOMBRE'] || ''} ${row['APELLIDO'] || ''}`.trim(),
@@ -420,7 +352,6 @@ export const Admin: React.FC = () => {
           debt: 0,
           password: row['CONTRASEÑA']
         })).filter(u => u.email);
-
         setWhitelist(mappedUsers);
         alert(`¡Éxito! Se han importado ${mappedUsers.length} registros del archivo ${file.name}.`);
       };
@@ -430,48 +361,36 @@ export const Admin: React.FC = () => {
 
   const generateStatementPDF = async (resident: any) => {
     const doc = new jsPDF()
-
-    // Cargar deudas reales
     const { data: debts } = await supabase
         .from('debts')
         .select('*')
         .eq('residente_id', resident.id)
         .order('fecha_vencimiento', { ascending: true })
-
     const { data: payments } = await supabase
         .from('payments')
         .select('*')
         .eq('profile_id', resident.id)
         .eq('status', 'approved')
         .order('created_at', { ascending: true })
-
-    // Configuración de estilos imitando la referencia
     doc.setFont("helvetica", "bold")
     doc.setFontSize(11)
     doc.text("CONDOMINIO CONJUNTO 14 LAS HUERTAS", 10, 15)
     doc.text("RIF. J-29900732-3", 10, 20)
     doc.text(`Fecha:  ${new Date().toLocaleDateString('es-VE')}`, 150, 20)
-
     doc.text(`ESTADO DE CUENTA HASTA ${new Date().toLocaleDateString('es-VE')}`, 10, 30)
     doc.line(10, 32, 200, 32)
-
     doc.text(`PROPIETARIO: ${(resident.first_name || resident.name || '').toUpperCase()} ${(resident.last_name || '').toUpperCase()}`, 10, 40)
     doc.text(`CASA: ${resident.house_number}`, 120, 40)
-
-    // Tabla de movimientos real
     const body: any[] = []
     let saldo = 0
-
     debts?.forEach(d => {
         saldo += Number(d.monto_pendiente)
         body.push([`${d.concepto} (${d.fecha_vencimiento})`, `${Number(d.monto_pendiente).toFixed(2).replace('.', ',')} $`])
     })
-
     payments?.forEach(p => {
         saldo -= Number(p.monto_usd)
         body.push([`ABONA EL ${new Date(p.created_at).toLocaleDateString()} - REF: ${p.referencia}`, `-${Number(p.monto_usd).toFixed(2).replace('.', ',')} $`])
     })
-
     autoTable(doc, {
       startY: 45,
       head: [['DESCRIPCIÓN', 'MONTO $']],
@@ -484,26 +403,13 @@ export const Admin: React.FC = () => {
       headStyles: { fontStyle: 'bold', textColor: [0, 0, 0], fillColor: [240, 240, 240] },
       columnStyles: { 1: { halign: 'right' } }
     })
-
     const finalY = (doc as any).lastAutoTable.finalY || 150
     doc.setFontSize(10)
     doc.text("Realizado por:", 10, finalY + 15)
     doc.text("Administración Condominio", 10, finalY + 22)
     doc.text("Sistema de Gestión Caminos", 10, finalY + 27)
-
-    const fileName = `Estado_de_Cuenta_casa_${resident.house_number}.pdf`
-
-    // Abrir PDF con el navegador/visor del sistema operativo
     const blobUrl = doc.output('bloburl')
     await Browser.open({ url: blobUrl.toString() })
-
-    return fileName
-  }
-
-  const sendWhatsApp = (resident: any) => {
-    const message = `Hola ${resident.name}, te adjunto tu Estado de Cuenta de la casa ${resident.house_number}. Saldo pendiente: ${resident.debt}$ a la fecha.`
-    const url = `https://wa.me/${resident.phone.replace('+', '')}?text=${encodeURIComponent(message)}`
-    window.open(url, '_blank')
   }
 
   const deleteUser = (id: number, name: string) => {
@@ -518,25 +424,12 @@ export const Admin: React.FC = () => {
         ...data,
         residential_cluster: isSuperAdmin ? selectedCluster : user?.residential_cluster,
       })
-
       alert(`Invitación enviada exitosamente a ${data.email}`)
       setIsInviteModalOpen(false)
       reset()
     } catch (err: any) {
       console.error('Error inviting resident:', err)
       alert('Error al invitar residente: ' + (err.message || String(err)))
-    }
-  }
-
-  const addUser = () => {
-    const name = prompt("Nombre completo:");
-    const email = prompt("Correo:");
-    const role = prompt("Rol (Residente, Tesorero, Administrador, Vigilante):", "Residente");
-    const cluster = prompt("Conjunto residencial (Copiar exacto o dejar vacío para usar el seleccionado):", selectedCluster);
-
-    if (name && email && role) {
-      console.log("Añadir usuario (local):", { name, email, role, cluster });
-      alert("Usuario añadido localmente (Simulación).");
     }
   }
 
@@ -598,7 +491,6 @@ export const Admin: React.FC = () => {
                     </button>
                   </div>
 
-                   {/* Otros botones debajo */}
                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                       <button onClick={() => { setGastoDetail({ concepto: '', monto: 0, categoria: 'Reparación' }); setShowGastoDetail(true); }} style={actionBtnStyle}>
                          <span className="material-symbols-outlined" style={{ marginRight: '8px' }}>add_circle</span> Nuevo Gasto
@@ -903,7 +795,6 @@ export const Admin: React.FC = () => {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                            <p style={{ margin: 0, fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(p.monto_usd || p.amount_usd || 0)}</p>
-                           {p.monto_bs > 0 && <p style={{ margin: 0, fontSize: '11px', fontWeight: 600, color: 'var(--text-sub)' }}>{formatBs(p.monto_bs / (p.monto_usd || 1), p.monto_bs)}</p>}
                            <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', backgroundColor: (p.status === 'pending' || p.status === 'pendiente') ? '#fff4e5' : p.status === 'approved' ? '#e6f4ea' : '#fce8e6', color: (p.status === 'pending' || p.status === 'pendiente') ? '#b45d00' : p.status === 'approved' ? '#1e7e34' : '#c82333', fontWeight: 700 }}>
                               {(p.status === 'pendiente' ? 'PENDIENTE' : p.status?.toUpperCase())}
                            </span>
@@ -920,12 +811,6 @@ export const Admin: React.FC = () => {
                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{p.banco_origen || 'N/A'}</p>
                         </div>
                      </div>
-
-                     {p.description && (
-                        <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', borderLeft: '4px solid var(--accent-gold)' }}>
-                           <p style={{ margin: 0, fontSize: '12px', fontStyle: 'italic' }}>"{p.description}"</p>
-                        </div>
-                     )}
 
                      {(p.screenshot_url || p.evidencia_url) && (
                         <div style={{ marginBottom: '15px' }}>
@@ -1062,7 +947,7 @@ export const Admin: React.FC = () => {
                   >
                     {Object.entries(RESIDENTIAL_CLUSTERS).map(([etapa, conjuntos]) => (
                       <optgroup key={etapa} label={etapa}>
-                        {conjuntos.map(c => (
+                        {(conjuntos as string[]).map(c => (
                           <option key={c} value={c}>{c}</option>
                         ))}
                       </optgroup>
@@ -1099,31 +984,6 @@ export const Admin: React.FC = () => {
                   </button>
                 </div>
              </div>
-
-             <div style={{ ...cardStyle, marginTop: '20px' }}>
-                <p style={labelStyle}>CREAR NUEVO CONJUNTO / RESIDENCIA</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Seleccione el conjunto y luego adjunte el archivo Excel con la base de datos de propietarios para inicializarlo.</p>
-
-                <input type="file" id="super-import" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportResidents} />
-                <button
-                  onClick={() => document.getElementById('super-import')?.click()}
-                  style={{ ...primaryBtnStyle, backgroundColor: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                >
-                  <span className="material-symbols-outlined">add_business</span>
-                  IMPORTAR EXCEL Y CREAR CONJUNTO
-                </button>
-             </div>
-
-             <div style={{ ...cardStyle, marginTop: '20px' }}>
-                <p style={labelStyle}>ACCESO RÁPIDO A SEGURIDAD</p>
-                <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '15px' }}>Gestione las llaves de integración y sesiones activas en la pantalla de Privacidad.</p>
-                <button
-                  onClick={() => navigate('/profile/privacy')}
-                  style={{ ...primaryBtnStyle, backgroundColor: 'var(--accent-gold)' }}
-                >
-                  Ir a Privacidad y API Keys
-                </button>
-             </div>
           </section>
         )}
       </main>
@@ -1136,7 +996,6 @@ const AdminVotingCard = ({ voting, onDelete }: { voting: Voting, onDelete: () =>
   const { data: results = { favor: 0, contra: 0 } } = useVotingResults(voting.id)
 
   useEffect(() => {
-    // Suscripción Realtime para resultados en vivo
     const channel = supabase
       .channel(`votes-${voting.id}`)
       .on('postgres_changes', {
@@ -1185,7 +1044,6 @@ const AdminVotingCard = ({ voting, onDelete }: { voting: Voting, onDelete: () =>
 
        <div style={{ marginTop: '15px' }}>
           <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '15px' }}>{voting.description}</p>
-
           <div style={{ display: 'flex', gap: '20px', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '15px' }}>
             <div style={{ flex: 1, textAlign: 'center' }}>
                <p style={{ margin: 0, fontSize: '10px', fontWeight: 800, color: 'var(--primary-color)' }}>A FAVOR</p>

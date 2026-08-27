@@ -9,10 +9,10 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useAuthStore, UserRole } from '../../store/useAuthStore'
-import { sanitizeString, isValidEmail } from '../../utils/security'
+import { useAuthStore, UserRole } from '../../app/store/useAuthStore'
+import { sanitizeString, isValidEmail } from '../../shared/utils/security'
 import icono from '../../assets/icono.png'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),

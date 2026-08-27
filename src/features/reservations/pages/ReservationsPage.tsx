@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MdArrowBack } from 'react-icons/md'
-import { supabase } from '../../lib/supabase'
-import { useAuthStore } from '../../store/useAuthStore'
+import { supabase } from '../../../shared/lib/supabase'
+import { useAuthStore } from '../../../app/store/useAuthStore'
 
-export const Reservations: React.FC = () => {
+export const ReservationsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const [showModal, setShowModal] = useState(false)

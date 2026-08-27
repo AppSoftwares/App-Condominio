@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  MdOutlinePerson,
   MdOutlineHowToVote,
   MdOutlineHistory,
-  MdOutlinePictureAsPdf,
   MdOutlineEventNote,
   MdOutlineDownload
 } from 'react-icons/md'
-import { useAuthStore } from '../../store/useAuthStore'
-import { supabase } from '../../lib/supabase'
-import { votingService, Voting } from '../../services/votingService'
-import { listAnnouncements, AnnouncementDTO } from '../../lib/announcementsApi'
+import { useAuthStore } from '../../../app/store/useAuthStore'
+import { supabase } from '../../../shared/lib/supabase'
+import { votingService, Voting } from '../../../shared/api/services/votingService'
+import { listAnnouncements, AnnouncementDTO } from '../../../shared/api/announcementsApi'
 
-export const Requests: React.FC = () => {
+export const RequestsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
@@ -278,7 +276,6 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
   )
 }
 
-const headerStyle = { position: 'fixed' as any, top: 0, width: '100%', height: '64px', backgroundColor: 'var(--header-bg)', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }
 const historyCardStyle = { backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '24px', padding: '25px', width: '100%', boxSizing: 'border-box' as any }
 const annCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px' }
 const annIconStyle = { width: '44px', height: '44px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }

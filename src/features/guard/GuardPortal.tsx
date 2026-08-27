@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../shared/lib/supabase'
 import {
   MdCheckCircle,
   MdCancel,
@@ -13,10 +13,10 @@ import {
   MdNotificationsActive
 } from 'react-icons/md'
 import { Network } from '@capacitor/network'
-import { enqueueAction } from '../../lib/offlineQueue'
+import { enqueueAction } from '../../shared/lib/offlineQueue'
 import { BarcodeScanner } from '@capacitor-mlkit/barcode-scanning'
-import { useAuthStore } from '../../store/useAuthStore'
-import { notificationService } from '../../services/notificationService'
+import { useAuthStore } from '../../app/store/useAuthStore'
+import { notificationService } from '../../shared/api/services/notificationService'
 
 export const GuardPortal: React.FC = () => {
   const navigate = useNavigate()

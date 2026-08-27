@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { supabase } from '../../lib/supabase'
-import { MdErrorOutline, MdCheckCircle, MdPending, MdUpdate } from 'react-icons/md'
+import { supabase } from '../../../shared/lib/supabase'
 
 export const IncidentsAdmin: React.FC = () => {
   const [incidents, setIncidents] = useState<any[]>([])
