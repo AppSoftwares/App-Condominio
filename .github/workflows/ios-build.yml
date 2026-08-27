@@ -43,9 +43,7 @@ jobs:
           echo "Version found: $VERSION"
 
       - name: Install dependencies
-        run: |
-          pnpm config set audit-config.min-release-age 0
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Create .env file
         run: |

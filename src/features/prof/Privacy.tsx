@@ -146,6 +146,21 @@ export const Privacy: React.FC = () => {
     else fetchSessions()
   }
 
+  const formatLastSeen = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+
+    if (diff < 60000) return 'Ahora mismo';
+    if (diff < 3600000) return `Hace ${Math.floor(diff / 60000)} min`;
+
+    const isToday = date.toDateString() === now.toDateString();
+    const time = date.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    if (isToday) return `Hoy a las ${time}`;
+    return `${date.toLocaleDateString()} a las ${time}`;
+  }
+
   return (
     <div style={{ width: '100%', backgroundColor: 'var(--bg-color)', fontFamily: "'Inter', sans-serif", color: 'var(--text-color)', paddingBottom: '30px' }}>
       <header style={{
@@ -260,19 +275,24 @@ export const Privacy: React.FC = () => {
       {/* MODAL: DISPOSITIVOS ACTIVOS */}
       {showDevicesModal && (
         <Modal title="Dispositivos Activos" onClose={() => setShowDevicesModal(false)}>
-          <p style={{ fontSize: '13px', color: '#6f7978', marginBottom: '20px' }}>Estas son las sesiones activas en tu cuenta. Puedes cerrar sesiones remotas si no las reconoces.</p>
+          <p style={{ fontSize: '13px', color: 'var(--text-sub)', marginBottom: '20px' }}>Estas son las sesiones activas en tu cuenta. Puedes cerrar sesiones remotas si no las reconoces.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {loadingDevices ? <p style={{textAlign:'center'}}>Cargando sesiones...</p> : devices.length === 0 ? <p style={{textAlign:'center'}}>No hay otras sesiones.</p> : devices.map(dev => {
               const isCurrent = dev.device_id === currentDeviceId;
               return (
-                <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: '#f5f3f0', borderRadius: '16px' }}>
+                <div key={dev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: 'var(--icon-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                   <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                    <span className="material-symbols-outlined" style={{ color: '#0f5551' }}>{dev.platform === 'web' ? 'laptop' : 'smartphone'}</span>
+                    <span className="material-symbols-outlined" style={{ color: 'var(--primary-color)' }}>{dev.platform === 'web' ? 'laptop' : 'smartphone'}</span>
                     <div style={{ textAlign: 'left' }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: '14px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text-color)' }}>
                         {dev.device_name} {isCurrent && '(Este equipo)'}
                       </p>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#6f7978' }}>Visto: {new Date(dev.last_seen).toLocaleString()}</p>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-sub)' }}>
+                        Visto: {formatLastSeen(dev.last_seen)} • {dev.location || 'Ubicación desconocida'}
+                      </p>
+                      <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: 'var(--accent-gold)', fontWeight: 800 }}>
+                        IP: {dev.ip_address || '0.0.0.0'}
+                      </p>
                     </div>
                   </div>
                   {!isCurrent && (
