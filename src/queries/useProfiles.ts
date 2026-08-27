@@ -43,7 +43,7 @@ export function useInviteResident() {
       residential_cluster?: string;
       role?: string;
     }) => {
-      const { data, error } = await supabase.functions.invoke('invite-resident2', { body: payload })
+      const { data, error } = await supabase.functions.invoke('invite-resident', { body: payload })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
       return data
