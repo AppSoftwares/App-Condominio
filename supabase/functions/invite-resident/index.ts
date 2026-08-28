@@ -51,14 +51,24 @@ serve(async (req) => {
 
     const cleanEmail = email.trim().toLowerCase()
 
+    // Generar contraseña provisional aleatoria
+    const generatePassword = (length = 10) => {
+      const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
+      const array = new Uint8Array(length);
+      crypto.getRandomValues(array);
+      return Array.from(array, (byte) => charset[byte % charset.length]).join("");
+    }
+    const provisionalPassword = generatePassword();
+
     // 1. Invitar al usuario via Auth Admin API
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       cleanEmail,
       {
-        redirectTo: `${Deno.env.get('APP_URL')}/reset-password`,
+        redirectTo: `${Deno.env.get('APP_URL') || 'https://app-condominio.vercel.app'}/reset-password`,
         data: {
           first_name,
           last_name,
+          password_provisional: provisionalPassword,
           password_set: false
         },
       }

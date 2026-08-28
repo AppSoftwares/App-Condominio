@@ -62,7 +62,10 @@ export const ResetPassword: React.FC = () => {
     try {
       const { error } = await supabase.auth.updateUser({
         password: values.password,
-        data: { password_set: true }
+        data: {
+          password_set: true,
+          password_provisional: null // Limpiar la contraseña provisional por seguridad
+        }
       })
       if (error) throw error
       alert(isInvitation ? '¡Bienvenido! Su clave ha sido configurada. Ya puede iniciar sesión.' : 'Contraseña actualizada con éxito. Inicie sesión con sus nuevas credenciales.')
