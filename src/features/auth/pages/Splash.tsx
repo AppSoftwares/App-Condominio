@@ -9,7 +9,6 @@ export const Splash: React.FC = () => {
     <div style={{
       height: '100vh', width: '100%', overflowX: 'hidden', backgroundColor: 'var(--bg-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden'
     }}>
-       {/* Background Decoration */}
        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'var(--icon-bg)', zIndex: 0, border: '2px solid var(--accent-gold)', opacity: 0.3 }}></div>
        <div style={{ position: 'absolute', bottom: '-50px', left: '-50px', width: '200px', height: '200px', borderRadius: '50%', backgroundColor: 'var(--icon-bg)', zIndex: 0, border: '2px solid var(--accent-gold)', opacity: 0.3 }}></div>
 
@@ -31,8 +30,10 @@ export const Splash: React.FC = () => {
           </div>
        </main>
 
-       <footer style={{ position: 'absolute', bottom: '40px', fontSize: '11px', color: 'var(--text-sub)', letterSpacing: '2px' }}>
-          HERITAGE RESIDENTIAL SYSTEM • 2024
+       <footer style={{ position: 'absolute', bottom: '10px', width: '100%' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-sub)', textAlign: 'center', letterSpacing: '1px' }}>
+             APP CONDOMINIO • 2026
+          </div>
        </footer>
     </div>
   )

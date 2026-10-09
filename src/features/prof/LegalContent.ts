@@ -5,92 +5,80 @@ export interface LegalSection {
 
 export const TERMS_AND_CONDITIONS = {
   title: "Términos y Condiciones de Servicio",
-  lastUpdate: "26 de agosto de 2026",
-  intro: `Los presentes Términos y Condiciones ("Términos") regulan el acceso y uso de la plataforma web y aplicación móvil App Condominio (en adelante, "la Plataforma" o "el Servicio"), operada bajo la denominación comercial App Condominio.
+  lastUpdate: "09 de octubre de 2026",
+  intro: `Los presentes Términos y Condiciones ("Términos") regulan el acceso y uso de la plataforma web y aplicación móvil App Condominio (en adelante, "la Plataforma" o "el Servicio"), operada por [CONFIRMAR razón social], RIF [CONFIRMAR RIF], con domicilio fiscal en [CONFIRMAR domicilio fiscal] (en adelante, "el Prestador").
 
-Al crear una cuenta, ingresar o utilizar la Plataforma, el usuario (bien sea la Junta de Condominio, la Administradora, el Propietario, el Arrendatario o el Vigilante) manifiesta su conformidad absoluta con las disposiciones aquí establecidas. Si no está de acuerdo con estos Términos, deberá abstenerse de utilizar el Servicio.`,
+Al crear una cuenta, ingresar o utilizar la Plataforma, el usuario manifiesta su conformidad absoluta con las disposiciones aquí establecidas. Si no está de acuerdo con estos Términos, deberá abstenerse de utilizar el Servicio.`,
   sections: [
     {
       title: "1. Descripción del Servicio",
       body: `App Condominio es una plataforma tecnológica bajo la modalidad SaaS (Software como Servicio) diseñada para optimizar la gestión operativa, financiera, de comunicación y de gobernanza de conjuntos residenciales, edificios y condominios en la República Bolivariana de Venezuela.
 El Servicio comprende las siguientes funcionalidades principales:
 • Gestión de la Estructura Residencial: Padrón de unidades, inmuebles, propietarios, arrendatarios y alícuotas correspondientes.
-• Módulo Financiero y Recaudación: Carga de avisos de cobro, desglose de gastos comunes y extraordinarios, conciliación y validación de pagos (transferencias, pago móvil u otros medios).
-• Gobernanza Digital: Herramientas para la convocatoria, consulta digital, emisión de votos, control de quórum y trazabilidad en asambleas ordinarias y extraordinarias.
-• Control de Acceso y Visitantes: Registro de ingresos, control vehicular y gestión de pases de visitantes mediante la aplicación móvil.
-• Módulos Operativos: Reserva de áreas comunes, canalización de incidencias, cartelera virtual de avisos y repositorio documental del condominio.`
+• Módulo Financiero y Recaudación: Carga de avisos de cobro, desglose de gastos comunes y extraordinarios, conciliación y validación de pagos.
+• Gobernanza Digital: Herramientas para la convocatoria, consulta digital, emisión de votos, control de quórum y trazabilidad en asambleas.
+• Control de Acceso y Visitantes: Registro de ingresos, control vehicular y gestión de pases de visitantes.
+• Módulos Operativos: Reserva de áreas comunes, canalización de incidencias, cartelera virtual de avisos y repositorio documental.`
     },
     {
       title: "2. Registro de Cuentas y Responsabilidad de Credenciales",
-      body: `1. Alta del Condominio: La activación de una comunidad o inmueble requiere ser ejecutada por un representante legal legítimo, administrador autorizado o por el equipo técnico de App Condominio.
-2. Uso Individual e Intransferible: Cada cuenta de usuario se vincula a una persona natural. Queda estrictamente prohibido compartir credenciales de acceso (usuario y contraseña) entre múltiples individuos.
-3. Custodia de Credenciales: El usuario es el único responsable de la confidencialidad de su contraseña y de las acciones realizadas desde su cuenta. Debe notificar de inmediato a App Condominio ante cualquier sospecha de acceso no autorizado o brecha de seguridad.
-4. Veracidad de la Información: El usuario garantiza que la información suministrada es exacta, actualizada y veraz. Nos reservamos el derecho de suspender o revocar cuentas con datos falsos o suplantación de identidad.`
+      body: `1. Alta del Condominio: La activación de una comunidad requiere ser ejecutada por un representante legal legítimo, administrador autorizado o por el equipo técnico de App Condominio.
+2. Uso Individual e Intransferible: Cada cuenta de usuario se vincula a una persona natural. Queda estrictamente prohibido compartir credenciales de acceso.
+3. Custodia de Credenciales: El usuario es el único responsable de la confidencialidad de su contraseña y de las acciones realizadas desde su cuenta.
+4. Veracidad de la Información: El usuario garantiza que la información suministrada es exacta, actualizada y veraz.`
     },
     {
-      title: "3. Suscripción, Tarifas y Forma de Pago",
+      title: "3. Suscripción, Tarifas y Tasa de Cambio",
       body: `1. Planes de Suscripción: El costo del Servicio se calcula bajo una modalidad de suscripción periódica basada en el número de unidades o apartamentos que conforman el condominio.
-2. Moneda y Tasa de Cambio: Las tarifas de los planes están expresadas en dólares estadounidenses (USD) como unidad de referencia. Las facturas y pagos procesados dentro del territorio venezolano se liquidarán en Bolívares (Bs.) calculados a la tasa de cambio oficial publicada por el Banco Central de Venezuela (BCV) correspondiente a la fecha de la transacción o emisión de factura, conforme al marco legal cambiario vigente.
-3. Período de Prueba (Trial): Se podrá otorgar un período de prueba gratuito de hasta treinta (30) días continuos. Vencido este plazo, se requerirá la selección de un plan activo para mantener el acceso al sistema.
-4. Condiciones de Pago: La facturación se realiza de manera anticipada. La mora en el pago del plan por parte del condominio autoriza a App Condominio a suspender temporalmente el acceso a las funciones administrativas del sistema, previo aviso.
-5. Ajuste de Precios: Nos reservamos el derecho de modificar las tarifas de suscripción mediante notificación enviada con al menos treinta (30) días de anticipación.`
+2. Tasa de Cambio y Transparencia (§3.2): Las tarifas están expresadas en dólares estadounidenses (USD) como unidad de referencia. Las facturas y pagos procesados dentro del territorio venezolano se liquidarán en Bolívares (Bs.) calculados a la tasa de cambio oficial publicada por el Banco Central de Venezuela (BCV) vigente en la fecha de la transacción (fuente: DolarApi / BCV). El monto final en Bs. de las cuotas condominiales es validado y confirmado por la administración de tu condominio.
+3. Período de Prueba (Trial): Se podrá otorgar un período de prueba gratuito de hasta treinta (30) días continuos.
+4. Condiciones de Pago: La facturación se realiza de manera anticipada.
+5. Ajuste de Precios: Se notificará con al menos treinta (30) días de anticipación.`
     },
     {
       title: "4. Uso Aceptable de la Plataforma",
-      body: `El usuario se obliga a hacer un uso diligente, correcto y lícito de la Plataforma. En particular, queda prohibido:
-• Utilizar el Servicio para fines distintos a la administración y convivencia del condominio registrado.
-• Introducir o difundir virus informáticos, malware o códigos maliciosos que atenten contra la seguridad de la infraestructura.
-• Intentar realizar ingeniería inversa, descompilar o extraer el código fuente del portal web o la aplicación móvil.
-• Acceder sin autorización a la información, bases de datos o paneles de control de otros condominios alojados en la Plataforma.
-• Cargar contenido injurioso, difamatorio, ilegal o que vulnere la privacidad, el honor o la imagen de los residentes u otros terceros.
-• Realizar ataques de denegación de servicio (DoS/DDoS) o enviar solicitudes masivas automatizadas que comprometan el rendimiento del servidor.`
+      body: `El usuario se obliga a hacer un uso diligente, correcto y lícito de la Plataforma, prohibiéndose tajantemente la suplantación de identidad, difusión de contenido falso, ataques informáticos o ingeniería inversa.`
     },
     {
       title: "5. Propiedad de los Datos y Exportación",
-      body: `1. Titularidad: Toda la información cargada en la Plataforma (padrón de propietarios, soportes contables, registros de pago, actas y listas de visitas) es propiedad exclusiva del condominio o de los usuarios titulares. App Condominio no asume titularidad sobre dichos datos.
-2. Rol de la Plataforma: App Condominio opera en calidad de Encargado del Tratamiento de los datos, procesándolos únicamente para la prestación efectiva del Servicio.
-3. Exportación y Retención Post-Cancelación: En caso de terminación del servicio, la administración del condominio dispondrá de un plazo de treinta (30) días para descargar una copia estructurada de sus datos (formatos CSV/Excel). Cumplidos sesenta (60) días continuos tras la cancelación, los datos serán depurados de los servidores activos.`
+      body: `1. Titularidad: Toda la información cargada es propiedad exclusiva del condominio o de los usuarios titulares.
+2. Rol de la Plataforma: App Condominio opera en calidad de Encargado del Tratamiento.
+3. Exportación y Retención: En caso de terminación del servicio, la administración dispondrá de treinta (30) días para exportar sus datos (formatos CSV/Excel) y se procederá a la purga a los sesenta (60) días.`
     },
     {
       title: "6. Propiedad Intelectual",
-      body: `La Plataforma App Condominio, incluyendo su código fuente, arquitectura de software, bases de datos, diseños de interfaz, logotipos, marcas y textos, son propiedad intelectual exclusiva de App Condominio.
-El nombre e identificadores comerciales se encuentran protegidos bajo la legislación venezolana de propiedad industrial y el marco del Servicio Autónomo de la Propiedad Intelectual (SAPI). La contratación del servicio otorga únicamente una licencia de uso limitada, no exclusiva, revocable e intransferible durante el período de la suscripción.`
+      body: `La Plataforma y sus componentes son propiedad intelectual exclusiva de App Condominio, protegidos bajo la legislación venezolana (SAPI).`
     },
     {
-      title: "7. Disponibilidad, Nivel de Servicio (SLA) y Mantenimiento",
-      body: `1. Disponibilidad: App Condominio realiza esfuerzos razonables para mantener una disponibilidad operativa de la plataforma del 99.5% mensual.
-2. Mantenimientos Programados: Se podrán realizar labores de mantenimiento preventivo o actualizaciones que requieran la interrupción temporal del servicio, notificando con al menos veinticuatro (24) horas de antelación mediante la plataforma o correo electrónico.
-3. Exclusiones de Garantía: App Condominio no se hace responsable por caídas del servicio o fallas de acceso derivadas de problemas de conectividad a Internet por parte de los proveedores ISP del usuario, interrupciones en el servicio eléctrico nacional o eventos de fuerza mayor.`
+      title: "7. Disponibilidad y Nivel de Servicio (SLA)",
+      body: `Se realizan esfuerzos razonables para mantener una disponibilidad operativa del 99.5% mensual, excluyendo fallas de proveedores ISP o servicios eléctricos.`
     },
     {
       title: "8. Limitación de Responsabilidad y Verificación de Pagos",
-      body: `1. Falta de Responsabilidad por Cobranza o Conciliación: App Condominio es un canal digital y un soporte tecnológico; no es una entidad financiera ni un gestor de fondos. La Junta de Condominio o la Administradora son las únicas responsables de validar la autenticidad de los comprobantes de pago (transferencias, pago móvil, etc.) subidos por los propietarios.
-2. Toma de Decisiones Internas: App Condominio no responde por resoluciones, sanciones, cobros o acuerdos adoptados por las Juntas de Condominio o las Asambleas de Propietarios basándose en los informes del sistema.
-3. Límite de Indemnización: En caso de comprobarse judicialmente responsabilidad directa por negligencia grave atribuible a la Plataforma, la responsabilidad total máxima acumulada no excederá el monto equivalente pagado por el condominio contratante en los últimos tres (3) meses de servicio.`
+      body: `1. Verificación de Pagos: App Condominio no es entidad financiera ni gestora de fondos; la administración es la única responsable de validar los comprobantes de pago.
+2. Decisiones Internas: La plataforma no responde por resoluciones de las Juntas de Condominio.
+3. Límite de Indemnización (§8.3): En caso de comprobarse judicialmente responsabilidad directa por negligencia grave imputable a la Plataforma, la responsabilidad total máxima acumulada no excederá el monto equivalente pagado por el condominio contratante en los últimos tres (3) meses de servicio, conforme a la legislación aplicable de protección al consumidor.`
     },
     {
-      title: "9. Cumplimiento de la Ley Venezolana y Mensajes de Datos",
-      body: `1. Validez Jurídica de la Información: Las notificaciones, avisos de cobro, registros de participación y votaciones generadas en la Plataforma se amparan bajo la Ley sobre Mensajes de Datos y Firmas Electrónicas, otorgándoles validez y eficacia probatoria en la medida en que cumplan con la integridad y disponibilidad exigidas por la ley.
-2. Marco Normativo Condominial: Las herramientas organizativas del sistema apoyan la gestión del inmueble, pero no sustituyen ni modifican las obligaciones dispuestas en la Ley de Propiedad Horizontal venezolana, el documento de condominio ni el reglamento interno de cada edificio o residencial.`
+      title: "9. Cumplimiento Legal y Mensajes de Datos",
+      body: `Las notificaciones y registros generados se amparan bajo la Ley sobre Mensajes de Datos y Firmas Electrónicas, sin menoscabo de la Ley de Propiedad Horizontal.`
     },
     {
-      title: "10. Suspensión y Cancelación",
-      body: `1. Por el Condominio: La administración podrá rescindir el servicio en cualquier momento enviando un aviso previo de treinta (30) días.
-2. Por App Condominio: Podremos suspender o cancelar de forma inmediata el acceso a la cuenta si el usuario incurre en un incumplimiento grave de estos Términos, realiza actividades ilícitas o mantiene impagos de su plan de suscripción.`
+      title: "10. Suspensión, Cancelación y Reembolsos",
+      body: `La administración puede cancelar en cualquier momento con aviso previo de 30 días, sujetándose a la Política de Reembolso y Cancelación y al procedimiento de eliminación de datos.`
     },
     {
       title: "11. Modificaciones a los Términos",
-      body: `App Condominio podrá modificar estos Términos para adaptarlos a mejoras del software o cambios en el marco legal aplicable. Se informará a los usuarios sobre cambios relevantes con un plazo no menor a treinta (30) días antes de su entrada en vigor. El uso continuado del servicio tras la fecha señalada constituirá la aceptación expresa de los nuevos términos.`
+      body: `Cualquier modificación sustancial requerirá de aceptación ACTIVA por parte del usuario en la aplicación (mediante ConsentGate), sin constituir aceptación tácita por el uso continuado.`
     },
     {
       title: "12. Ley Aplicable y Jurisdicción",
-      body: `Los presentes Términos y Condiciones se rigen e interpretan plenamente de conformidad con las leyes de la República Bolivariana de Venezuela.
-Cualquier controversia, reclamo o desacuerdo derivado de la interpretación o ejecución del presente contrato que no pueda ser resuelto de mutuo acuerdo entre las partes, será sometido a la jurisdicción de los tribunales competentes en la República Bolivariana de Venezuela.`
+      body: `Estos Términos se rigen por las leyes de la República Bolivariana de Venezuela, sometiéndose a los tribunales competentes.`
     }
   ],
   footer: {
-    contactEmail: "desarrollodeappcondominio@gmail.com",
-    webPortal: "https://app-condominio-six.vercel.app/",
+    contactEmail: "[CONFIRMAR correo corporativo]",
+    webPortal: "https://app-condominio.vercel.app",
     location: "República Bolivariana de Venezuela",
     copy: "© 2026 App Condominio — Todos los derechos reservados."
   }
@@ -98,92 +86,72 @@ Cualquier controversia, reclamo o desacuerdo derivado de la interpretación o ej
 
 export const PRIVACY_POLICY = {
   title: "Política de Privacidad",
-  lastUpdate: "26 de agosto de 2026",
-  intro: `App Condominio ("nosotros", "nuestra plataforma") opera el sistema de administración y gestión residencial accesible a través del portal web https://app-condominio-six.vercel.app/ y sus aplicaciones móviles oficiales para Android e iOS.
-Esta Política de Privacidad describe cómo recopilamos, procesamos, almacenamos y protegemos la información personal de los usuarios. Al registrarse o utilizar App Condominio, usted acepta los términos descritos en el presente documento. Si no está de acuerdo con estas disposiciones, le solicitamos abstenerse de utilizar nuestros servicios.`,
+  lastUpdate: "09 de octubre de 2026",
+  intro: `App Condominio ("nosotros", "nuestra plataforma"), operada por [CONFIRMAR razón social], RIF [CONFIRMAR RIF], con domicilio en [CONFIRMAR domicilio fiscal] y correo de privacidad [CONFIRMAR correo corporativo], describe en la presente Política de Privacidad cómo recopilamos, procesamos y protegemos la información personal.`,
   sections: [
     {
       title: "1. Naturaleza del Tratamiento de Datos",
-      body: `A los efectos legales aplicables, la Junta de Condominio o la Empresa Administradora del inmueble actúa como Responsable del Tratamiento de los datos del residencial. App Condominio actúa estrictamente en calidad de Encargado del Tratamiento, proporcionando la infraestructura tecnológica para la gestión operativa y financiera del condominio.`
+      body: `La Junta de Condominio o la Empresa Administradora actúa como Responsable del Tratamiento. App Condominio actúa estrictamente como Encargado del Tratamiento.`
     },
     {
       title: "2. Información que Recopilamos",
-      body: `A. Información proporcionada directamente por el usuario
-• Datos de cuenta: Nombre, apellido, correo electrónico, número de teléfono y contraseña cifrada.
-• Datos del inmueble: Nombre del conjunto o edificio, RIF, dirección física, número de unidad (bloque, torre, apartamento o casa) y porcentaje de alícuota.
-• Información financiera y contable: Montos de cuotas, estado de cuenta, historial de pagos y comprobantes digitalizados (imágenes de transferencias o depósitos bancarios).
-• Documentación residencial: Reglamentos internos, actas de asambleas, avisos de cobro y archivos institucionales cargados por la administración.
-• Control de accesos y visitantes: Nombre completo, número de cédula de identidad o pasaporte del visitante, fecha/hora de ingreso, placa del vehículo y unidad de destino, registrados por el residente o por el personal de seguridad.
-• Interacciones y participación: Votos emitidos en consultas o asambleas digitales, reportes de incidencias, reservas de áreas comunes y mensajes enviados mediante la plataforma.
-
-B. Información recopilada automáticamente
-• Datos de diagnóstico y dispositivo: Dirección IP, tipo de dispositivo, sistema operativo, modelo del terminal e identificadores únicos de dispositivo móvil.
-• Permisos de la aplicación móvil: Acceso a la cámara y galería (exclusivamente para capturar o adjuntar comprobantes de pago y fotos de perfil) y notificaciones push.
-• Registros de actividad (Audit Log): Bitácora inmutable de acciones realizadas en el sistema (inicios de sesión, registros de pago, votaciones y cambios de configuración) para auditoría interna.`
+      body: `• Datos de cuenta: Nombre, apellido, correo electrónico, teléfono y contraseña cifrada.
+• Datos del inmueble: Conjunto residencial, RIF, dirección, unidad y alícuota.
+• Información financiera: Estados de cuenta, historial de pagos y comprobantes.
+• Control de accesos: Datos de visitantes, cédula, placa y hora de ingreso.
+• Datos técnicos: IP, tipo de dispositivo, sistema operativo y notificaciones push.`
     },
     {
-      title: "3. Finalidad del Tratamiento de Datos",
-      body: `• Gestión operativa del condominio: Emisión de avisos de cobro, conciliación de pagos, gestión de cartera de morosos y facilitación de la comunicación interna.
-• Control de seguridad y acceso: Verificación de identidad de residentes y registro de entradas/salidas de visitantes.
-• Gobernanza digital: Ejecución de votaciones, encuestas y asambleas no presenciales con validez técnica.
-• Seguridad de la plataforma: Detección de fraudes, autenticación de usuarios y prevención de accesos no autorizados.
-• Cumplimiento legal y fiscal: Conservación de registros financieros según la legislación venezolana aplicable.
-
-Garantía de Privacidad: App Condominio no comercializa, alquila ni cede datos personales a terceros. Los datos de un condominio no son accesibles por otros conjuntos residenciales ni se utilizan para el entrenamiento de modelos de inteligencia artificial.`
+      title: "3. Garantía de Privacidad y No Comercialización",
+      body: `No vendemos ni alquilamos datos personales. Solo los compartimos con los proveedores tecnológicos listados en la sección 4 que actúan como subencargados, y con la administración de tu condominio.`
     },
     {
-      title: "4. Compartición y Transferencia de Datos",
-      body: `Podemos compartir información únicamente en los siguientes escenarios:
-• Proveedores de infraestructura (Encargados de tecnología): Servicios de almacenamiento en la nube, bases de datos y entrega de correos electrónicos transaccionales. Estos proveedores operan bajo estrictas cláusulas de confidencialidad y estándares internacionales de seguridad.
-• Administración del Condominio: La Junta de Condominio y la Administradora designada tienen acceso exclusivo a la información correspondiente a las unidades bajo su gestión.
-• Requerimiento Legal: Cuando sea exigido por un tribunal competente o autoridades públicas de la República Bolivariana de Venezuela en el marco de una investigación legal.`
+      title: "4. Tabla de Subencargados y Terceros",
+      body: `• Supabase: Base de datos, autenticación y almacenamiento de archivos. Ubicación: Londres / UE.
+• Vercel: Hosting web de la plataforma. Ubicación: [CONFIRMAR región].
+• Google Firebase Cloud Messaging: Gestión de notificaciones push (token de dispositivo).
+• Google OAuth: Autenticación federada de inicio de sesión (opcional).
+• Sentry: Diagnóstico y reporte de errores anónimos (únicamente con tu consentimiento expreso).
+• DolarApi: Consulta de tasa de cambio oficial BCV (no recibe datos personales, solo consulta IP).`
     },
     {
-      title: "5. Almacenamiento, Seguridad y Transferencia Internacional",
-      body: `• Infraestructura Cloud: Los datos son procesados y almacenados mediante Supabase en servidores seguros ubicados en Europa (Londres / West Europe).
-• Cifrado de Credenciales: Las contraseñas se gestionan mediante el algoritmo de hash seguro bcrypt. Nunca se procesan ni almacenan en texto plano.
-• Seguridad en Tránsito y Reposo: Todas las comunicaciones entre el cliente (web/móvil) y la base de datos están cifradas bajo protocolos HTTPS/TLS 1.3. Los archivos subidos cuentan con políticas de acceso restrictivo (Row Level Security).
-• Aislamiento de Datos: Multi-tenancy garantizado a nivel de base de datos para evitar el cruce de información entre condominios.`
+      title: "5. Almacenamiento, Seguridad y Cifrado",
+      body: `• Cifrado de transporte: Comunicaciones bajo TLS 1.2 o superior.
+• Almacenamiento de sesión: Los tokens de sesión se guardan en el almacenamiento interno de la app, aislado por el sistema operativo (Secure Store / almacenamiento local cifrado).
+• Bitácora de acciones: Acceso restringido a registros de auditoría y aislamiento multi-tenant a nivel de base de datos.`
     },
     {
-      title: "6. Retención y Cancelación de Datos",
-      body: `• Cuentas Activas: Los datos se conservan mientras la relación contractual entre el condominio y la plataforma permanezca vigente.
-• Registros Contables: Los comprobantes de pago y estados de cuenta se conservan por el período mínimo legal exigido para fines fiscales y contables (5 años).
-• Cancelación del Servicio: Al finalizar la relación comercial con un condominio, la administración podrá solicitar la exportación completa de sus datos (formatos CSV/Excel). Los datos activos serán eliminados de los servidores de producción en un lapso no mayor a sesenta (60) días continuos.`
+      title: "6. Retención de Datos",
+      body: `• Cuentas activas: Durante la vigencia del contrato.
+• Registros contables y comprobantes: 5 años por obligación legal fiscal.
+• Datos de visitantes: Se conservan por [CONFIRMAR días] para seguridad residencial y luego se purgan.
+• Logs técnicos: Se conservan por [CONFIRMAR días] para diagnóstico.
+• Solicitudes de derechos: 2 años desde su cierre.`
     },
     {
-      title: "7. Derechos del Usuario",
-      body: `De conformidad con el ordenamiento jurídico venezolano, todo residente o usuario tiene derecho a:
-• Acceso y Rectificación: Consultar sus datos personales y solicitar la actualización o corrección de información inexacta.
-• Supresión: Solicitar la eliminación de su cuenta personal (sujeto a las obligaciones legales de conservación contable del condominio).
-• Portabilidad: Obtener un resumen exportable de sus registros e historial financiero.
-Para ejercer estos derechos, el usuario puede enviar una solicitud formal a la dirección de correo indicada al final de este documento.`
+      title: "7. Derechos del Usuario y Mecanismos",
+      body: `Conforme al Art. 28 y Art. 60 de la Constitución de la República Bolivariana de Venezuela, tienes derecho al acceso, rectificación, cancelación y oposición de tus datos, así como a retirar tu consentimiento opcional en cualquier momento. Puedes ejercerlos de forma directa desde la app en Perfil > Privacidad (Eliminar mi cuenta, Descargar mis datos o configurar preferencias). Plazo máximo de respuesta: 30 días hábiles.`
     },
     {
       title: "8. Datos de Menores de Edad",
-      body: `App Condominio está diseñada exclusivamente para personas mayores de 18 años con capacidad legal para asumir obligaciones de propietarios o inquilinos. No recopilamos intencionalmente información de menores de edad. Si se detecta el registro no autorizado de un menor, la cuenta será desactivada de inmediato.`
+      body: `La plataforma es exclusiva para mayores de 18 años mediante verificación de mayoría de edad por casilla obligatoria y control de padrón por la administración. Si se detecta un menor, se procede a su baja inmediata.`
     },
     {
-      title: "9. Tecnologías de Almacenamiento Local (Cookies y Session Storage)",
-      body: `• Plataforma Web: Utiliza localStorage y cookies técnicas estrictamente necesarias para autenticar la sesión del usuario y mantener la seguridad activa.
-• App Móvil: Utiliza almacenamiento seguro del dispositivo (Secure Store / EncryptedSharedPreferences) para mantener los tokens de sesión cifrados.
-• No Rastreo Comercial: No utilizamos scripts de seguimiento publicitario, píxeles de remarketing ni compartimos hábitos de navegación con agencias externas.`
+      title: "9. Cookies y Almacenamiento Local",
+      body: `Remitimos a nuestra Política de Cookies y Almacenamiento Local para el detalle técnico de las cookies técnicas y de sesión empleadas.`
     },
     {
-      title: "10. Ley Aplicable y Jurisdicción",
-      body: `La presente Política de Privacidad se rige e interpreta de conformidad con la legislación vigente de la República Bolivariana de Venezuela. En particular, se sujeta a:
-• La Ley de Propiedad Horizontal.
-• La Ley Especial Contra los Delitos Informáticos.
-• La Ley sobre Mensajes de Datos y Firmas Electrónicas.
-• La Ley Orgánica de Telecomunicaciones.
-• La Ley para la Defensa de las Personas en el Acceso a los Bienes y Servicios.
-• Las disposiciones de la Constitución de la República Bolivariana de Venezuela (Art. 60) relativas al honor, vida privada, intimidad, propia imagen y protección de datos personales.
-Cualquier controversia o reclamo derivado del uso de la plataforma será sometido a los tribunales competentes del territorio de la República Bolivariana de Venezuela.`
+      title: "10. Incidentes de Seguridad",
+      body: `En caso de brechas o incidentes de seguridad que afecten datos personales, notificaremos a la administración y a los usuarios afectados sin demora injustificada (máximo 72 horas hábiles).`
+    },
+    {
+      title: "11. Ley Aplicable y Jurisdicción",
+      body: `La presente Política se rige por las leyes de la República Bolivariana de Venezuela.`
     }
   ],
   footer: {
-    contactEmail: "desarrollodeappcondominio@gmail.com",
-    webPortal: "https://app-condominio-six.vercel.app/",
+    contactEmail: "[CONFIRMAR correo corporativo]",
+    webPortal: "https://app-condominio.vercel.app",
     location: "República Bolivariana de Venezuela",
     copy: "© 2026 App Condominio — Todos los derechos reservados."
   }

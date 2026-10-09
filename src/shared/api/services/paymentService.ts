@@ -5,7 +5,8 @@ export interface PaymentPayload {
   monto_usd: number
   referencia: string
   banco_origen: string
-  evidencia_url: string
+  evidencia_path?: string
+  evidencia_url?: string
   description: string
   details: any
   idempotency_key?: string
@@ -18,7 +19,7 @@ export const paymentService = {
       monto_usd: payload.monto_usd,
       referencia: payload.referencia,
       banco_origen: payload.banco_origen,
-      evidencia_url: payload.evidencia_url,
+      evidencia_url: payload.evidencia_path || payload.evidencia_url || '',
       description: payload.description,
       details: payload.details,
       idempotency_key: payload.idempotency_key

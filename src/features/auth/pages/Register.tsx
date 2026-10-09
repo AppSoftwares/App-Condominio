@@ -4,6 +4,16 @@ import { useAuthStore } from '../../../app/store/useAuthStore'
 import { Eye, EyeOff, ArrowLeft } from 'lucide-react'
 import { supabase } from '../../../shared/lib/supabase'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../../config/clusters'
+import { ConsentCheckbox } from '../../legal/ConsentCheckbox'
+import { LegalLink } from '../../legal/LegalLink'
+import { LEGAL_VERSIONS } from '../../legal/consentConfig'
+import { z } from 'zod'
+
+const registrationConsentSchema = z.object({
+  acceptTerms: z.boolean().refine(v => v === true, { message: 'Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.' }),
+  confirmAdult: z.boolean().refine(v => v === true, { message: 'Debes confirmar que eres mayor de 18 años.' }),
+  acceptNews: z.boolean(),
+})
 
 export const Register: React.FC = () => {
   const navigate = useNavigate()
@@ -16,14 +26,28 @@ export const Register: React.FC = () => {
   const [lastName, setLastName] = useState('')
   const [cluster, setCluster] = useState(RESIDENTIAL_CLUSTERS["Etapa I"][0])
   const [house, setHouse] = useState('')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [confirmAdult, setConfirmAdult] = useState(false)
+  const [acceptNews, setAcceptNews] = useState(false)
+  const [consentErrors, setConsentErrors] = useState<{ acceptTerms?: string | null; confirmAdult?: string | null }>({})
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const validation = registrationConsentSchema.safeParse({ acceptTerms, confirmAdult, acceptNews })
+    if (!validation.success) {
+      const fieldErrors = validation.error.format()
+      setConsentErrors({
+        acceptTerms: fieldErrors.acceptTerms?._errors[0] || null,
+        confirmAdult: fieldErrors.confirmAdult?._errors[0] || null,
+      })
+      return
+    }
+    setConsentErrors({})
     setLoading(true)
 
     try {
-      // 1. Validación contra la lista importada del Excel
       const cleanEmail = email.trim().toLowerCase();
       const whitelistedUser = whitelist.find(u => u.email.toLowerCase().trim() === cleanEmail);
 
@@ -33,12 +57,10 @@ export const Register: React.FC = () => {
         return
       }
 
-      // 2. Registro Real en Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: password,
         options: {
-          // Detectar si estamos en producción para el redireccionamiento
           emailRedirectTo: window.location.origin.includes('localhost')
             ? 'http://localhost:5173/login'
             : 'https://app-condominio.vercel.app/login',
@@ -57,7 +79,6 @@ export const Register: React.FC = () => {
       }
 
       if (authData.user) {
-        // 3. Crear Perfil con estado 'pendiente'
         const { error: profileError } = await supabase
           .from('profiles')
           .insert([
@@ -70,7 +91,11 @@ export const Register: React.FC = () => {
               residential_cluster: cluster,
               etapa: getEtapaForCluster(cluster),
               house_number: house,
-              status: 'pending' // El admin deberá aprobarlo
+              status: 'pending',
+              terms_version: LEGAL_VERSIONS.terms,
+              privacy_version: LEGAL_VERSIONS.privacy,
+              legal_accepted_at: new Date().toISOString(),
+              adult_confirmed_at: new Date().toISOString()
             }
           ])
 
@@ -180,8 +205,8 @@ export const Register: React.FC = () => {
       <main style={mainContentStyle}>
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
           <div style={stepIndicatorStyle}><span style={{ color: 'white', fontWeight: 700 }}>2</span></div>
-          <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Ubicación</h2>
-          <p style={{ fontSize: '14px', color: '#6f7978' }}>Confirme su casa en el conjunto</p>
+          <h2 style={{ fontSize: '24px', fontFamily: "'EB Garamond', serif", color: '#0f5551', margin: '15px 0 5px' }}>Ubicación y Consentimiento</h2>
+          <p style={{ fontSize: '14px', color: '#6f7978' }}>Confirme sus datos y aceptación legal</p>
         </div>
 
         <form onSubmit={handleRegister} style={cardStyle}>
@@ -223,7 +248,7 @@ export const Register: React.FC = () => {
               ))}
             </select>
           </div>
-          <div style={{ marginBottom: '30px' }}>
+          <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Número de Casa</label>
             <input
               type="text"
@@ -236,6 +261,19 @@ export const Register: React.FC = () => {
               style={inputStyle}
             />
           </div>
+
+          <div style={{ marginTop: '20px', marginBottom: '25px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+            <ConsentCheckbox id="reg-terms" checked={acceptTerms} onChange={setAcceptTerms} required error={consentErrors.acceptTerms}>
+              He leído y acepto los <LegalLink doc="terms">Términos y Condiciones</LegalLink> y la <LegalLink doc="privacy">Política de Privacidad</LegalLink>, y el tratamiento de mis datos para la gestión de mi condominio.
+            </ConsentCheckbox>
+            <ConsentCheckbox id="reg-adult" checked={confirmAdult} onChange={setConfirmAdult} required error={consentErrors.confirmAdult}>
+              Declaro que soy mayor de 18 años.
+            </ConsentCheckbox>
+            <ConsentCheckbox id="reg-news" checked={acceptNews} onChange={setAcceptNews}>
+              Quiero recibir novedades y comunicados de App Condominio por correo. Puedo darme de baja en cualquier momento.
+            </ConsentCheckbox>
+          </div>
+
           <button type="submit" disabled={loading} style={primaryBtnStyle}>
             {loading ? 'Validando...' : 'Enviar Solicitud'}
           </button>

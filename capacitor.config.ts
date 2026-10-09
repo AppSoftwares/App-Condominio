@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     iosScheme: 'https',
     hostname: 'app-condominio.vercel.app',
-    allowNavigation: ["*"]
+    allowNavigation: ['app-condominio.vercel.app', '*.supabase.co', 'accounts.google.com'],
   },
   ios: {
     contentInset: 'never',
@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 3000,
+      launchAutoHide: false,
       backgroundColor: "#0f5551",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",

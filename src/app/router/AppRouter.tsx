@@ -8,6 +8,7 @@ import { ResetPassword } from '../../features/auth/pages/ResetPassword'
 import { MfaChallenge } from '../../features/auth/pages/MfaChallenge'
 import { useAuthStore, UserRole } from '../store/useAuthStore'
 import { ScrollToTop } from '../../shared/components/ScrollToTop'
+import { FullScreenLoader } from '../../shared/components/FullScreenLoader'
 
 const ResDash = lazy(() => import('../../features/dash/pages/ResDash').then(m => ({ default: m.ResDash })))
 const Profile = lazy(() => import('../../features/prof/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
@@ -30,6 +31,8 @@ const Guests = lazy(() => import('../../features/guests/pages/GuestsPage').then(
 const Reservations = lazy(() => import('../../features/reservations/pages/ReservationsPage').then(m => ({ default: m.ReservationsPage })))
 const Incidents = lazy(() => import('../../features/incidents/pages/IncidentsPage').then(m => ({ default: m.IncidentsPage })))
 const PackageLocker = lazy(() => import('../../features/packages/pages/PackageLockerPage').then(m => ({ default: m.PackageLockerPage })))
+const DeleteAccount = lazy(() => import('../../features/legal/DeleteAccountPage').then(m => ({ default: m.DeleteAccountPage })))
+const CancelService = lazy(() => import('../../features/legal/CancelServicePage').then(m => ({ default: m.CancelServicePage })))
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
   const user = useAuthStore(state => state.user)
@@ -52,19 +55,14 @@ const RoleRedirect = ({ role }: { role: string }) => {
 
 export const AppRouter = () => {
   const user = useAuthStore(state => state.user)
-  const authReady = useAuthStore(state => state.authReady)
   const mfaRequired = useAuthStore(state => state.mfaRequired)
   const setMfaRequired = useAuthStore(state => state.setMfaRequired)
 
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando...</div>}>
+    <Suspense fallback={<FullScreenLoader label="Cargando vista..." />}>
       <ScrollToTop />
       {mfaRequired ? (
         <MfaChallenge onVerified={() => setMfaRequired(false)} />
-      ) : !authReady && !user ? (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <p>Iniciando sesión...</p>
-        </div>
       ) : (
         <Routes>
           <Route path="/" element={!user ? <AuthSplash /> : <RoleRedirect role={user.role} />} />
@@ -72,6 +70,13 @@ export const AppRouter = () => {
           <Route path="/login" element={!user ? <Login /> : <RoleRedirect role={user.role} />} />
           <Route path="/register" element={!user ? <Register /> : <RoleRedirect role={user.role} />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* Rutas Públicas Legales (H-03) */}
+          <Route path="/legal/terms" element={<LegalDocument />} />
+          <Route path="/legal/privacy" element={<LegalDocument />} />
+          <Route path="/legal/cookies" element={<LegalDocument />} />
+          <Route path="/legal/refunds" element={<LegalDocument />} />
+          <Route path="/legal/delete-account" element={<DeleteAccount />} />
 
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />
@@ -92,6 +97,8 @@ export const AppRouter = () => {
             <Route path="/profile/help" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><HelpCenter /></ProtectedRoute>} />
             <Route path="/profile/legal" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalDocument /></ProtectedRoute>} />
             <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
+            <Route path="/profile/delete-account" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><DeleteAccount /></ProtectedRoute>} />
+            <Route path="/profile/cancel-service" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><CancelService /></ProtectedRoute>} />
 
             <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><Admin /></ProtectedRoute>} />
             <Route path="/admin/incidents" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><IncidentsAdmin /></ProtectedRoute>} />

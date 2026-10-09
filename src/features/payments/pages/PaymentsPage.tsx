@@ -18,6 +18,7 @@ import { Network } from '@capacitor/network'
 import { enqueueAction } from '../../../shared/lib/offlineQueue'
 import { clusterService, ClusterInfo } from '../../../shared/api/services/clusterService'
 import { paymentService } from '../../../shared/api/services/paymentService'
+import { PaymentSummary } from '../components/PaymentSummary'
 
 const THEME = {
   colors: {
@@ -38,6 +39,9 @@ export const PaymentsPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const bcvRate = useCurrencyStore(state => state.bcvRate)
+  const rateUpdatedAt = useCurrencyStore(state => state.rateUpdatedAt)
+  const rateSource = useCurrencyStore(state => state.rateSource)
+
   type DebtItem = {
     id: string
     monto_pendiente: number
@@ -56,17 +60,21 @@ export const PaymentsPage: React.FC = () => {
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [compressing, setCompressing] = useState(false)
-  const [totalDebt, setTotalDebt] = useState(20) // Default a 20 mientras carga o si no hay datos
+  const [totalDebt, setTotalDebt] = useState(20)
   const [debtItems, setDebtItems] = useState<DebtItem[]>([])
   const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
   const [loadingDebts, setLoadingDebts] = useState(true)
   const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const selectedDebtTotal = debtItems.length > 0
-    ? selectedDebtIds.length > 0
-      ? debtItems.filter(debt => selectedDebtIds.includes(debt.id)).reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
-      : 0
+  const selectedDebtsList = debtItems.length > 0
+    ? debtItems.filter(debt => selectedDebtIds.includes(debt.id))
+    : []
+
+  const selectedDebtTotal = selectedDebtsList.length > 0
+    ? selectedDebtsList.reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
     : totalDebt
 
   const allDebtSelected = debtItems.length > 0 && selectedDebtIds.length === debtItems.length
@@ -79,19 +87,10 @@ export const PaymentsPage: React.FC = () => {
     if (user?.residential_cluster) {
       clusterService.getInfo(user.residential_cluster).then(setClusterInfo)
     }
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, _session) => {
-      // Re-fetch if needed
-    })
-
-    return () => {
-      try { sub?.subscription?.unsubscribe?.() } catch (e) {}
-    }
   }, [user?.id, user?.residential_cluster])
 
   const fetchDebts = async () => {
     try {
-      // 1. Intentar obtener deudas específicas
       const { data: debtData, error } = await supabase
         .from('debts')
         .select('*')
@@ -100,7 +99,6 @@ export const PaymentsPage: React.FC = () => {
 
       if (error) throw error
 
-      // 2. Obtener configuración global (cuota mensual)
       const { data: settings } = await supabase
         .from('condo_settings')
         .select('*')
@@ -119,11 +117,11 @@ export const PaymentsPage: React.FC = () => {
         const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
         setTotalDebt(Number(montoACobrar) || 20)
       } else {
-        setTotalDebt(20) // Forzar los 20 si no hay nada en DB
+        setTotalDebt(20)
       }
     } catch (err) {
       console.error("Error al cargar deudas:", err)
-      setTotalDebt(20) // Fallback de seguridad
+      setTotalDebt(20)
     } finally {
       setLoadingDebts(false)
     }
@@ -133,21 +131,29 @@ export const PaymentsPage: React.FC = () => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (file.type === 'application/pdf') {
-      setFileAttached(file)
-      alert(`Archivo PDF "${file.name}" cargado.`)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('El archivo supera el tamaño máximo permitido de 5 MB.')
       return
     }
 
-    // Compresión para imágenes
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+    if (!validTypes.includes(file.type)) {
+      alert('Tipo de archivo no válido. Solo se permiten imágenes (JPEG, PNG, WEBP) o PDF.')
+      return
+    }
+
+    if (file.type === 'application/pdf') {
+      setFileAttached(file)
+      return
+    }
+
     setCompressing(true)
     try {
       const compressed = await compressImage(file)
       setFileAttached(compressed)
-      alert(`Imagen optimizada y cargada con éxito.`)
     } catch (err) {
       console.error('Error al comprimir:', err)
-      setFileAttached(file) // Fallback al original
+      setFileAttached(file)
     } finally {
       setCompressing(false)
     }
@@ -194,7 +200,7 @@ export const PaymentsPage: React.FC = () => {
             } else {
               reject(new Error('Canvas blob is null'))
             }
-          }, 'image/jpeg', 0.7) // 70% calidad
+          }, 'image/jpeg', 0.7)
         }
       }
       reader.onerror = (error) => reject(error)
@@ -202,57 +208,57 @@ export const PaymentsPage: React.FC = () => {
   }
 
   const handleRegisterPayment = async () => {
+    if (!paymentConfirmed) {
+      setConfirmError('Debes confirmar que el comprobante es auténtico y los montos son correctos.')
+      return
+    }
+    setConfirmError(null)
+
     if ((selectedMethod !== 'main') && !fileAttached) {
-      alert("Por favor adjunte el capture del comprobante para continuar.")
+      alert("Por favor adjunte el comprobante para continuar.")
       return
     }
 
     setLoading(true)
     try {
-      let screenshotUrl = ''
+      let evidencePath = ''
 
       if (fileAttached) {
+        if (fileAttached.size > 5 * 1024 * 1024) {
+          throw new Error('El archivo supera el tamaño máximo permitido de 5 MB.')
+        }
+
         const fileExt = fileAttached.name.split('.').pop()
         const fileName = `${user?.id || 'anon'}_${Date.now()}.${fileExt}`
         const filePath = `payments/${fileName}`
 
-        console.log('Iniciando subida de comprobante...')
         const { error: uploadError } = await supabase.storage
           .from('payment-captures')
-          .upload(filePath, fileAttached)
+          .upload(filePath, fileAttached, { upsert: false })
 
-        if (uploadError) {
-          console.error('Error subiendo comprobante:', uploadError)
-          throw new Error('No se pudo subir la imagen del comprobante. Verifique su conexión.')
-        }
-        console.log('Comprobante subido con éxito.')
+        if (uploadError) throw new Error('No se pudo subir la imagen del comprobante. Verifique su conexión.')
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('payment-captures')
-          .getPublicUrl(filePath)
-
-        screenshotUrl = publicUrl
+        evidencePath = filePath
       }
 
       const cleanReference = sanitizeString(reference)
       const cleanBank = sanitizeString(originBank)
-      const selectedDescription = selectedDebtIds.length > 0
-        ? `Cuotas seleccionadas: ${selectedDebtIds.join(', ')}`
+      const selectedDescription = selectedDebtsList.length > 0
+        ? `Cuotas: ${selectedDebtsList.map(d => d.concepto || d.tipo || d.id).join(', ')}`
         : ''
       const cleanDescription = sanitizeString(`${description} ${selectedDescription}`.trim())
       const cleanSender = sanitizeString(senderName)
-      const amountUSD = selectedDebtIds.length > 0 ? selectedDebtTotal : totalDebt
-      const idempotencyKey = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
+      const amountUSD = selectedDebtTotal
 
       const payload = {
         monto_bs: amountUSD * bcvRate,
         monto_usd: amountUSD,
         referencia: cleanReference,
         banco_origen: cleanBank,
-        evidencia_url: screenshotUrl,
+        evidencia_path: evidencePath,
         description: cleanDescription,
         details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
-        idempotency_key: idempotencyKey
+        idempotency_key: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
       }
 
       const netStatus = await Network.getStatus();
@@ -260,7 +266,7 @@ export const PaymentsPage: React.FC = () => {
           await enqueueAction({
               tipo: 'payment',
               payload,
-              idempotencyKey
+              idempotencyKey: payload.idempotency_key
           });
           alert("¡Pago guardado offline! Se enviará automáticamente cuando recuperes la conexión.");
           navigate('/dashboard');
@@ -281,6 +287,10 @@ export const PaymentsPage: React.FC = () => {
   if (selectedMethod !== 'main') {
     const isPM = selectedMethod === 'pagomovil'
     const isZelle = selectedMethod === 'zelle'
+
+    const summaryItems = selectedDebtsList.length > 0
+      ? selectedDebtsList.map(d => ({ label: d.concepto || d.tipo || 'Cuota de condominio', usd: Number(d.monto_pendiente) }))
+      : [{ label: 'Cuota estándar de condominio', usd: totalDebt }]
 
     return (
       <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column' as any }}>
@@ -358,7 +368,7 @@ export const PaymentsPage: React.FC = () => {
                     <div style={{ marginBottom: '15px' }}>
                       <label style={{ fontSize: '10px', color: 'var(--text-sub)', fontWeight: 700 }}>MOTIVO O DESCRIPCIÓN DEL PAGO</label>
                       <textarea
-                        placeholder="Ej: Pago de condominio Octubre y cuota extra de bomba"
+                        placeholder="Ej: Pago de condominio Octubre"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         style={{ ...inputStyle, height: '80px', resize: 'none' }}
@@ -368,28 +378,24 @@ export const PaymentsPage: React.FC = () => {
                 </>
               )}
 
-              <div style={{ ...infoRowStyle, border: 'none', backgroundColor: 'var(--icon-bg)', padding: '15px', borderRadius: '12px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-sub)' }}>MONTO A ENVIAR</span>
-                  {!isZelle && (
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-color)' }}>
-                      (Tasa BCV: {bcvRate.toFixed(2)} Bs/$)
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--primary-color)' }}>{formatUSD(selectedDebtTotal)}</span>
-                  {!isZelle && (
-                    <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary-color)' }}>
-                      {formatBs(selectedDebtTotal, bcvRate)}
-                    </span>
-                  )}
-                </div>
+              <div style={{ marginTop: '20px' }}>
+                <PaymentSummary
+                  items={summaryItems}
+                  rate={{
+                    value: bcvRate,
+                    updatedAt: rateUpdatedAt,
+                    source: rateSource,
+                    isFallback: rateSource === 'fallback'
+                  }}
+                  confirmed={paymentConfirmed}
+                  onConfirmChange={setPaymentConfirmed}
+                  error={confirmError}
+                />
               </div>
             </div>
 
-            <div style={{ marginTop: '30px' }}>
-              <label style={labelStyle}>ADJUNTAR COMPROBANTE</label>
+            <div style={{ marginTop: '20px' }}>
+              <label style={labelStyle}>ADJUNTAR COMPROBANTE (MÁX 5 MB)</label>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={compressing}
@@ -405,21 +411,25 @@ export const PaymentsPage: React.FC = () => {
                   {compressing ? 'Optimizando imagen...' : fileAttached ? (fileAttached.type === 'application/pdf' ? 'PDF Adjuntado' : 'Imagen Adjuntada') : 'Subir Comprobante (Imagen o PDF)'}
                 </span>
               </button>
-              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/*,application/pdf" style={{ display: 'none' }} />
+              <input type="file" ref={fileInputRef} onChange={handleAttachCapture} accept="image/jpeg,image/png,image/webp,application/pdf" style={{ display: 'none' }} />
             </div>
 
-                    <button
-                onClick={handleRegisterPayment}
-                disabled={loading || (debtItems.length > 0 && selectedDebtIds.length === 0)}
-                style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: (loading || (debtItems.length > 0 && selectedDebtIds.length === 0)) ? 0.7 : 1 }}
-              >
-              {loading ? 'Procesando...' : debtItems.length > 0 && selectedDebtIds.length === 0 ? 'Seleccione al menos una cuota' : 'Registrar Pago'}
+            <button
+              onClick={handleRegisterPayment}
+              disabled={loading}
+              style={{ ...primaryBtnStyle, marginTop: '30px', marginBottom: '20px', opacity: loading ? 0.7 : 1 }}
+            >
+              {loading ? 'Procesando...' : 'Registrar Pago'}
             </button>
           </div>
         </main>
       </div>
     )
   }
+
+  const summaryItemsMain = selectedDebtsList.length > 0
+    ? selectedDebtsList.map(d => ({ label: d.concepto || d.tipo || 'Cuota de condominio', usd: Number(d.monto_pendiente) }))
+    : [{ label: 'Cuota estándar de condominio', usd: totalDebt }]
 
   return (
     <div style={{ ...containerStyle, minHeight: 'auto' }}>
@@ -492,12 +502,19 @@ export const PaymentsPage: React.FC = () => {
           </div>
         )}
 
-        <div style={{ backgroundColor: 'var(--primary-color)', borderRadius: '24px', padding: '30px', color: 'white', marginBottom: '40px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)' }}>
-           <p style={{ margin: '0 0 12px 0', fontSize: '13px', opacity: 0.9, fontWeight: 700, letterSpacing: '1px' }}>MONTO SELECCIONADO</p>
-           <h2 style={{ margin: '0 0 8px 0', fontSize: '42px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(selectedDebtTotal)}</h2>
-           <p style={{ margin: '0 0 15px 0', fontSize: '18px', fontWeight: 700, color: 'var(--accent-gold)' }}>Equivalente a: {formatBs(selectedDebtTotal, bcvRate)}</p>
-           <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.1)', margin: '15px 0' }}></div>
-           <p style={{ margin: 0, fontSize: '11px', opacity: 0.7, fontWeight: 600 }}>Tasa oficial BCV: {bcvRate.toFixed(2)} Bs/$</p>
+        <div style={{ marginBottom: '24px' }}>
+          <PaymentSummary
+            items={summaryItemsMain}
+            rate={{
+              value: bcvRate,
+              updatedAt: rateUpdatedAt,
+              source: rateSource,
+              isFallback: rateSource === 'fallback'
+            }}
+            confirmed={paymentConfirmed}
+            onConfirmChange={setPaymentConfirmed}
+            error={confirmError}
+          />
         </div>
 
         <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-color)', marginBottom: '20px', marginLeft: '5px' }}>Opciones de Pago</h3>
@@ -513,19 +530,40 @@ export const PaymentsPage: React.FC = () => {
               icon={MdOutlineSmartphone}
               label="Pago Móvil"
               sublabel="Validación manual en 24h"
-              onClick={() => setSelectedStep('pagomovil')}
+              onClick={() => {
+                if (!paymentConfirmed) {
+                  setConfirmError('Debes confirmar que el comprobante es auténtico y los montos son correctos.')
+                  return
+                }
+                setConfirmError(null)
+                setSelectedStep('pagomovil')
+              }}
            />
            <PaymentOption
               icon={MdOutlineAccountBalance}
               label="Transferencia Bancaria"
               sublabel="Datos BNC y adjuntar capture"
-              onClick={() => setSelectedStep('transferencia')}
+              onClick={() => {
+                if (!paymentConfirmed) {
+                  setConfirmError('Debes confirmar que el comprobante es auténtico y los montos son correctos.')
+                  return
+                }
+                setConfirmError(null)
+                setSelectedStep('transferencia')
+              }}
            />
            <PaymentOption
               icon={MdOutlinePayments}
               label="Zelle"
               sublabel="CONDOMINIOLAS HUERTAS@GMAIL.COM"
-              onClick={() => setSelectedStep('zelle')}
+              onClick={() => {
+                if (!paymentConfirmed) {
+                  setConfirmError('Debes confirmar que el comprobante es auténtico y los montos son correctos.')
+                  return
+                }
+                setConfirmError(null)
+                setSelectedStep('zelle')
+              }}
            />
         </div>
       </main>

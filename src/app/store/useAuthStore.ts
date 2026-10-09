@@ -4,8 +4,8 @@ import { supabase } from '../../shared/lib/supabase'
 import { Preferences } from '@capacitor/preferences'
 import { Device } from '@capacitor/device'
 import { UAParser } from 'ua-parser-js'
+import { withTimeout } from '../bootstrap/bootstrapApp'
 
-// Custom storage for Capacitor Preferences
 const capacitorStorage = {
   getItem: async (name: string): Promise<string | null> => {
     const { value } = await Preferences.get({ key: name })
@@ -33,12 +33,20 @@ interface UserProfile {
   etapa?: string
 }
 
+type ProfileResult =
+  | { kind: 'ok'; profile: UserProfile }
+  | { kind: 'not_registered' }
+  | { kind: 'denied' }
+  | { kind: 'transient' }
+
 interface AuthState {
   user: UserProfile | null
   whitelist: any[]
   authReady: boolean
   biometricsEnabled: boolean
   mfaRequired: boolean
+  authNotice: 'unregistered' | 'denied' | null
+  authDegraded: boolean
   setUser: (user: UserProfile | null) => void
   setWhitelist: (list: any[]) => void
   setAuthReady: (ready: boolean) => void
@@ -51,6 +59,8 @@ interface AuthState {
 }
 
 let authListenerSubscription: { unsubscribe: () => void } | null = null
+let syncInFlight: Promise<void> | null = null
+const AUTH_TIMEOUT_MS = 6000
 
 async function registerCurrentDevice() {
   try {
@@ -64,7 +74,6 @@ async function registerCurrentDevice() {
       deviceName = `${parser.getBrowser().name || 'Navegador'} en ${parser.getOS().name || 'Web'}`
     }
 
-    // Usar rpc_register_session con control de errores absoluto
     const { error } = await supabase.rpc('rpc_register_session', {
       p_device_name: deviceName || 'Dispositivo desconocido',
       p_device_id: id.identifier,
@@ -73,7 +82,6 @@ async function registerCurrentDevice() {
 
     if (error) console.warn('RPC register_session error:', error.message)
   } catch (err) {
-    // Nunca dejar que este error suba hasta cerrar la app
     console.error('Safe device registration failed:', err)
   }
 }
@@ -82,7 +90,6 @@ async function checkMfaStatus(): Promise<boolean> {
   try {
     const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
     if (error) throw error
-    // Si el usuario tiene un factor verificado (aal2 disponible) pero está en aal1, se requiere MFA
     return data.currentLevel === 'aal1' && data.nextLevel === 'aal2'
   } catch (err) {
     console.error('Error verificando MFA:', err)
@@ -90,11 +97,10 @@ async function checkMfaStatus(): Promise<boolean> {
   }
 }
 
-async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
+async function getOrCreateProfile(authUser: any): Promise<ProfileResult> {
   try {
     const userEmail = authUser.email?.toLowerCase().trim()
 
-    // 1. Búsqueda de Perfil
     const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
@@ -102,39 +108,58 @@ async function getOrCreateProfile(authUser: any): Promise<UserProfile | null> {
       .maybeSingle()
 
     if (error) {
-      console.error('Error de base de datos al buscar perfil:', error)
-      alert(`Error de base de datos: ${error.message}. Contacte a soporte técnico.`)
-      await supabase.auth.signOut().catch(() => {})
-      return null
-    }
-
-    if (profile) {
-      // Si el ID de Google no coincide con el de la tabla, lo vinculamos
-      if (profile.id !== authUser.id) {
-        console.log('Vinculando ID de Auth con perfil existente...')
-        await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
+      const status = (error as any).status || (error as any).code
+      if (status === 401 || status === 403 || error.code === '42501' || error.code === 'PGRST301') {
+        return { kind: 'denied' }
       }
-
-      return {
-        id: authUser.id,
-        email: profile.email,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        role: profile.role,
-        avatar_url: profile.avatar_url,
-        residential_cluster: profile.residential_cluster || profile.conjunto,
-        house_number: profile.house_number || profile.casa_n
-      } as UserProfile
+      if (!navigator.onLine || /fetch|network|timeout/i.test(error.message) || (typeof status === 'number' && status >= 500)) {
+        return { kind: 'transient' }
+      }
+      return { kind: 'denied' }
     }
 
-    // 2. RECHAZO ESTRICTO
-    console.error('Acceso denegado: El usuario no tiene un perfil registrado en la tabla profiles.')
-    alert(`Acceso denegado: El correo ${userEmail} no está registrado en el sistema.`)
+    if (!profile) {
+      return { kind: 'not_registered' }
+    }
+
+    if (profile.id !== authUser.id) {
+      console.log('Vinculando ID de Auth con perfil existente...')
+      await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
+    }
+
+    const userProfile: UserProfile = {
+      id: authUser.id,
+      email: profile.email,
+      first_name: profile.first_name,
+      last_name: profile.last_name,
+      role: profile.role,
+      avatar_url: profile.avatar_url,
+      residential_cluster: profile.residential_cluster || profile.conjunto,
+      house_number: profile.house_number || profile.casa_n
+    }
+
+    return { kind: 'ok', profile: userProfile }
+  } catch (err: any) {
+    if (!navigator.onLine || /fetch|network|timeout/i.test(err?.message)) {
+      return { kind: 'transient' }
+    }
+    return { kind: 'transient' }
+  }
+}
+
+async function applyProfileResult(result: ProfileResult, set: any, get: any) {
+  if (result.kind === 'ok') {
+    const mfaNeeded = await checkMfaStatus().catch(() => false)
+    set({ user: result.profile, authReady: true, mfaRequired: mfaNeeded, authNotice: null, authDegraded: false })
+    if (!mfaNeeded) registerCurrentDevice()
+  } else if (result.kind === 'not_registered') {
     await supabase.auth.signOut().catch(() => {})
-    return null
-  } catch (err) {
-    console.error('Error crítico en autenticación:', err)
-    return null
+    set({ user: null, authReady: true, authNotice: 'unregistered', authDegraded: false })
+  } else if (result.kind === 'denied') {
+    await supabase.auth.signOut().catch(() => {})
+    set({ user: null, authReady: true, authNotice: 'denied', authDegraded: false })
+  } else if (result.kind === 'transient') {
+    set({ authReady: true, authDegraded: true })
   }
 }
 
@@ -146,6 +171,8 @@ export const useAuthStore = create<AuthState>()(
       authReady: false,
       biometricsEnabled: false,
       mfaRequired: false,
+      authNotice: null,
+      authDegraded: false,
       setUser: (user) => set({ user }),
       setWhitelist: (list) => set({ whitelist: list }),
       setAuthReady: (ready) => set({ authReady: ready }),
@@ -155,12 +182,10 @@ export const useAuthStore = create<AuthState>()(
         const currentUser = get().user
         if (!currentUser) return
 
-        // 1. Actualizar localmente para feedback inmediato
         set((state) => ({
           user: state.user ? { ...state.user, avatar_url: url } : null
         }))
 
-        // 2. Persistir en la base de datos de Supabase
         const { error } = await supabase
           .from('profiles')
           .update({ avatar_url: url })
@@ -173,70 +198,58 @@ export const useAuthStore = create<AuthState>()(
       },
       signOut: async () => {
         try {
-          // 1. Notificar a Supabase
           await supabase.auth.signOut()
 
-          // 2. Limpiar suscripción si existe
           if (authListenerSubscription) {
             authListenerSubscription.unsubscribe()
             authListenerSubscription = null
           }
 
-          // 3. Limpiar almacenamiento de Capacitor explicitly
-          await Preferences.clear()
-
-          // 4. Limpiar almacenamiento local (Web fallback)
-          localStorage.clear()
-          sessionStorage.clear()
-
+          const keysToRemove = ['auth-storage-v6', 'biometric_enabled']
+          const localStorageKeys = Object.keys(localStorage)
+          for (const k of localStorageKeys) {
+            if (k.startsWith('sb-') || k.includes('auth-token') || keysToRemove.includes(k)) {
+              localStorage.removeItem(k)
+            }
+          }
+          const sessionStorageKeys = Object.keys(sessionStorage)
+          for (const k of sessionStorageKeys) {
+            if (k.startsWith('sb-') || k.includes('auth-token') || keysToRemove.includes(k)) {
+              sessionStorage.removeItem(k)
+            }
+          }
+          await Preferences.remove({ key: 'auth-storage-v6' })
+          await Preferences.remove({ key: 'biometric_enabled' })
         } catch (err) {
           console.error('Error during thorough signOut:', err)
         } finally {
-          // 5. Resetear estado de la memoria
           set({
             user: null,
             authReady: true,
             biometricsEnabled: false,
-            mfaRequired: false
+            mfaRequired: false,
+            authNotice: null,
+            authDegraded: false
           })
         }
       },
-      sync: async () => {
-        const timeoutId = setTimeout(() => {
-          if (!get().authReady) {
-            console.warn('Auth sync timeout reached, forcing ready state')
-            set({ authReady: true })
-          }
-        }, 5000)
-
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession()
-
-          if (error) {
-            console.error('Supabase session error:', error)
-            set({ authReady: true })
-            return
-          }
-
-          if (session?.user) {
-            const profile = await getOrCreateProfile(session.user)
-
-            if (profile) {
-              const mfaNeeded = await checkMfaStatus()
-              set({ user: profile, authReady: true, mfaRequired: mfaNeeded })
-              if (!mfaNeeded) registerCurrentDevice() // Registrar solo si no está bloqueado por MFA
-            } else {
-              set({ authReady: true })
+      sync: () => {
+        if (syncInFlight) return syncInFlight
+        syncInFlight = (async () => {
+          try {
+            const { data: { session }, error } = await withTimeout(supabase.auth.getSession(), AUTH_TIMEOUT_MS)
+            if (error || !session?.user) {
+              set({ user: error ? get().user : null, authReady: true })
+              return
             }
-          } else {
-            set({ user: null, authReady: true })
+            const result = await withTimeout(getOrCreateProfile(session.user), AUTH_TIMEOUT_MS)
+            await applyProfileResult(result, set, get)
+          } catch (err) {
+            console.warn('[auth] sync degradado:', (err as Error)?.name)
+            set({ authReady: true })
           }
-        } catch (err) {
-          console.error('Critical error in syncSession:', err)
-          set({ authReady: true })
-        } finally {
-          clearTimeout(timeoutId)
-        }
+        })().finally(() => { syncInFlight = null })
+        return syncInFlight
       },
       initialize: () => {
         if (authListenerSubscription) {
@@ -246,31 +259,24 @@ export const useAuthStore = create<AuthState>()(
         }
 
         console.log('Initializing Auth Store...')
-        get().sync()
+        void get().sync()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-          console.log('Auth state change event:', event)
-
-          if (event === 'SIGNED_OUT') {
-            set({ user: null, authReady: true })
-          } else if (session?.user) {
-            try {
-              const profile = await getOrCreateProfile(session.user)
-
-              if (profile) {
-                const mfaNeeded = await checkMfaStatus()
-                set({ user: profile, authReady: true, mfaRequired: mfaNeeded })
-                if (event === 'SIGNED_IN' && !mfaNeeded) registerCurrentDevice()
-              } else {
-                set({ authReady: true })
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'INITIAL_SESSION') return
+          setTimeout(() => {
+            void (async () => {
+              console.log('Auth state change event:', event)
+              if (event === 'SIGNED_OUT') {
+                set({ user: null, authReady: true })
+              } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                if (session?.user) {
+                  const result = await getOrCreateProfile(session.user)
+                  await applyProfileResult(result, set, get)
+                }
               }
-            } catch (err) {
-              console.warn('Error refreshing profile on auth change:', err)
-              set({ authReady: true })
-            }
-          } else {
-            set({ authReady: true })
-          }
+              // TOKEN_REFRESHED -> no action needed
+            })()
+          }, 0)
         })
 
         authListenerSubscription = subscription
@@ -286,20 +292,11 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage-v6',
       storage: createJSONStorage(() => capacitorStorage),
-      onRehydrateStorage: (state) => {
-        return (hydratedState, error) => {
-          if (error) {
-            console.error('Error during hydration:', error)
-            state.setAuthReady(true)
-          } else if (hydratedState?.user) {
-            // Optimistically set ready if we have a persisted user
-            hydratedState.setAuthReady(true)
-          }
-        }
+      onRehydrateStorage: () => (state) => {
+        // no optimistic authReady
       },
       partialize: (state) => ({
         user: state.user,
-        whitelist: state.whitelist,
         biometricsEnabled: state.biometricsEnabled
       })
     }

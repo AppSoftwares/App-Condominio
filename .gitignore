@@ -25,3 +25,12 @@ residents/
 !ios/App/App/Assets.xcassets/**/*.png
 !android/app/src/main/res/**/*.png
 !android/app/src/main/res/**/*.webp
+
+# Archivos sensibles de auditoría / datos PII / temporales
+production_users.sql
+sql/insert_profiles_by_email.sql
+sql/update_juan_perez.sql
+supabase/.temp/
+"IOs IPA/"
+"IOs IPA/*.ipa"
+repomix-output.xml

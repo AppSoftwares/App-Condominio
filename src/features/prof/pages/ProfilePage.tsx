@@ -7,13 +7,13 @@ import {
   MdOutlinePalette,
   MdOutlineNotifications,
   MdOutlineHelpOutline,
-  MdGavel,
   MdOutlineLogout,
   MdOutlineChevronRight,
   MdOutlineEmergency
 } from 'react-icons/md'
 import { useAuthStore } from '../../../app/store/useAuthStore'
 import { supabase } from '../../../shared/lib/supabase'
+import { LegalSettingsSection } from '../../legal/LegalSettingsSection'
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate()
@@ -24,7 +24,6 @@ export const ProfilePage: React.FC = () => {
     if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) return
     try {
       await signOut()
-      // Redirección forzada al inicio para limpiar cualquier estado residual de React
       window.location.replace('/')
     } catch (err) {
       console.error('Error during logout:', err)
@@ -49,7 +48,6 @@ export const ProfilePage: React.FC = () => {
 
       if (upErr) throw upErr
 
-      // Limpiar avatares anteriores del usuario (deja solo el nuevo)
       const { data: existing } = await supabase.storage.from('avatars').list(user.id)
       if (existing) {
         const toDelete = existing
@@ -72,11 +70,10 @@ export const ProfilePage: React.FC = () => {
   const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
 
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', minHeight: '100vh' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', transition: 'all 0.3s ease', minHeight: '100vh', paddingBottom: '60px' }}>
 
       <main style={mainContentStyle}>
 
-        {/* Profile Avatar Large - Now at the top */}
         <div style={{ position: 'relative', width: '160px', height: '160px', margin: '10px auto 30px' }}>
           <div style={{ width: '100%', height: '100%', borderRadius: '50%', border: '5px solid var(--accent-gold)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(198,160,89,0.3)' }}>
             <img src={user?.avatar_url || defaultAvatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -101,8 +98,13 @@ export const ProfilePage: React.FC = () => {
            </div>
 
            <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
-              <MenuItem onClick={() => navigate('/profile/legal?type=terms')} icon={MdGavel} label="Términos y Condiciones" />
+              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" last />
+           </div>
+
+           {/* Sección Legal integrada */}
+           <LegalSettingsSection />
+
+           <div style={cardStyle}>
               <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>

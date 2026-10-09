@@ -13,21 +13,21 @@ interface VersionInfo {
   releaseNotes?: string;
 }
 
-export const useUpdateCheck = () => {
+export const useUpdateCheck = (options?: { enabled?: boolean; initialDelayMs?: number }) => {
+  const enabled = options?.enabled ?? true;
+  const initialDelayMs = options?.initialDelayMs ?? 0;
+
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const intervalRef = useRef<number | null>(null)
 
   const checkUpdates = async () => {
     try {
-      // 1. Obtener info de la app actual
       const info = await App.getInfo();
-      // En Android, 'build' suele ser el versionCode
       const currentVersionCode = parseInt(info.build);
 
       console.log('Versión actual (build):', currentVersionCode);
 
-      // 2. Consultar el JSON en el servidor (Vercel)
       const UPDATE_URL = import.meta.env.VITE_UPDATE_JSON_URL || 'https://app-condominio.vercel.app/version.json';
 
       const response = await fetch(`${UPDATE_URL}?t=${Date.now()}`, {
@@ -42,7 +42,6 @@ export const useUpdateCheck = () => {
       const latest: VersionInfo = await response.json();
       console.log('Última versión disponible:', latest.versionCode);
 
-      // 3. Comparar versiones
       if (latest.versionCode > currentVersionCode) {
         setUpdateInfo(latest);
         setIsUpdateAvailable(true);
@@ -94,17 +93,28 @@ export const useUpdateCheck = () => {
     console.log('Update available:', latest.versionName)
   }
 
-  const DEFAULT_INTERVAL_MS = Number(import.meta.env.VITE_UPDATE_CHECK_INTERVAL_MS) || 15 * 60 * 1000 // 15 minutes
+  const DEFAULT_INTERVAL_MS = Number(import.meta.env.VITE_UPDATE_CHECK_INTERVAL_MS) || 15 * 60 * 1000
 
   useEffect(() => {
-    checkUpdates();
+    if (!enabled) return;
 
-    try {
-      intervalRef.current = window.setInterval(() => {
-        checkUpdates();
-      }, DEFAULT_INTERVAL_MS) as unknown as number
-    } catch (err) {
-      console.warn('No se pudo iniciar el intervalo de actualización automático', err)
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const run = () => {
+      checkUpdates();
+      try {
+        intervalRef.current = window.setInterval(() => {
+          checkUpdates();
+        }, DEFAULT_INTERVAL_MS) as unknown as number
+      } catch (err) {
+        console.warn('No se pudo iniciar el intervalo de actualización automático', err)
+      }
+    };
+
+    if (initialDelayMs > 0) {
+      timeoutId = setTimeout(run, initialDelayMs);
+    } else {
+      run();
     }
 
     const appListenerPromise = App.addListener('appStateChange', (state) => {
@@ -117,6 +127,7 @@ export const useUpdateCheck = () => {
     window.addEventListener('online', onOnline);
 
     return () => {
+      if (timeoutId) clearTimeout(timeoutId);
       if (intervalRef.current) {
         clearInterval(intervalRef.current as number)
         intervalRef.current = null
@@ -124,7 +135,7 @@ export const useUpdateCheck = () => {
       try { appListenerPromise.then(l => l.remove()).catch(()=>{}) } catch (e) {}
       window.removeEventListener('online', onOnline);
     }
-  }, []);
+  }, [enabled, initialDelayMs]);
 
   const performUpdate = async () => {
     if (updateInfo) {
@@ -136,7 +147,7 @@ export const useUpdateCheck = () => {
       } else if (platform === 'ios') {
         downloadUrl = 'https://github.com/AppSoftwares/App-Condominio/actions';
       } else {
-        downloadUrl = updateInfo.url; // Fallback
+        downloadUrl = updateInfo.url;
       }
 
       console.log('Descarga directa o redirección:', downloadUrl);

@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import icono from '../../../assets/icono.png'
+import { LegalEntityBlock } from '../../legal/LegalEntityBlock'
 
 import { version } from '../../../../package.json'
 
@@ -24,7 +25,6 @@ export const AuthSplash: React.FC = () => {
       position: 'relative',
       overflowY: 'auto'
     }}>
-      {/* Background elements to fill space gracefully */}
       <div style={{ position: 'absolute', top: '-10%', right: '-10%', width: '300px', height: '300px', borderRadius: '50%', backgroundColor: 'rgba(18, 184, 163, 0.05)', zIndex: 0 }}></div>
       <div style={{ position: 'absolute', bottom: '-10%', left: '-10%', width: '250px', height: '250px', borderRadius: '50%', backgroundColor: 'rgba(120, 89, 25, 0.05)', zIndex: 0 }}></div>
 
@@ -77,6 +77,8 @@ export const AuthSplash: React.FC = () => {
             }}
           >INGRESAR / INICIAR SESIÓN</button>
         </div>
+
+        <LegalEntityBlock />
       </main>
     </div>
   )
