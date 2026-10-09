@@ -9,6 +9,8 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: "ci_test_secret_only_long_enough_32_chars"
     services:
       postgres:
         image: postgres:15
@@ -32,8 +34,6 @@ jobs:
           pip install httpx pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run backend tests
-        env:
-          SECRET_KEY: "ci_test_secret_only_long_enough_32_chars"
         run: |
           python -m pytest -q
 
@@ -49,7 +49,5 @@ jobs:
         run: npm install -g pnpm@10.34.4
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-      - name: Build frontend
-        run: pnpm build
       - name: Build frontend
         run: pnpm build

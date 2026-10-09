@@ -25,9 +25,11 @@ jobs:
       - name: Prepare image names
         id: image_names
         run: |
-          # Convert repository and owner to lowercase for Docker tags
-          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          # Convert repository and owner to lowercase and sanitize accents for Docker tags
+          REPO_CLEAN=$(echo "${{ github.repository }}" | iconv -t ascii//TRANSLIT | tr -cd '[:alnum:]_.-')
+          OWNER_CLEAN=$(echo "${{ github.repository_owner }}" | iconv -t ascii//TRANSLIT | tr -cd '[:alnum:]_.-')
+          REPO_LOWER=$(echo "$REPO_CLEAN" | tr '[:upper:]' '[:lower:]')
+          OWNER_LOWER=$(echo "$OWNER_CLEAN" | tr '[:upper:]' '[:lower:]')
           echo "backend=ghcr.io/$REPO_LOWER-backend:latest" >> $GITHUB_OUTPUT
           echo "frontend=ghcr.io/$REPO_LOWER-frontend:latest" >> $GITHUB_OUTPUT
       - name: Build and push backend image
