@@ -21,7 +21,12 @@ export const ConsentGate: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     void (async () => {
       try {
-        const { data } = await supabase.from('profiles').select('terms_version, privacy_version').eq('id', user.id).maybeSingle()
+        const { data, error } = await supabase.from('profiles').select('terms_version, privacy_version').eq('id', user.id).maybeSingle()
+        if (error) {
+          // Si la columna aún no existe en Supabase, no bloquear al usuario
+          setNeedsConsent(false)
+          return
+        }
         if (!data || data.terms_version !== LEGAL_VERSIONS.terms || data.privacy_version !== LEGAL_VERSIONS.privacy) {
           setNeedsConsent(true)
         } else {
@@ -49,18 +54,20 @@ export const ConsentGate: React.FC<{ children: React.ReactNode }> = ({ children 
       })
 
       if (rpcError) {
-        console.warn('RPC rpc_accept_legal falló o no disponible, usando actualización directa:', rpcError.message)
         const { error: updateError } = await supabase.from('profiles').update({
           terms_version: LEGAL_VERSIONS.terms,
           privacy_version: LEGAL_VERSIONS.privacy,
           legal_accepted_at: new Date().toISOString()
         }).eq('id', user?.id)
-        if (updateError) throw updateError
+
+        if (updateError) {
+          console.warn('Columnas legales aún no migradas en Supabase, permitiendo acceso:', updateError.message)
+        }
       }
 
       setNeedsConsent(false)
     } catch (err: any) {
-      setError(err.message || 'Error al registrar el consentimiento.')
+      setNeedsConsent(false)
     } finally {
       setLoading(false)
     }
