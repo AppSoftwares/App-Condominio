@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship, JSON
@@ -22,7 +22,7 @@ class Building(SQLModel, table=True):
     cantidad_pisos: int
     cantidad_torres: int
     cantidad_apartamentos: int
-    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_creacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     sections: List["Section"] = Relationship(back_populates="building")
 
@@ -67,7 +67,7 @@ class Announcement(SQLModel, table=True):
     mensaje: str
     tipo: str  # "mantenimiento", "general", "emergencia", "reserva"
     seccion_id: Optional[int] = Field(default=None, foreign_key="section.id")
-    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_creacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_expiracion: Optional[datetime] = None
 
 class ApiKey(SQLModel, table=True):
@@ -76,14 +76,14 @@ class ApiKey(SQLModel, table=True):
     key_hash: str = Field(index=True)
     activo: bool = Field(default=True)
     permisos: List[str] = Field(default=[], sa_type=JSON)
-    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_creacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Expense(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     monto: float
     categoria: ExpenseCategory
     descripcion: str
-    fecha: datetime = Field(default_factory=datetime.utcnow)
+    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Debt(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -93,7 +93,7 @@ class Debt(SQLModel, table=True):
     monto_original: float
     monto_pendiente: float
     pagada: bool = Field(default=False)
-    fecha_creacion: datetime = Field(default_factory=datetime.utcnow)
+    fecha_creacion: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_vencimiento: Optional[datetime] = None
 
     resident: Optional["Resident"] = Relationship(back_populates="debts")
@@ -105,7 +105,7 @@ class Payment(SQLModel, table=True):
     deuda_id: int = Field(foreign_key="debt.id")
     monto_pagado: float
     monto_fondo_reserva: float
-    fecha_pago: datetime = Field(default_factory=datetime.utcnow)
+    fecha_pago: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Amenity(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -142,7 +142,7 @@ class Voting(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     titulo: str
     descripcion: str
-    fecha_inicio: datetime = Field(default_factory=datetime.utcnow)
+    fecha_inicio: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fecha_fin: datetime
     activa: bool = Field(default=True)
     monto_propuesto: Optional[float] = None
@@ -155,7 +155,7 @@ class VoteRecord(SQLModel, table=True):
     voting_id: int = Field(foreign_key="voting.id")
     residente_id: int = Field(foreign_key="resident.id")
     opcion: str # "favor" | "contra"
-    fecha: datetime = Field(default_factory=datetime.utcnow)
+    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     voting: "Voting" = Relationship(back_populates="votes")
 
@@ -163,5 +163,5 @@ class UserMetric(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     evento: str
     residente_id: Optional[int] = Field(foreign_key="resident.id")
-    fecha: datetime = Field(default_factory=datetime.utcnow)
+    fecha: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     metadata_json: Optional[dict] = Field(default={}, sa_type=JSON)
