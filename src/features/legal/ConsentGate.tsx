@@ -47,7 +47,17 @@ export const ConsentGate: React.FC<{ children: React.ReactNode }> = ({ children 
         p_app_version: '2.5.2',
         p_platform: 'web'
       })
-      if (rpcError) throw rpcError
+
+      if (rpcError) {
+        console.warn('RPC rpc_accept_legal falló o no disponible, usando actualización directa:', rpcError.message)
+        const { error: updateError } = await supabase.from('profiles').update({
+          terms_version: LEGAL_VERSIONS.terms,
+          privacy_version: LEGAL_VERSIONS.privacy,
+          legal_accepted_at: new Date().toISOString()
+        }).eq('id', user?.id)
+        if (updateError) throw updateError
+      }
+
       setNeedsConsent(false)
     } catch (err: any) {
       setError(err.message || 'Error al registrar el consentimiento.')

@@ -1,7 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import icono from '../../../assets/icono.png'
-import { LegalEntityBlock } from '../../legal/LegalEntityBlock'
 
 import { version } from '../../../../package.json'
 
@@ -77,8 +76,6 @@ export const AuthSplash: React.FC = () => {
             }}
           >INGRESAR / INICIAR SESIÓN</button>
         </div>
-
-        <LegalEntityBlock />
       </main>
     </div>
   )
