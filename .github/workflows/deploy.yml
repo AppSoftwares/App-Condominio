@@ -25,13 +25,15 @@ jobs:
       - name: Prepare image names
         id: image_names
         run: |
-          # Convert repository and owner to lowercase and sanitize accents for Docker tags
-          REPO_CLEAN=$(echo "${{ github.repository }}" | iconv -t ascii//TRANSLIT | tr -cd '[:alnum:]_.-')
-          OWNER_CLEAN=$(echo "${{ github.repository_owner }}" | iconv -t ascii//TRANSLIT | tr -cd '[:alnum:]_.-')
-          REPO_LOWER=$(echo "$REPO_CLEAN" | tr '[:upper:]' '[:lower:]')
-          OWNER_LOWER=$(echo "$OWNER_CLEAN" | tr '[:upper:]' '[:lower:]')
-          echo "backend=ghcr.io/$REPO_LOWER-backend:latest" >> $GITHUB_OUTPUT
-          echo "frontend=ghcr.io/$REPO_LOWER-frontend:latest" >> $GITHUB_OUTPUT
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.event.repository.name }}"
+          if [ -z "$REPO" ]; then
+            REPO=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          fi
+          OWNER_LOWER=$(echo "$OWNER" | iconv -t ascii//TRANSLIT | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]_.-')
+          REPO_LOWER=$(echo "$REPO" | iconv -t ascii//TRANSLIT | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]_.-')
+          echo "backend=ghcr.io/$OWNER_LOWER/$REPO_LOWER-backend:latest" >> $GITHUB_OUTPUT
+          echo "frontend=ghcr.io/$OWNER_LOWER/$REPO_LOWER-frontend:latest" >> $GITHUB_OUTPUT
       - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:

@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SECRET_KEY: "ci_test_secret_only_long_enough_32_chars"
+      PYTHONPATH: "."
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
