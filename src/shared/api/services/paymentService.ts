@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../../shared/lib/supabase'
 
 export interface PaymentPayload {
   monto_bs: number

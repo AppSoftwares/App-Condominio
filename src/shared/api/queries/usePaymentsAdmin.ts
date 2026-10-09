@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../../shared/lib/supabase'
 
 export function usePaymentsAdmin(residentialCluster?: string, isSuperAdmin: boolean = false) {
   return useQuery({
