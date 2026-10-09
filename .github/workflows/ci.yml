@@ -11,17 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SECRET_KEY: "ci_test_secret_only_long_enough_32_chars"
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: caminos
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d caminos" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -35,7 +24,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run backend tests
         run: |
-          python -m pytest -q
+          pytest
 
   frontend-build:
     runs-on: ubuntu-latest
@@ -46,8 +35,10 @@ jobs:
         with:
           node-version: '22'
       - name: Install pnpm
-        run: npm install -g pnpm@10.34.4
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.34.4
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
       - name: Build frontend
         run: pnpm build
