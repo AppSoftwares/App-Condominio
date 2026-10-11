@@ -9,6 +9,8 @@ import { MfaChallenge } from '../../features/auth/pages/MfaChallenge'
 import { useAuthStore, UserRole } from '../store/useAuthStore'
 import { ScrollToTop } from '../../shared/components/ScrollToTop'
 import { FullScreenLoader } from '../../shared/components/FullScreenLoader'
+import { usePushNotifications } from '../../shared/hooks/usePushNotifications'
+import { PushRouteListener } from './PushRouteListener'
 
 const ResDash = lazy(() => import('../../features/dash/pages/ResDash').then(m => ({ default: m.ResDash })))
 const Profile = lazy(() => import('../../features/prof/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
@@ -20,6 +22,7 @@ const InviteFriend = lazy(() => import('../../features/prof/pages/InviteFriendPa
 const Support = lazy(() => import('../../features/prof/pages/SupportPage').then(m => ({ default: m.SupportPage })))
 const HelpCenter = lazy(() => import('../../features/prof/pages/HelpCenterPage').then(m => ({ default: m.HelpCenterPage })))
 const LegalDocument = lazy(() => import('../../features/prof/pages/LegalDocumentPage').then(m => ({ default: m.LegalDocumentPage })))
+const LegalPrivacy = lazy(() => import('../../features/prof/pages/LegalPrivacyPage').then(m => ({ default: m.LegalPrivacyPage })))
 const EmergencyLines = lazy(() => import('../../features/prof/pages/EmergencyLinesPage').then(m => ({ default: m.EmergencyLinesPage })))
 const Admin = lazy(() => import('../../features/admin/pages/AdminPage').then(m => ({ default: m.AdminPage })))
 const IncidentsAdmin = lazy(() => import('../../features/admin/pages/IncidentsAdmin').then(m => ({ default: m.IncidentsAdmin })))
@@ -31,6 +34,7 @@ const Guests = lazy(() => import('../../features/guests/pages/GuestsPage').then(
 const Reservations = lazy(() => import('../../features/reservations/pages/ReservationsPage').then(m => ({ default: m.ReservationsPage })))
 const Incidents = lazy(() => import('../../features/incidents/pages/IncidentsPage').then(m => ({ default: m.IncidentsPage })))
 const PackageLocker = lazy(() => import('../../features/packages/pages/PackageLockerPage').then(m => ({ default: m.PackageLockerPage })))
+const FinancialReport = lazy(() => import('../../features/requests/pages/FinancialReportPage').then(m => ({ default: m.FinancialReportPage })))
 const DeleteAccount = lazy(() => import('../../features/legal/DeleteAccountPage').then(m => ({ default: m.DeleteAccountPage })))
 const CancelService = lazy(() => import('../../features/legal/CancelServicePage').then(m => ({ default: m.CancelServicePage })))
 
@@ -58,9 +62,12 @@ export const AppRouter = () => {
   const mfaRequired = useAuthStore(state => state.mfaRequired)
   const setMfaRequired = useAuthStore(state => state.setMfaRequired)
 
+  usePushNotifications(user?.id)
+
   return (
     <Suspense fallback={<FullScreenLoader label="Cargando vista..." />}>
       <ScrollToTop />
+      <PushRouteListener />
       {mfaRequired ? (
         <MfaChallenge onVerified={() => setMfaRequired(false)} />
       ) : (
@@ -82,6 +89,7 @@ export const AppRouter = () => {
             <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["resident"]}><ResDash /></ProtectedRoute>} />
             <Route path="/payments" element={<ProtectedRoute allowedRoles={["resident"]}><Payments /></ProtectedRoute>} />
             <Route path="/requests" element={<ProtectedRoute allowedRoles={["resident"]}><Requests /></ProtectedRoute>} />
+            <Route path="/requests/finanzas" element={<ProtectedRoute allowedRoles={["resident","admin","superadmin"]}><FinancialReport /></ProtectedRoute>} />
             <Route path="/guests" element={<ProtectedRoute allowedRoles={["resident"]}><Guests /></ProtectedRoute>} />
             <Route path="/reservations" element={<ProtectedRoute allowedRoles={["resident"]}><Reservations /></ProtectedRoute>} />
             <Route path="/incidents" element={<ProtectedRoute allowedRoles={["resident"]}><Incidents /></ProtectedRoute>} />
@@ -96,6 +104,7 @@ export const AppRouter = () => {
             <Route path="/profile/support" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><Support /></ProtectedRoute>} />
             <Route path="/profile/help" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><HelpCenter /></ProtectedRoute>} />
             <Route path="/profile/legal" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalDocument /></ProtectedRoute>} />
+            <Route path="/profile/legal-privacy" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><LegalPrivacy /></ProtectedRoute>} />
             <Route path="/profile/emergency" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><EmergencyLines /></ProtectedRoute>} />
             <Route path="/profile/delete-account" element={<ProtectedRoute allowedRoles={["resident","admin","guard","superadmin"]}><DeleteAccount /></ProtectedRoute>} />
             <Route path="/profile/cancel-service" element={<ProtectedRoute allowedRoles={["admin","superadmin"]}><CancelService /></ProtectedRoute>} />

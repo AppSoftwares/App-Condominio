@@ -3,7 +3,7 @@ import base64
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from jose import jwt, JWTError
 from fastapi import Security, HTTPException, Depends
@@ -62,14 +62,14 @@ def verify_api_key(
 
 def create_tokens(user_id: int):
     # Access Token
-    access_expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = jwt.encode(
         {"sub": str(user_id), "exp": access_expire, "type": "access"},
         SECRET_KEY, algorithm=ALGORITHM
     )
 
     # Refresh Token (3 meses)
-    refresh_expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_expire = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     refresh_token = jwt.encode(
         {"sub": str(user_id), "exp": refresh_expire, "type": "refresh"},
         SECRET_KEY, algorithm=ALGORITHM

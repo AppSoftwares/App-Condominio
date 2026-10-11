@@ -9,11 +9,11 @@ import {
   MdOutlineHelpOutline,
   MdOutlineLogout,
   MdOutlineChevronRight,
-  MdOutlineEmergency
+  MdOutlineEmergency,
+  MdGavel
 } from 'react-icons/md'
 import { useAuthStore } from '../../../app/store/useAuthStore'
 import { supabase } from '../../../shared/lib/supabase'
-import { LegalSettingsSection } from '../../legal/LegalSettingsSection'
 
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate()
@@ -98,21 +98,33 @@ export const ProfilePage: React.FC = () => {
            </div>
 
            <div style={cardStyle}>
-              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" last />
+              <MenuItem onClick={() => navigate('/profile/support')} icon={MdOutlineHelpOutline} label="Centro de Ayuda" />
+              <MenuItem onClick={() => navigate('/profile/legal-privacy')} icon={MdGavel} label="Legal y Privacidad" last />
            </div>
 
-           {/* Sección Legal integrada */}
-           <LegalSettingsSection />
-
            <div style={cardStyle}>
-              <div onClick={handleLogout} style={{ ...menuItemStyle, border: 'none' }}>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  width: '100%',
+                  padding: '20px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <div style={{ ...iconBoxStyle, backgroundColor: 'rgba(186,26,26,0.1)', color: '#ba1a1a' }}>
                        <MdOutlineLogout size={24} />
                     </div>
-                    <span style={{ fontWeight: 600, color: '#ba1a1a' }}>Cerrar Sesión</span>
+                    <span style={{ fontWeight: 600, color: '#ba1a1a', fontSize: '15px' }}>Cerrar Sesión</span>
                  </div>
-              </div>
+              </button>
            </div>
         </div>
       </main>

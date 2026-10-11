@@ -1,8 +1,10 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../../app/store/useAuthStore'
-import { MdOutlineVisibility, MdOutlineVisibilityOff } from 'react-icons/md'
+import { MdOutlineVisibility, MdOutlineVisibilityOff, MdDownload, MdDeleteForever, MdCancel } from 'react-icons/md'
 import { supabase } from '../../../shared/lib/supabase'
+import { SettingsRow } from '../components/SettingsRow'
+import { LEGAL_ENTITY } from '../../../config/legalEntity'
 
 export const AccountPage: React.FC = () => {
   const navigate = useNavigate()
@@ -13,6 +15,7 @@ export const AccountPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loadingExport, setLoadingExport] = useState(false)
 
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
@@ -67,6 +70,33 @@ export const AccountPage: React.FC = () => {
     }
   }
 
+  const handleDownloadData = async () => {
+    if (!user) return
+    setLoadingExport(true)
+    try {
+      const { error } = await supabase.from('data_requests').insert({
+        user_id: user.id,
+        request_type: 'data_export',
+        contact_email: user.email,
+        reason: 'Solicitud de descarga de datos personales del usuario'
+      })
+      if (error) throw error
+      alert('Solicitud de descarga de datos recibida. La administración procesará su exportación en un plazo máximo de 30 días.')
+    } catch (err: any) {
+      alert('Error al solicitar descarga: ' + err.message)
+    } finally {
+      setLoadingExport(false)
+    }
+  }
+
+  const handleRequestServiceCancel = () => {
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      navigate('/profile/cancel-service')
+    } else {
+      alert('Para solicitar la baja del servicio, por favor contacte a la administración de su condominio o envíe un correo a ' + LEGAL_ENTITY.contactEmail)
+    }
+  }
+
   return (
     <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', paddingBottom: '40px' }}>
       <main style={{ paddingLeft: '20px', paddingRight: '20px', maxWidth: '500px', margin: '0 auto', paddingTop: '10px' }}>
@@ -90,7 +120,7 @@ export const AccountPage: React.FC = () => {
         </section>
 
         {/* Change Password Section */}
-        <section style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
+        <section style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '24px', marginBottom: '24px', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
           <h3 style={{ fontSize: '18px', color: 'var(--primary-color)', marginBottom: '20px', fontWeight: 700 }}>Cambiar Contraseña</h3>
           <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ position: 'relative' }}>
@@ -149,6 +179,30 @@ export const AccountPage: React.FC = () => {
             </div>
             <button type="submit" disabled={loading} style={primaryBtnStyle}>Actualizar Contraseña</button>
           </form>
+        </section>
+
+        {/* Mis datos y cuenta */}
+        <section style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '28px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+          <div style={{ padding: '16px 24px 8px', fontSize: '13px', fontWeight: 800, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            Mis datos y cuenta
+          </div>
+          <SettingsRow
+            icon={MdDownload}
+            label={loadingExport ? "Solicitando..." : "Descargar mis datos"}
+            onClick={handleDownloadData}
+          />
+          <SettingsRow
+            icon={MdCancel}
+            label="Solicitar baja del servicio a la Administración"
+            onClick={handleRequestServiceCancel}
+          />
+          <SettingsRow
+            icon={MdDeleteForever}
+            label="Eliminar mi cuenta y mis datos"
+            onClick={() => navigate('/profile/delete-account')}
+            danger
+            last
+          />
         </section>
 
         <p style={{ textAlign: 'center', marginTop: '30px', fontSize: '12px', color: 'var(--text-sub)', lineHeight: '1.5' }}>

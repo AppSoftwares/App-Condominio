@@ -29,7 +29,9 @@ import {
   MdReceiptLong,
   MdOutlineReceiptLong,
   MdInventory,
-  MdOutlineInventory
+  MdOutlineInventory,
+  MdCampaign,
+  MdOutlineCampaign
 } from 'react-icons/md'
 import { useAuthStore } from '../store/useAuthStore'
 import { useUpdateStore } from '../store/useUpdateStore'
@@ -159,6 +161,11 @@ export const Layout: React.FC = () => {
               icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'payments' ? MdReceiptLong : MdOutlineReceiptLong}
               active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'payments'}
               onClick={() => navigate('/admin?tab=payments')}
+            />
+            <NavIcon
+              icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'announcements' ? MdCampaign : MdOutlineCampaign}
+              active={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'announcements'}
+              onClick={() => navigate('/admin?tab=announcements')}
             />
             <NavIcon
               icon={location.pathname === '/admin' && new URLSearchParams(location.search).get('tab') === 'polls' ? MdHowToVote : MdOutlineHowToVote}

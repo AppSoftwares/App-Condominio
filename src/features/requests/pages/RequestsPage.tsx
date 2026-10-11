@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   MdOutlineHowToVote,
   MdOutlineHistory,
-  MdOutlineEventNote,
-  MdOutlineDownload
+  MdOutlineCampaign
 } from 'react-icons/md'
 import { useAuthStore } from '../../../app/store/useAuthStore'
 import { supabase } from '../../../shared/lib/supabase'
 import { votingService, Voting } from '../../../shared/api/services/votingService'
 import { listAnnouncements, AnnouncementDTO } from '../../../shared/api/announcementsApi'
+import { FinancialSummaryCard } from '../components/FinancialSummaryCard'
+import { AnnouncementCard } from '../components/AnnouncementCard'
 
 export const RequestsPage: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const highlightedAnnouncementId = searchParams.get('announcement')
+
   const { user } = useAuthStore()
 
   const [votings, setVotings] = useState<Voting[]>([])
@@ -20,8 +24,11 @@ export const RequestsPage: React.FC = () => {
   const [securityAlerts, setSecurityAlerts] = useState<any[]>([])
   const [votedIds, setVotedIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
-
   const [error, setError] = useState<string | null>(null)
+
+  // Pagination for announcements
+  const [announcementsPage, setAnnouncementsPage] = useState(1)
+  const announcementsPerPage = 5
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +59,7 @@ export const RequestsPage: React.FC = () => {
 
       } catch (err) {
         console.error('Error cargando comunidad:', err)
+        setError('No se pudo cargar la información de la comunidad.')
       } finally {
         setLoading(false)
       }
@@ -70,13 +78,57 @@ export const RequestsPage: React.FC = () => {
     }
   }
 
+  // Paginated announcements
+  const paginatedAnnouncements = announcements.slice(0, announcementsPage * announcementsPerPage)
+
   return (
-    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ backgroundColor: 'var(--bg-color)', color: 'var(--text-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '40px' }}>
       <main style={{ paddingLeft: '20px', paddingRight: '20px', width: '100%', maxWidth: '600px', boxSizing: 'border-box', paddingTop: '10px' }}>
         <section style={{ marginBottom: '30px' }}>
            <h2 style={{ fontFamily: "'EB Garamond', serif", fontSize: '32px', color: 'var(--primary-color)', margin: '0 0 10px 0' }}>Portal de Comunidad</h2>
-           <p style={{ fontSize: '14px', color: 'var(--text-sub)', margin: 0 }}>Participe en las decisiones de nuestra comunidad.</p>
+           <p style={{ fontSize: '14px', color: 'var(--text-sub)', margin: 0 }}>Participe en las decisiones y manténgase informado.</p>
         </section>
+
+        <FinancialSummaryCard />
+
+        {/* Sección de Comunicados Oficiales */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', marginTop: '35px' }}>
+           <MdOutlineCampaign size={26} style={{ color: 'var(--primary-color)' }} />
+           <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>Comunicados Oficiales</h3>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '35px' }}>
+           {announcements.length === 0 ? (
+             <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay comunicados oficiales publicados.</p>
+           ) : (
+             <>
+               {paginatedAnnouncements.map(ann => (
+                 <AnnouncementCard
+                   key={ann.id}
+                   announcement={ann}
+                   isHighlighted={highlightedAnnouncementId === String(ann.id)}
+                 />
+               ))}
+               {paginatedAnnouncements.length < announcements.length && (
+                 <button
+                   onClick={() => setAnnouncementsPage(prev => prev + 1)}
+                   style={{
+                     padding: '12px',
+                     backgroundColor: 'var(--card-bg)',
+                     border: '1px solid var(--border-color)',
+                     borderRadius: '14px',
+                     fontWeight: 700,
+                     color: 'var(--primary-color)',
+                     cursor: 'pointer',
+                     marginTop: '10px'
+                   }}
+                 >
+                   Cargar más comunicados ({announcements.length - paginatedAnnouncements.length} restantes)
+                 </button>
+               )}
+             </>
+           )}
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '25px' }}>
            <MdOutlineHowToVote size={24} style={{ color: '#785919' }} />
@@ -129,25 +181,6 @@ export const RequestsPage: React.FC = () => {
            </div>
            <p style={{ margin: 0, fontSize: '13px', opacity: 0.9 }}>Resultados de votaciones anteriores.</p>
         </div>
-
-        <h3 style={{ fontSize: '18px', fontWeight: 700, marginTop: '40px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>Comunicados</h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-           {announcements.length === 0 ? (
-             <p style={{ textAlign: 'center', color: 'var(--text-sub)' }}>No hay comunicados oficiales publicados.</p>
-           ) : announcements.map(ann => (
-             <div key={ann.id} style={annCardStyle}>
-                <div style={annIconStyle}>
-                   <MdOutlineEventNote size={24} />
-                </div>
-                <div style={{ flex: 1 }}>
-                   <p style={{ margin: 0, fontWeight: 700, fontSize: '14px' }}>{ann.titulo}</p>
-                   <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-sub)' }}>{new Date(ann.fecha_creacion).toLocaleDateString()}</p>
-                </div>
-                <MdOutlineDownload size={20} style={{ color: 'var(--text-sub)' }} />
-             </div>
-           ))}
-        </div>
       </main>
     </div>
   )
@@ -157,7 +190,6 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
   const [results, setResults] = useState<{favor: number, contra: number} | null>(null)
   const [showResults, setShowResults] = useState(hasVoted)
 
-  // Sincronizar showResults cuando hasVoted cambie (después de votar)
   useEffect(() => {
     if (hasVoted) {
       setShowResults(true)
@@ -177,7 +209,6 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
     if (hasVoted || showResults) {
       loadResults()
 
-      // Suscripción Realtime para residentes (ver resultados en vivo)
       const channel = supabase
         .channel(`resident-votes-${voting.id}`)
         .on('postgres_changes', {
@@ -277,6 +308,4 @@ const VotingCard = ({ voting, onVote, hasVoted }: { voting: Voting, onVote: (opc
 }
 
 const historyCardStyle = { backgroundColor: 'var(--primary-color)', color: 'white', borderRadius: '24px', padding: '25px', width: '100%', boxSizing: 'border-box' as any }
-const annCardStyle = { display: 'flex', alignItems: 'center', gap: '15px', padding: '15px', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px' }
-const annIconStyle = { width: '44px', height: '44px', backgroundColor: 'var(--icon-bg)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-color)' }
 const primaryBtnStyle = { width: '100%', padding: '16px', backgroundColor: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: 700, cursor: 'pointer' }

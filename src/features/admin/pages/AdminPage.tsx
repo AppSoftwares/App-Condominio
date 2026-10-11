@@ -20,6 +20,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useProfiles, useApproveUser, useInviteResident } from '../../../shared/api/queries/useProfiles'
 import { useVotings, useCreateVoting, useDeleteVoting, useVotingResults } from '../../../shared/api/queries/useVotings'
 import { usePaymentsAdmin, useValidatePayment } from '../../../shared/api/queries/usePaymentsAdmin'
+import { FinancialReportUploader } from '../components/FinancialReportUploader'
+import { AnnouncementComposer } from '../components/AnnouncementComposer'
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -41,11 +43,11 @@ export const AdminPage: React.FC = () => {
   const [selectedCluster, setSelectedCluster] = useState(user?.residential_cluster || "Conjunto 14 Las Huertas")
 
   const initialTab = (searchParams.get('tab') as any) || 'finance'
-  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'finance' | 'users' | 'payments' | 'polls' | 'security' | 'incidents' | 'announcements'>(initialTab)
 
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['finance', 'users', 'payments', 'polls', 'security', 'incidents'].includes(tab)) {
+    if (tab && ['finance', 'users', 'payments', 'polls', 'security', 'incidents', 'announcements'].includes(tab)) {
       setActiveTab(tab as any)
     }
   }, [searchParams])
@@ -448,8 +450,15 @@ export const AdminPage: React.FC = () => {
 
       <main style={mainContentStyle}>
 
+        {activeTab === 'announcements' && (
+          <section style={{ width: '100%' }}>
+            <AnnouncementComposer cluster={selectedCluster} isSuperAdmin={isSuperAdmin} />
+          </section>
+        )}
+
         {activeTab === 'finance' && (
           <section style={{ width: '100%' }}>
+             <FinancialReportUploader cluster={selectedCluster} />
              <div style={{ textAlign: 'center', marginBottom: '30px' }}>
                 <h3 style={{ fontSize: '32px', fontFamily: "'EB Garamond', serif", margin: '0 0 10px 0' }}>Relación Mensual</h3>
 

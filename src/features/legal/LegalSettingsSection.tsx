@@ -1,37 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MdGavel, MdOutlinePrivacyTip, MdCookie, MdReceiptLong, MdSettings, MdDownload, MdDeleteForever, MdCancel, MdBusiness } from 'react-icons/md'
+import { MdGavel, MdOutlinePrivacyTip, MdCookie, MdReceiptLong, MdSettings, MdBusiness } from 'react-icons/md'
 import { ConsentPreferences } from './ConsentPreferences'
 import { LEGAL_ENTITY } from '../../config/legalEntity'
-import { useAuthStore } from '../../app/store/useAuthStore'
-import { supabase } from '../../shared/lib/supabase'
 
 export const LegalSettingsSection: React.FC = () => {
   const navigate = useNavigate()
-  const user = useAuthStore(s => s.user)
   const [showConsentModal, setShowConsentModal] = useState(false)
-  const [loadingExport, setLoadingExport] = useState(false)
-
-  const handleDownloadData = async () => {
-    if (!user) return
-    setLoadingExport(true)
-    try {
-      const { error } = await supabase.from('data_requests').insert({
-        user_id: user.id,
-        request_type: 'data_export',
-        contact_email: user.email,
-        reason: 'Solicitud de descarga de datos personales del usuario'
-      })
-      if (error) throw error
-      alert('Solicitud de descarga de datos recibida. La administración procesará su exportación en un plazo máximo de 30 días.')
-    } catch (err: any) {
-      alert('Error al solicitar descarga: ' + err.message)
-    } finally {
-      setLoadingExport(false)
-    }
-  }
-
-  const isAdminOrSuper = user?.role === 'admin' || user?.role === 'superadmin'
 
   return (
     <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '28px', border: '1px solid var(--border-color)', width: '100%', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)', textAlign: 'left' }}>
@@ -43,15 +18,7 @@ export const LegalSettingsSection: React.FC = () => {
       <LegalItem onClick={() => navigate('/profile/legal?type=privacy')} icon={MdOutlinePrivacyTip} label="Política de Privacidad" />
       <LegalItem onClick={() => navigate('/profile/legal?type=cookies')} icon={MdCookie} label="Política de Cookies y Almacenamiento" />
       <LegalItem onClick={() => navigate('/profile/legal?type=refunds')} icon={MdReceiptLong} label="Política de Reembolso y Cancelación" />
-      <LegalItem onClick={() => setShowConsentModal(true)} icon={MdSettings} label="Preferencias de privacidad (cookies y diagnóstico)" />
-      <LegalItem onClick={handleDownloadData} icon={MdDownload} label={loadingExport ? "Solicitando..." : "Descargar mis datos"} />
-      <LegalItem onClick={() => navigate('/profile/delete-account')} icon={MdDeleteForever} label="Eliminar mi cuenta y mis datos" danger />
-
-      {isAdminOrSuper ? (
-        <LegalItem onClick={() => navigate('/profile/cancel-service')} icon={MdCancel} label="Cancelar suscripción / servicio" danger />
-      ) : (
-        <LegalItem onClick={() => alert('Para solicitar la baja del servicio, por favor contacte a la administración de su condominio o envíe un correo a ' + LEGAL_ENTITY.contactEmail)} icon={MdCancel} label="Solicitar baja del servicio a mi administración" />
-      )}
+      <LegalItem onClick={() => setShowConsentModal(true)} icon={MdSettings} label="Preferencias de privacidad (cookies y diagnóstico)" last />
 
       <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--icon-bg)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
@@ -68,8 +35,8 @@ export const LegalSettingsSection: React.FC = () => {
   )
 }
 
-const LegalItem = ({ icon: Icon, label, onClick, danger }: any) => (
-  <div onClick={onClick} style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderBottom: '1px solid var(--border-color)' }}>
+const LegalItem = ({ icon: Icon, label, onClick, danger, last }: any) => (
+  <div onClick={onClick} style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', borderBottom: last ? 'none' : '1px solid var(--border-color)' }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
       <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: danger ? 'rgba(186,26,26,0.1)' : 'var(--icon-bg)', color: danger ? '#ba1a1a' : 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Icon size={22} />
