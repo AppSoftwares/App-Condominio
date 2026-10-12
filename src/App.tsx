@@ -40,16 +40,15 @@ function App() {
   const fetchRate = useCurrencyStore(state => state.fetchRate)
   const isDarkMode = useThemeStore(state => state.isDarkMode)
 
-  const [boot, setBoot] = useState<BootResult | null>(null)
+  const [boot, setBoot] = useState<BootResult>({ status: 'ready', hasSession: false, locked: false })
   const [isLocked, setIsLocked] = useState(false)
   const lastBackgroundAtRef = useRef<number>(0)
 
-  // Carga secundaria diferida (condicionada a boot !== null)
+  // Carga secundaria diferida
   useEffect(() => {
-    if (!boot) return
     fetchRate()
     flushQueue().catch(() => {})
-  }, [boot])
+  }, [])
 
   // Suscribirse a cambios de consentimiento para Sentry
   useEffect(() => {
@@ -144,10 +143,6 @@ function App() {
       document.body.classList.remove('dark-mode')
     }
   }, [isDarkMode])
-
-  if (!boot) {
-    return Capacitor.isNativePlatform() ? null : <FullScreenLoader label="Iniciando..." />
-  }
 
   return (
     <ErrorBoundary>
