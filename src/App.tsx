@@ -3,7 +3,7 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { ErrorBoundary } from './shared/components/ErrorBoundary'
 import { useAuthStore } from './app/store/useAuthStore'
-import { usePushNotifications } from './shared/hooks/usePushNotifications'
+import { PushBridge } from './app/router/PushBridge'
 import { useCurrencyStore } from './app/store/useCurrencyStore'
 import { useThemeStore } from './app/store/useThemeStore'
 import { useUpdateCheck } from './shared/hooks/useUpdateCheck'
@@ -46,6 +46,7 @@ function App() {
 
   // Carga secundaria diferida
   useEffect(() => {
+    ;(window as any).__APP_MOUNTED__ = true
     fetchRate()
     flushQueue().catch(() => {})
   }, [])
@@ -63,8 +64,6 @@ function App() {
     })
     return unsub
   }, [])
-
-  usePushNotifications(boot && user ? user.id : undefined)
 
   const { isUpdateAvailable, updateInfo, performUpdate } = useUpdateCheck({
     enabled: !!boot,
@@ -149,6 +148,7 @@ function App() {
       <AppProviders>
         <AuthProvider>
           <Router>
+            <PushBridge />
             <CookieConsentBanner />
             <ConsentGate>
               {boot.status === 'degraded' && <OfflineBanner reason={boot.reason} onRetry={() => handleBoot()} />}

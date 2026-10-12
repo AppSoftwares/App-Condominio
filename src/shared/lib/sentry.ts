@@ -18,7 +18,7 @@ export async function initSentryIfConsented() {
       dsn,
       sendDefaultPii: false,
       tracesSampleRate: 0.1,
-      beforeSend(event) {
+      beforeSend(event: any) {
         delete event.user
         if (event.request) {
           delete (event.request as any).cookies
@@ -27,7 +27,7 @@ export async function initSentryIfConsented() {
         }
         return scrub(event)
       },
-      beforeBreadcrumb(b) {
+      beforeBreadcrumb(b: any) {
         if (b.category === 'fetch' || b.category === 'xhr') {
           b.data = { method: b.data?.method }
         }

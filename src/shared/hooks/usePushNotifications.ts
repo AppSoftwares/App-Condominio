@@ -45,7 +45,7 @@ export const usePushNotifications = (userId: string | undefined) => {
         if (!isMounted) return
 
         registrationListener = await PushNotifications.addListener('registration', async (token) => {
-          console.log('Push token recibido:', token.value)
+          console.warn('push registrado')
           const { error } = await supabase
             .from('profiles')
             .update({
@@ -62,7 +62,6 @@ export const usePushNotifications = (userId: string | undefined) => {
         })
 
         receivedListener = await PushNotifications.addListener('pushNotificationReceived', (notification) => {
-          console.log('Notificación push recibida en primer plano:', notification)
           // Mostrar banner in-app o toast
           if (notification.title && notification.body) {
             showInAppBanner(notification.title, notification.body)
@@ -70,7 +69,6 @@ export const usePushNotifications = (userId: string | undefined) => {
         })
 
         actionListener = await PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-          console.log('Acción sobre notificación push:', notification)
           const data = notification.notification.data
           if (data && data.route) {
             let targetRoute = data.route

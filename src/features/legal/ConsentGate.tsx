@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { useAuthStore } from '../../app/store/useAuthStore'
 import { supabase } from '../../shared/lib/supabase'
 import { LEGAL_VERSIONS } from './consentConfig'
@@ -49,8 +50,8 @@ export const ConsentGate: React.FC<{ children: React.ReactNode }> = ({ children 
       const { error: rpcError } = await supabase.rpc('rpc_accept_legal', {
         p_terms: LEGAL_VERSIONS.terms,
         p_privacy: LEGAL_VERSIONS.privacy,
-        p_app_version: '2.5.2',
-        p_platform: 'web'
+        p_app_version: __APP_VERSION__,
+        p_platform: Capacitor.getPlatform()
       })
 
       if (rpcError) {

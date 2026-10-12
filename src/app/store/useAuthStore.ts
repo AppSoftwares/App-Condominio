@@ -123,7 +123,7 @@ async function getOrCreateProfile(authUser: any): Promise<ProfileResult> {
     }
 
     if (profile.id !== authUser.id) {
-      console.log('Vinculando ID de Auth con perfil existente...')
+      console.warn('Vinculando perfil')
       await supabase.from('profiles').update({ id: authUser.id }).eq('email', userEmail)
     }
 
@@ -253,19 +253,19 @@ export const useAuthStore = create<AuthState>()(
       },
       initialize: () => {
         if (authListenerSubscription) {
-          console.log('Auth Store already initialized, skipping...')
+          console.warn('Auth Store already initialized')
           if (!get().authReady) set({ authReady: true })
           return () => {}
         }
 
-        console.log('Initializing Auth Store...')
+        console.warn('Initializing Auth Store')
         void get().sync()
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'INITIAL_SESSION') return
           setTimeout(() => {
             void (async () => {
-              console.log('Auth state change event:', event)
+              console.warn('Auth state change event')
               if (event === 'SIGNED_OUT') {
                 set({ user: null, authReady: true })
               } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
