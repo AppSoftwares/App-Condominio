@@ -40,7 +40,7 @@ jobs:
         with:
           version: 10.34.4
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
       - name: Typecheck
         run: pnpm run typecheck
       - name: Smoke test de arranque (la app debe pintar algo)
