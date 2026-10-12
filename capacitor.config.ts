@@ -5,9 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Condominio',
   webDir: 'dist',
   server: {
-    iosScheme: 'https',
-    hostname: 'app-condominio.vercel.app',
-    allowNavigation: ['app-condominio.vercel.app', '*.supabase.co', 'accounts.google.com'],
+    allowNavigation: ['*.supabase.co', 'accounts.google.com', 'app-condominio.vercel.app'],
   },
   ios: {
     contentInset: 'never',
