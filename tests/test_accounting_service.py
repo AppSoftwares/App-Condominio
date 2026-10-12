@@ -71,7 +71,7 @@ def test_process_payment_discount(session: Session):
 
     with patch('app.services.accounting_service.datetime') as mock_date:
         # Simulamos que es día 3 del mes
-        mock_date.utcnow.return_value = dt.datetime(2026, 7, 3)
+        mock_date.now.return_value = dt.datetime(2026, 7, 3, tzinfo=dt.timezone.utc)
         mock_date.side_effect = lambda *args, **kw: dt.datetime(*args, **kw)
 
         # Monto con descuento debería ser 75.0

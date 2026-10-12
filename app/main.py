@@ -67,7 +67,7 @@ def on_startup():
     init_db()
     with Session(engine) as session:
         from app.models.entities import Amenity, Resident, Building, Section, Unit, Voting, Announcement, Debt
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         from sqlmodel import select
 
         # 1. Crear Edificio, Sección y Unidad base
@@ -166,7 +166,7 @@ def on_startup():
             session.add(Voting(
                 titulo="Cambio de Bomba de Agua",
                 descripcion="Se propone cambiar la bomba principal por una de mayor potencia para mejorar la presión en los pisos altos.",
-                fecha_fin=datetime.utcnow() + timedelta(days=7),
+                fecha_fin=datetime.now(timezone.utc) + timedelta(days=7),
                 monto_propuesto=2500.0
             ))
 

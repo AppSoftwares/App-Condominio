@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Session, select
 from app.models.entities import Resident, Debt, Payment
 
@@ -35,7 +35,7 @@ def process_payment(session: Session, residente_id: int, deuda_id: int, monto_en
 
     # Lógica de descuento del 25% si es antes del día 5 (solo para cuotas mensuales específicas)
     # Aquí asumimos que el descuento se aplica si el pago ocurre en los primeros 5 días del mes
-    hoy = datetime.utcnow()
+    hoy = datetime.now(timezone.utc)
     monto_a_pagar = deuda.monto_pendiente
 
     # Ejemplo: Si el concepto es 'Mantenimiento Mensual' y es antes del día 5
@@ -88,7 +88,7 @@ def migrate_historical_debt(session: Session, identificador_unidad: str, concept
         concepto=concepto,
         monto_original=monto_total,
         monto_pendiente=monto_total,
-        fecha_creacion=fecha_corte or datetime.utcnow()
+        fecha_creacion=fecha_corte or datetime.now(timezone.utc)
     )
 
     session.add(deuda_migrada)

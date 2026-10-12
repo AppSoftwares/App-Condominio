@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlalchemy.pool import StaticPool
@@ -41,7 +41,7 @@ def client_fixture(session: Session):
 
 def test_cast_vote_success(client: TestClient, session: Session):
     # Setup
-    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.utcnow() + timedelta(days=1), activa=True)
+    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.now(timezone.utc) + timedelta(days=1), activa=True)
     session.add(voting)
     session.commit()
 
@@ -57,7 +57,7 @@ def test_cast_vote_success(client: TestClient, session: Session):
 
 def test_cast_vote_duplicate(client: TestClient, session: Session):
     # Setup
-    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.utcnow() + timedelta(days=1), activa=True)
+    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.now(timezone.utc) + timedelta(days=1), activa=True)
     session.add(voting)
     session.commit()
 
@@ -73,7 +73,7 @@ def test_cast_vote_duplicate(client: TestClient, session: Session):
 
 def test_cast_vote_invalid_option(client: TestClient, session: Session):
     # Setup
-    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.utcnow() + timedelta(days=1), activa=True)
+    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.now(timezone.utc) + timedelta(days=1), activa=True)
     session.add(voting)
     session.commit()
 
@@ -86,7 +86,7 @@ def test_cast_vote_invalid_option(client: TestClient, session: Session):
 
 def test_cast_vote_closed_voting(client: TestClient, session: Session):
     # Setup
-    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.utcnow() + timedelta(days=1), activa=False)
+    voting = Voting(titulo="Propuesta", descripcion="Desc", fecha_fin=datetime.now(timezone.utc) + timedelta(days=1), activa=False)
     session.add(voting)
     session.commit()
 
