@@ -254,11 +254,6 @@ export const PrivacyPage: React.FC = () => {
               />
               <MenuItem onClick={() => { setShowDevicesModal(true); fetchSessions(); }} icon="devices" label="Dispositivos Activos" desc="Gestiona tus sesiones abiertas" />
             </Section>
-
-            <Section title="Legal">
-              <MenuItem onClick={() => navigate('/profile/legal?type=privacy')} icon="description" label="Política de Privacidad" />
-              <MenuItem onClick={() => navigate('/profile/legal?type=terms')} icon="assignment" label="Términos y Condiciones" />
-            </Section>
           </>
         )}
       </main>
