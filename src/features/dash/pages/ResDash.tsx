@@ -19,6 +19,7 @@ export const ResDash: React.FC = () => {
   const navigate = useNavigate()
   const [announcements, setAnnouncements] = React.useState<any[]>([])
   const [totalDebt, setTotalDebt] = React.useState(0)
+  const [historicalDebt, setHistoricalDebt] = React.useState(0)
   const [loading, setLoading] = React.useState(true)
 
   const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBXl_IfekcWOFARMjd2mqv4iW5pjjXof_IFK1PmC2_jcr4Dqc_sqHvBCFfhx10Vkoy3fwsaCJFY3FeBLxdhFwjA_ZXTeu2p8RlOhoNLfY1oUtcW7agASAcxMxF0W6jw8xgy9uo7OjGHjYW-J-JV_f6uhPH-r6sVqTOygYgkI_CauVfYnZOmKbS0ZtiweGaQmq4ooCgcZNjNeZd5HwFNIkSTAtL1UNXV3so4jgtqKVBx5-M-HFKpQaaequitgj24kQjzJ8S2sECYzco"
@@ -38,7 +39,7 @@ export const ResDash: React.FC = () => {
         // Fetch Total Debt logic
         const { data: debtData } = await supabase
           .from('debts')
-          .select('monto_pendiente')
+          .select('monto_pendiente, es_saldo_historico')
           .eq('residente_id', user?.id)
           .eq('pagada', false)
 
@@ -51,14 +52,16 @@ export const ResDash: React.FC = () => {
 
         if (debtData && debtData.length > 0) {
           const total = debtData.reduce((acc, d) => acc + Number(d.monto_pendiente), 0)
+          const histTotal = debtData.filter(d => d.es_saldo_historico).reduce((acc, d) => acc + Number(d.monto_pendiente), 0)
           setTotalDebt(total)
+          setHistoricalDebt(histTotal)
         } else if (settings) {
-          // If no specific debt entries, calculate based on monthly settings
           const today = new Date()
           const currentDay = today.getDate()
           const isProntoPago = currentDay <= settings.dias_pronto_pago
           const montoACobrar = isProntoPago ? settings.monto_pronto_pago_usd : settings.cuota_mensual_usd
           setTotalDebt(Number(montoACobrar))
+          setHistoricalDebt(0)
         }
 
       } catch (err) {
@@ -102,7 +105,7 @@ export const ResDash: React.FC = () => {
                 {totalDebt > 0 ? 'PENDIENTE' : 'AL DÍA'}
               </span>
             </div>
-            <div style={{ marginBottom: '30px' }}>
+            <div style={{ marginBottom: '20px' }}>
               <h3 style={{ fontFamily: "'EB Garamond', serif", fontSize: '48px', color: 'var(--primary-color)', margin: '0 0 5px 0', fontWeight: 800 }}>
                 ${totalDebt.toFixed(2)}
               </h3>
@@ -110,8 +113,17 @@ export const ResDash: React.FC = () => {
                 {totalDebt > 0 ? 'Saldo actual a pagar' : '¡Excelente! No tienes deudas pendientes.'}
               </p>
             </div>
+
+            {historicalDebt > 0 && (
+              <div style={{ marginBottom: '20px', padding: '12px', backgroundColor: 'rgba(120,89,25,0.08)', borderRadius: '16px', border: '1px solid var(--accent-gold)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)', display: 'block', marginBottom: '4px' }}>INCLUYE SALDO HISTÓRICO MIGRADO</span>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>${historicalDebt.toFixed(2)} USD</span>
+                <p style={{ fontSize: '11px', color: 'var(--text-sub)', margin: '4px 0 0 0' }}>Puedes abonar o saldar este histórico en la sección de Pagos.</p>
+              </div>
+            )}
+
             <button onClick={() => navigate('/payments')} style={primaryBtnStyle}>
-              {totalDebt > 0 ? 'Pagar Ahora' : 'Ver Detalles'}
+              {totalDebt > 0 ? 'Pagar / Abonar Ahora' : 'Ver Detalles'}
             </button>
           </div>
 

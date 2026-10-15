@@ -7,12 +7,11 @@ export function usePaymentsAdmin(residentialCluster?: string, isSuperAdmin: bool
     queryFn: async () => {
       let query = supabase
         .from('payments')
-        .select('*, profiles(first_name, last_name, house_number, residential_cluster)')
+        .select('*, profiles(first_name, last_name, house_number, residential_cluster), payment_allocations(*, debts(concepto, tipo, monto_original, monto_pendiente))')
 
       if (isSuperAdmin) {
         // Superadmin fetches all
       } else if (residentialCluster) {
-        // Intelligent filtering as in the original code
         const clusterKeyword = residentialCluster.replace(/Conjunto\s+\d+\s+/i, '').trim()
         query = query.ilike('profiles.residential_cluster', `%${clusterKeyword}%`)
       }
@@ -27,12 +26,14 @@ export function usePaymentsAdmin(residentialCluster?: string, isSuperAdmin: bool
 export function useValidatePayment() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ paymentId, status }: { paymentId: string; status: 'approved' | 'rejected' }) => {
-      const { error } = await supabase
-        .from('payments')
-        .update({ status })
-        .eq('id', paymentId)
+    mutationFn: async ({ paymentId, status, note }: { paymentId: string; status: 'approved' | 'rejected'; note?: string }) => {
+      const { data, error } = await supabase.rpc('rpc_review_payment', {
+        p_payment_id: paymentId,
+        p_status: status,
+        p_note: note || null
+      })
       if (error) throw error
+      return data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['payments-admin'] })

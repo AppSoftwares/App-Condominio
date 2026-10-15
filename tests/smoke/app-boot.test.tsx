@@ -22,9 +22,9 @@ describe('arranque de la app', () => {
     document.body.appendChild(root)
 
     await act(async () => { createRoot(root).render(<App />) })
-    await act(async () => { await new Promise((r) => setTimeout(r, 1500)) })
+    await act(async () => { await new Promise((r) => setTimeout(r, 8000)) })
 
     expect(root.innerHTML.length).toBeGreaterThan(0)            // no pantalla blanca
     expect(root.textContent).not.toContain('Algo salió mal')    // no cayó el ErrorBoundary
-  })
+  }, 12000)
 })

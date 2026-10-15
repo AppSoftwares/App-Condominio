@@ -45,10 +45,13 @@ export const PaymentsPage: React.FC = () => {
   type DebtItem = {
     id: string
     monto_pendiente: number
+    monto_original?: number
     concepto?: string
     fecha_vencimiento?: string
     tipo?: string
     descripcion?: string
+    es_saldo_historico?: boolean
+    permite_abono?: boolean
   }
 
   const [selectedMethod, setSelectedStep] = useState<'main' | 'pagomovil' | 'transferencia' | 'zelle'>('main')
@@ -63,6 +66,7 @@ export const PaymentsPage: React.FC = () => {
   const [totalDebt, setTotalDebt] = useState(20)
   const [debtItems, setDebtItems] = useState<DebtItem[]>([])
   const [selectedDebtIds, setSelectedDebtIds] = useState<string[]>([])
+  const [debtAmounts, setDebtAmounts] = useState<Record<string, number>>({})
   const [loadingDebts, setLoadingDebts] = useState(true)
   const [clusterInfo, setClusterInfo] = useState<ClusterInfo | null>(null)
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
@@ -74,7 +78,10 @@ export const PaymentsPage: React.FC = () => {
     : []
 
   const selectedDebtTotal = selectedDebtsList.length > 0
-    ? selectedDebtsList.reduce((acc, debt) => acc + Number(debt.monto_pendiente), 0)
+    ? selectedDebtsList.reduce((acc, debt) => {
+        const amt = debt.permite_abono ? (debtAmounts[debt.id] ?? Number(debt.monto_pendiente)) : Number(debt.monto_pendiente)
+        return acc + (isNaN(amt) ? 0 : amt)
+      }, 0)
     : totalDebt
 
   const allDebtSelected = debtItems.length > 0 && selectedDebtIds.length === debtItems.length
@@ -96,6 +103,7 @@ export const PaymentsPage: React.FC = () => {
         .select('*')
         .eq('residente_id', user?.id)
         .eq('pagada', false)
+        .order('es_saldo_historico', { ascending: true })
 
       if (error) throw error
 
@@ -108,7 +116,17 @@ export const PaymentsPage: React.FC = () => {
       if (debtData && debtData.length > 0) {
         const total = debtData.reduce((acc: number, d: any) => acc + Number(d.monto_pendiente), 0)
         setDebtItems(debtData)
-        setSelectedDebtIds(debtData.map((debt: any) => debt.id))
+        // Preselect only normal debts (permite_abono = false / non-historical)
+        const normalDebtIds = debtData.filter((debt: any) => !debt.permite_abono).map((debt: any) => debt.id)
+        setSelectedDebtIds(normalDebtIds)
+
+        const initialAmounts: Record<string, number> = {}
+        debtData.forEach((debt: any) => {
+          if (debt.permite_abono) {
+            initialAmounts[debt.id] = Number(debt.monto_pendiente)
+          }
+        })
+        setDebtAmounts(initialAmounts)
         setTotalDebt(total || 20)
       } else if (settings) {
         const today = new Date()
@@ -214,6 +232,30 @@ export const PaymentsPage: React.FC = () => {
     }
     setConfirmError(null)
 
+    if (selectedDebtsList.length === 0) {
+      alert('Por favor selecciona al menos una deuda o cuota a pagar.')
+      return
+    }
+
+    // Validate allocations
+    for (const debt of selectedDebtsList) {
+      const amt = debt.permite_abono ? (debtAmounts[debt.id] ?? Number(debt.monto_pendiente)) : Number(debt.monto_pendiente)
+      if (amt <= 0) {
+        alert(`El monto de abono para ${debt.concepto || debt.tipo || 'la deuda'} debe ser mayor a 0.`)
+        return
+      }
+      if (debt.permite_abono) {
+        if (amt < 1.00 && Math.abs(amt - Number(debt.monto_pendiente)) > 0.005) {
+          alert(`El abono mínimo permitido es de US$ 1.00 para la deuda: ${debt.concepto || debt.tipo || ''}`)
+          return
+        }
+      }
+      if (amt > Number(debt.monto_pendiente) + 0.005) {
+        alert(`El monto excede el saldo pendiente para: ${debt.concepto || debt.tipo || ''}`)
+        return
+      }
+    }
+
     if ((selectedMethod !== 'main') && !fileAttached) {
       alert("Por favor adjunte el comprobante para continuar.")
       return
@@ -250,6 +292,11 @@ export const PaymentsPage: React.FC = () => {
       const cleanSender = sanitizeString(senderName)
       const amountUSD = selectedDebtTotal
 
+      const allocations = selectedDebtsList.map(debt => ({
+        debt_id: debt.id,
+        amount_usd: debt.permite_abono ? (debtAmounts[debt.id] ?? Number(debt.monto_pendiente)) : Number(debt.monto_pendiente)
+      }))
+
       const payload = {
         monto_bs: amountUSD * bcvRate,
         monto_usd: amountUSD,
@@ -258,7 +305,8 @@ export const PaymentsPage: React.FC = () => {
         evidencia_path: evidencePath,
         description: cleanDescription,
         details: selectedMethod === 'zelle' ? { sender: cleanSender, fecha: paymentDate, selected_debts: selectedDebtIds } : { fecha: paymentDate, selected_debts: selectedDebtIds },
-        idempotency_key: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`
+        idempotency_key: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `pay-${Date.now()}`,
+        allocations
       }
 
       const netStatus = await Network.getStatus();
@@ -289,7 +337,10 @@ export const PaymentsPage: React.FC = () => {
     const isZelle = selectedMethod === 'zelle'
 
     const summaryItems = selectedDebtsList.length > 0
-      ? selectedDebtsList.map(d => ({ label: d.concepto || d.tipo || 'Cuota de condominio', usd: Number(d.monto_pendiente) }))
+      ? selectedDebtsList.map(d => ({
+          label: `${d.concepto || d.tipo || 'Cuota'} ${d.permite_abono ? '(Abono)' : ''}`,
+          usd: d.permite_abono ? (debtAmounts[d.id] ?? Number(d.monto_pendiente)) : Number(d.monto_pendiente)
+        }))
       : [{ label: 'Cuota estándar de condominio', usd: totalDebt }]
 
     return (
@@ -428,8 +479,13 @@ export const PaymentsPage: React.FC = () => {
   }
 
   const summaryItemsMain = selectedDebtsList.length > 0
-    ? selectedDebtsList.map(d => ({ label: d.concepto || d.tipo || 'Cuota de condominio', usd: Number(d.monto_pendiente) }))
+    ? selectedDebtsList.map(d => ({
+        label: `${d.concepto || d.tipo || 'Cuota'} ${d.permite_abono ? '(Abono)' : ''}`,
+        usd: d.permite_abono ? (debtAmounts[d.id] ?? Number(d.monto_pendiente)) : Number(d.monto_pendiente)
+      }))
     : [{ label: 'Cuota estándar de condominio', usd: totalDebt }]
+
+  const monthlyFee = (clusterInfo as any)?.cuota_mensual_usd || 25
 
   return (
     <div style={{ ...containerStyle, minHeight: 'auto' }}>
@@ -456,41 +512,85 @@ export const PaymentsPage: React.FC = () => {
                 const isSelected = selectedDebtIds.includes(debt.id)
                 const subtitle = debt.tipo || debt.concepto || 'Cuota pendiente'
                 const dueDate = debt.fecha_vencimiento ? new Date(debt.fecha_vencimiento).toLocaleDateString('es-VE') : null
+                const currentAmount = debtAmounts[debt.id] ?? Number(debt.monto_pendiente)
 
                 return (
-                  <button
+                  <div
                     key={debt.id}
-                    onClick={() => {
-                      setSelectedDebtIds(prev => prev.includes(debt.id) ? prev.filter(id => id !== debt.id) : [...prev, debt.id])
-                    }}
                     style={{
-                      width: '100%',
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                      flexDirection: 'column',
                       padding: '18px 20px',
                       borderBottom: '1px solid var(--border-color)',
                       backgroundColor: isSelected ? 'rgba(15,85,81,0.08)' : 'var(--card-bg)',
-                      cursor: 'pointer',
-                      color: 'var(--text-color)',
-                      textAlign: 'left',
-                      border: 'none'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? '2px solid var(--primary-color)' : '2px solid var(--border-color)', backgroundColor: isSelected ? 'var(--primary-color)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 800 }}>✓</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div
+                        onClick={() => {
+                          setSelectedDebtIds(prev => prev.includes(debt.id) ? prev.filter(id => id !== debt.id) : [...prev, debt.id])
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer', flex: 1 }}
+                      >
+                        <div style={{ width: '20px', height: '20px', borderRadius: '6px', border: isSelected ? '2px solid var(--primary-color)' : '2px solid var(--border-color)', backgroundColor: isSelected ? 'var(--primary-color)' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 800 }}>✓</span>}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {subtitle}
+                            {debt.es_saldo_historico && (
+                              <span style={{ fontSize: '9px', backgroundColor: 'var(--accent-gold)', color: 'white', padding: '2px 6px', borderRadius: '6px', fontWeight: 800 }}>HISTÓRICO</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{dueDate ? `Vence ${dueDate}` : 'Sin fecha'} {debt.permite_abono ? '• Abonos permitidos (mín $1.00)' : ''}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div style={{ fontSize: '15px', fontWeight: 700 }}>{subtitle}</div>
-                        <div style={{ fontSize: '12px', color: 'var(--text-sub)' }}>{dueDate ? `Vence ${dueDate}` : 'Sin fecha'}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(Number(debt.monto_pendiente))}</span>
+                        <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{formatBs(Number(debt.monto_pendiente), bcvRate)}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-color)' }}>{formatUSD(Number(debt.monto_pendiente))}</span>
-                      <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>{formatBs(Number(debt.monto_pendiente), bcvRate)}</span>
-                    </div>
-                  </button>
+
+                    {isSelected && debt.permite_abono && (
+                      <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px dashed var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-sub)' }}>MONTO A ABONAR (USD):</span>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button
+                              onClick={() => setDebtAmounts(prev => ({ ...prev, [debt.id]: Math.min(Number(debt.monto_pendiente), monthlyFee) }))}
+                              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              1 cuota
+                            </button>
+                            <button
+                              onClick={() => setDebtAmounts(prev => ({ ...prev, [debt.id]: Math.min(Number(debt.monto_pendiente), 3 * monthlyFee) }))}
+                              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              3 cuotas
+                            </button>
+                            <button
+                              onClick={() => setDebtAmounts(prev => ({ ...prev, [debt.id]: Number(debt.monto_pendiente) }))}
+                              style={{ fontSize: '10px', padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', cursor: 'pointer', fontWeight: 700 }}
+                            >
+                              Todo
+                            </button>
+                          </div>
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1.00"
+                          max={Number(debt.monto_pendiente)}
+                          value={currentAmount}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0
+                            setDebtAmounts(prev => ({ ...prev, [debt.id]: val }))
+                          }}
+                          style={{ ...inputStyle, padding: '10px', fontSize: '14px' }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 )
               })}
             </div>

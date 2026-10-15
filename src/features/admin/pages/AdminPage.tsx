@@ -14,6 +14,8 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { RESIDENTIAL_CLUSTERS, getEtapaForCluster } from '../../../config/clusters'
 import { Browser } from '@capacitor/browser'
+import { Filesystem, Directory } from '@capacitor/filesystem'
+import { Share } from '@capacitor/share'
 import { votingService, Voting } from '../../../shared/api/services/votingService'
 import { notificationService } from '../../../shared/api/services/notificationService'
 import { useQueryClient } from '@tanstack/react-query'
@@ -22,6 +24,7 @@ import { useVotings, useCreateVoting, useDeleteVoting, useVotingResults } from '
 import { usePaymentsAdmin, useValidatePayment } from '../../../shared/api/queries/usePaymentsAdmin'
 import { FinancialReportUploader } from '../components/FinancialReportUploader'
 import { AnnouncementComposer } from '../components/AnnouncementComposer'
+import { DebtMigrationModal } from '../components/DebtMigrationModal'
 
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -73,6 +76,7 @@ export const AdminPage: React.FC = () => {
 
   // Invitation State (Form handled by useForm now)
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
+  const [isDebtModalOpen, setIsDebtModalOpen] = useState(false)
   const { register, handleSubmit, reset, formState: { errors } } = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
     defaultValues: { role: 'resident' }
@@ -201,33 +205,6 @@ export const AdminPage: React.FC = () => {
       setNewPollTitle(''); setNewPollAmount(''); setNewPollDesc(''); setOpt1(''); setOpt2('');
     } catch (err: any) {
       alert('No se pudo publicar la votación: ' + (err.message || 'Error desconocido'))
-    }
-  }
-
-  const handleImportDebts = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const API_BASE = (import.meta as any).env.VITE_API_URL || 'http://localhost:8000';
-        const response = await fetch(`${API_BASE}/api/v1/accounting/migrate-excel`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || 'Error en el servidor');
-        }
-
-        const result = await response.json();
-        alert(`¡Migración Completada!\nProcesados: ${result.processed} registros.`);
-      } catch (err: any) {
-        console.error('Error migrating debts:', err);
-        alert('Error al migrar deudas: ' + err.message);
-      }
     }
   }
 
@@ -368,48 +345,117 @@ export const AdminPage: React.FC = () => {
         .select('*')
         .eq('residente_id', resident.id)
         .order('fecha_vencimiento', { ascending: true })
-    const { data: payments } = await supabase
-        .from('payments')
+
+    const { data: migrations } = await supabase
+        .from('debt_migrations')
         .select('*')
-        .eq('profile_id', resident.id)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: true })
+        .eq('residente_id', resident.id)
+        .eq('status', 'applied')
+
+    const { data: settings } = await supabase
+        .from('condo_settings')
+        .select('*')
+        .eq('id', 1)
+        .maybeSingle()
+
+    const condoName = settings?.condo_name || resident.residential_cluster || "CONDOMINIO CONJUNTO LAS HUERTAS"
+    const rif = settings?.rif || "J-29900732-3"
+
     doc.setFont("helvetica", "bold")
     doc.setFontSize(11)
-    doc.text("CONDOMINIO CONJUNTO 14 LAS HUERTAS", 10, 15)
-    doc.text("RIF. J-29900732-3", 10, 20)
-    doc.text(`Fecha:  ${new Date().toLocaleDateString('es-VE')}`, 150, 20)
-    doc.text(`ESTADO DE CUENTA HASTA ${new Date().toLocaleDateString('es-VE')}`, 10, 30)
+    doc.text(condoName.toUpperCase(), 10, 15)
+    doc.text(`RIF. ${rif}`, 10, 20)
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-VE')}`, 150, 20)
+    doc.text(`ESTADO DE CUENTA DETALLADO HASTA ${new Date().toLocaleDateString('es-VE')}`, 10, 30)
     doc.line(10, 32, 200, 32)
     doc.text(`PROPIETARIO: ${(resident.first_name || resident.name || '').toUpperCase()} ${(resident.last_name || '').toUpperCase()}`, 10, 40)
     doc.text(`CASA: ${resident.house_number}`, 120, 40)
+
     const body: any[] = []
-    let saldo = 0
+    let totalOriginal = 0
+    let totalPendiente = 0
+
     debts?.forEach(d => {
-        saldo += Number(d.monto_pendiente)
-        body.push([`${d.concepto} (${d.fecha_vencimiento})`, `${Number(d.monto_pendiente).toFixed(2).replace('.', ',')} $`])
+        const orig = Number(d.monto_original ?? d.monto_pendiente)
+        const pend = Number(d.monto_pendiente)
+        const abonado = orig - pend
+        totalOriginal += orig
+        totalPendiente += pend
+        body.push([
+            `${d.concepto || d.tipo || 'Cuota'} ${d.es_saldo_historico ? '(Histórico)' : ''}`,
+            `${orig.toFixed(2)} $`,
+            `${abonado.toFixed(2)} $`,
+            `${pend.toFixed(2)} $`
+        ])
     })
-    payments?.forEach(p => {
-        saldo -= Number(p.monto_usd)
-        body.push([`ABONA EL ${new Date(p.created_at).toLocaleDateString()} - REF: ${p.referencia}`, `-${Number(p.monto_usd).toFixed(2).replace('.', ',')} $`])
-    })
+
     autoTable(doc, {
       startY: 45,
-      head: [['DESCRIPCIÓN', 'MONTO $']],
+      head: [['DESCRIPCIÓN', 'ORIGINAL', 'ABONADO', 'PENDIENTE']],
       body: [
         ...body,
-        [{ content: 'SALDO PENDIENTE TOTAL', styles: { fontStyle: 'bold' } }, { content: `${saldo.toFixed(2).replace('.', ',')} $`, styles: { fontStyle: 'bold' } }],
+        [{ content: 'TOTALES', styles: { fontStyle: 'bold' } }, { content: `${totalOriginal.toFixed(2)} $`, styles: { fontStyle: 'bold' } }, { content: `${(totalOriginal - totalPendiente).toFixed(2)} $`, styles: { fontStyle: 'bold' } }, { content: `${totalPendiente.toFixed(2)} $`, styles: { fontStyle: 'bold' } }],
       ],
       theme: 'plain',
       styles: { fontSize: 9, cellPadding: 2, font: 'helvetica' },
       headStyles: { fontStyle: 'bold', textColor: [0, 0, 0], fillColor: [240, 240, 240] },
-      columnStyles: { 1: { halign: 'right' } }
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
     })
-    const finalY = (doc as any).lastAutoTable.finalY || 150
+
+    let finalY = (doc as any).lastAutoTable.finalY || 150
+
+    if (migrations && migrations.length > 0) {
+      const annexLines: any[] = []
+      migrations.forEach(m => {
+        if (m.statement_lines && Array.isArray(m.statement_lines)) {
+          m.statement_lines.forEach((l: any) => {
+            annexLines.push([l.fecha || '-', l.descripcion || l.concepto || '-', `${Number(l.debe || l.monto || 0).toFixed(2)} $`])
+          })
+        }
+      })
+
+      if (annexLines.length > 0) {
+        doc.setFontSize(10)
+        doc.text("ANEXO: LÍNEAS DE ESTADO DE CUENTA MIGRADO", 10, finalY + 12)
+        autoTable(doc, {
+          startY: finalY + 16,
+          head: [['FECHA', 'DESCRIPCIÓN', 'MONTO']],
+          body: annexLines,
+          theme: 'grid',
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: { fillColor: [15, 85, 81] }
+        })
+        finalY = (doc as any).lastAutoTable.finalY || finalY + 50
+      }
+    }
+
     doc.setFontSize(10)
     doc.text("Realizado por:", 10, finalY + 15)
     doc.text("Administración Condominio", 10, finalY + 22)
     doc.text("Sistema de Gestión Caminos", 10, finalY + 27)
+
+    try {
+      const fileName = `estado_cuenta_${resident.house_number || resident.id}_${Date.now()}.pdf`
+      const base64Data = doc.output('datauristring').split(',')[1]
+      const savedFile = await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Cache
+      })
+      const canShareResult = await Share.canShare().catch(() => ({ value: false }))
+      if (typeof navigator.share === 'function' || canShareResult.value) {
+        await Share.share({
+          title: 'Estado de Cuenta',
+          text: `Estado de cuenta de Casa ${resident.house_number}`,
+          url: savedFile.uri,
+          dialogTitle: 'Compartir Estado de Cuenta'
+        })
+        return
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const blobUrl = doc.output('bloburl')
     await Browser.open({ url: blobUrl.toString() })
   }
@@ -660,13 +706,16 @@ export const AdminPage: React.FC = () => {
                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>upload_file</span>
                      <span>Importar Residentes</span>
                   </button>
-                  <input type="file" id="import-debts" style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleImportDebts} />
-                  <button onClick={() => document.getElementById('import-debts')?.click()} style={{ ...primaryBtnStyleSmall, backgroundColor: '#0f5551' }}>
+                  <button onClick={() => setIsDebtModalOpen(true)} style={{ ...primaryBtnStyleSmall, backgroundColor: '#0f5551' }}>
                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>history</span>
                      <span>Migrar Deudas</span>
                   </button>
                 </div>
              </div>
+
+             {isDebtModalOpen && (
+               <DebtMigrationModal onClose={() => setIsDebtModalOpen(false)} onDone={() => setIsDebtModalOpen(false)} />
+             )}
 
              {isInviteModalOpen && (
                <div style={{
@@ -820,6 +869,20 @@ export const AdminPage: React.FC = () => {
                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>{p.banco_origen || 'N/A'}</p>
                         </div>
                      </div>
+
+                     {p.payment_allocations && p.payment_allocations.length > 0 && (
+                        <div style={{ marginBottom: '15px', backgroundColor: 'var(--icon-bg)', padding: '12px', borderRadius: '12px' }}>
+                           <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: 800, color: 'var(--accent-gold)' }}>ASIGNACIONES DE PAGO A DEUDAS:</p>
+                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {p.payment_allocations.map((alloc: any) => (
+                                 <div key={alloc.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+                                    <span>{alloc.debts?.concepto || alloc.debts?.tipo || 'Cuota'}</span>
+                                    <strong>{formatUSD(alloc.amount_usd)}</strong>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     )}
 
                      {(p.screenshot_url || p.evidencia_url) && (
                         <div style={{ marginBottom: '15px' }}>
